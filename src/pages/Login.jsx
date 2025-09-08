@@ -1,6 +1,7 @@
 import { useState } from "react";
 import api from "../api/axios"
 import { useNavigate } from "react-router-dom";
+import Logo from "../assets/logoB.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export default function Login() {
     setError("");
 
     try {
-      const response = await api.post("/login", { email, senha });
+      const response = await api.post("/auth/login", { email, senha });
 
       const token = response.data.token;
       localStorage.setItem("token", token);//se pegar o token vai p home
@@ -29,6 +30,7 @@ export default function Login() {
         onSubmit={handleSubmit}
         className="bg-white/20 p-6 rounded-2xl shadow-md w-96 flex flex-col items-center"
       >
+        <img src={Logo} alt="Logo de onibus"/>
         <h2 className="text-white text-2xl font-semi-bold mb-4 text-center">TrackPass</h2>
 
         {error && <p className="text-red-500 text-center">{error}</p>}
