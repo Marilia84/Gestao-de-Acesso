@@ -23,22 +23,23 @@ export default function Login() {
       setError("Email ou senha inválidos.");
     }
   };
-
+// tem que barrar as outras roles, permitir somente gestor no front web
+// colocar toarst
    return (
-    <div className="h-screen w-screen bg-gradient-to-br from-[#859990] to-[#003918] flex items-center justify-center">
+    <div className="h-screen w-screen bg-gradient-to-br from-[#859990]  to-[#003918] flex items-center justify-center">
       <form
         onSubmit={handleSubmit}
-        className="bg-white/20 p-6 rounded-2xl shadow-md w-96 flex flex-col items-center"
+        className="bg-white/15 p-10 border border-white/30 rounded-3xl shadow-md  w-96 h-120 flex flex-col items-center"
       >
-        <img src={Logo} alt="Logo de onibus"/>
-        <h2 className="text-white text-2xl font-semi-bold mb-4 text-center">TrackPass</h2>
+        <img className="w-28 h-20"  src={Logo} alt="Logo de onibus"/>
+        <h2 className="text-white text-3xl font-bold mb-12 text-center">TrackPass</h2>
 
         {error && <p className="text-red-500 text-center">{error}</p>}
 
         <input
           type="email"
           placeholder="Email"
-          className="m-50 bg-white/30 w-full text-white placeholder-white p-2 rounded-lg mb-8"
+          className="m-50 bg-white/30 w-full text-white placeholder-white/70 p-2 rounded-lg mb-8"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -46,14 +47,14 @@ export default function Login() {
         <input
           type="password"
           placeholder="Senha"
-          className="bg-white/30 w-full text-white placeholder-white p-2 rounded-lg mb-8"
+          className="bg-white/30 w-full text-white placeholder-white/70 p-2 rounded-lg mb-8"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
         />
 
         <button
           type="submit"
-          className="w-40 bg-white/40 text-white p-2 rounded-md hover:bg-green-600"
+          className="w-40 bg-white/40 text-white/70 p-2 rounded-lg hover:bg-green-600"
         >
           ENTRAR
         </button>

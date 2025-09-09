@@ -6,7 +6,7 @@ import users from "../assets/users.png";
 import registry from "../assets/registry.png";
 import record from "../assets/record.png";
 import door from "../assets/door.png";
-import logoB from "../assets/logoB.png";
+import logoV from "../assets/logoV.png";
 
 
 export default function Navbar() {
@@ -18,23 +18,23 @@ export default function Navbar() {
     { icon: bus, label: "Lista de Onibus", path: "/perfil" },
     { icon: users, label: "Usuario", path: "/config" },
     { icon: registry, label: "registro", path: "/logout" },
-    { icon: record , label: "Sei la oq", path: "/logout" },
+    { icon: record , label: "Relatorio", path: "/logout" },
     { icon: door, label: "Sair", path: "/logout" },
 
 
   ];
-
+//vou arrumar a logo depois
   return (
     <div
-      className={`h-screen bg-gradient-to-br from-[#859990] to-[#003918] text-white flex flex-col transition-all duration-300 ${
+      className={`h-screen mr-12 text-white flex flex-col transition-all duration-300 ${
         isExpanded ? "w-48" : "w-16"
       }`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
       {/* Logo */}
-      <div className="flex items-center justify-center py-4">
-        <img src={logoB} alt="logo" className="w-10 h-10 rounded-full" />
+      <div className=" justify-center py-4">
+        <img src={logoV} alt="logo" className="w-66 h-45 rounded-full" /> 
       </div>
 
       {/* Itens do Menu */}
