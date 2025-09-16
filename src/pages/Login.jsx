@@ -5,7 +5,7 @@ import Logo from "../assets/logoB.png";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [username, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [error, setError] = useState("");
 
@@ -14,7 +14,7 @@ export default function Login() {
     setError("");
 
     try {
-      const response = await api.post("/auth/login", { email, senha });
+      const response = await api.post("/auth/login", { username, senha });
 
       const token = response.data.token;
       localStorage.setItem("token", token);//se pegar o token vai p home
@@ -40,7 +40,7 @@ export default function Login() {
           type="email"
           placeholder="Email"
           className="m-50 bg-white/30 w-full text-white placeholder-white/70 p-2 rounded-lg mb-8"
-          value={email}
+          value={username}
           onChange={(e) => setEmail(e.target.value)}
         />
 
