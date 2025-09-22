@@ -16,7 +16,7 @@ export default function Navbar() {
   const menuItems = [
     { icon: dashboard, label: "Dashboard", path: "/home" },
     { icon: bus, label: "Lista de Onibus", path: "/perfil" },
-    { icon: users, label: "Usuario", path: "/config" },
+    { icon: users, label: "Usuario", path: "/colaboradores" },
     { icon: registry, label: "registro", path: "/logout" },
     { icon: record , label: "Relatorio", path: "/logout" },
     { icon: door, label: "Sair", path: "/logout" },
