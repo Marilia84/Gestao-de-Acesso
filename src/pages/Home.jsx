@@ -7,7 +7,7 @@ export default function Home() {
     window.location.href = "/"; // redireciona para login
   };
   return( 
-  <div className="bg-[#E5EDE9]   flex flex-col justify-center  h-screen gap-4">
+  <div className="bg-gradient-to-b from-white to-[#E1EDE7]  flex flex-col justify-center  h-screen gap-4">
       <Navbar />
      
     </div>
