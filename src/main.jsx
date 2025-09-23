@@ -5,6 +5,7 @@ import "./index.css"
 import Login from "./pages/Login"
 import Home from "./pages/Home"
 import PrivateRoute from "./components/PrivateRoute"
+import Colaboradores from "./pages/Colaboradores"
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -12,6 +13,7 @@ createRoot(document.getElementById("root")).render(
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
+        <Route path="/colaboradores" element={<PrivateRoute><Colaboradores /></PrivateRoute>} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
