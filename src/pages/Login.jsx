@@ -2,6 +2,7 @@ import { useState } from "react";
 import api from "../api/axios"
 import { useNavigate } from "react-router-dom";
 import Logo from "../assets/logoB.png";
+import Fundo from "../assets/fundo.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -16,6 +17,14 @@ export default function Login() {
     try {
       const response = await api.post("/auth/login", { username, senha });
 
+      if(response.status == 403){
+        setError("Email ou senha inválidos.");
+
+      }
+      if(response.data.role !== "GESTOR"){
+        setError("Acesso permitido somente para gestores.");
+      }
+
       const token = response.data.token;
       localStorage.setItem("token", token);//se pegar o token vai p home
       navigate("/home");
@@ -26,7 +35,7 @@ export default function Login() {
 // tem que barrar as outras roles, permitir somente gestor no front web
 // colocar toarst
    return (
-    <div className="h-screen w-screen bg-gradient-to-br from-[#859990]  to-[#003918] flex items-center justify-center">
+    <div className="h-screen w-screen  bg-cover flex items-center justify-center" style={{ backgroundImage: `url(${Fundo})` }}>
       <form
         onSubmit={handleSubmit}
         className="bg-white/15 p-10 border border-white/30 rounded-3xl shadow-md  w-96 h-120 flex flex-col items-center"
