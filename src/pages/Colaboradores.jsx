@@ -21,14 +21,15 @@ export default function Colaboradores() {
       <Navbar />
       <div className="flex flex-1 flex-col justify-center items-center mr-[10px]  ">
       <div className="bg-white/10 shadow-md shadow-white  rounded-[32px] h-[895px] w-[1740px] mb-8 mt-8 p-8">
-        {/* Adicione o conteúdo da lista aqui */}
+      <div className="">
+        <input
+          type="text"
+          placeholder="Buscar colaborador..." className="w-[600px] rounded-[5px] placeholder-[#859990] placeholder-ml-12"></input> 
          <table className="min-w-full table-auto">
             <thead>
               <tr>
                 <th className="px-4 py-2">Colaborador</th>
                 <th className="px-4 py-2">Matricula</th>
-                <th className="px-4 py-2">Turno</th>
-                <th className="px-4 py-2">linha</th>
                 <th className="px-4 py-2">Função</th>
                 <th className="px-4 py-2">Ações</th>
               </tr>
@@ -39,10 +40,7 @@ export default function Colaboradores() {
                   <tr key={colab.id}>
                     <td className="px-4 py-2">{colab.nome}</td>
                     <td className="px-4 py-2">{colab.matricula}</td>
-                    <td className="px-4 py-2">{colab.turno}</td>
-                    <td className="px-4 py-2">{colab.linha}</td>
                     <td className="px-4 py-2">{colab.role}</td>
-                    <td className="px-4 py-2">{colab.turno}</td>
                     <td className="px-4 py-2">{colab.status}</td>
                     <td className="px-4 py-2">
                       <button className="bg-blue-500 text-white px-3 py-1 rounded">
@@ -63,6 +61,7 @@ export default function Colaboradores() {
               )}
             </tbody>
           </table>
+      </div>
       </div>
       </div>
     </div>
