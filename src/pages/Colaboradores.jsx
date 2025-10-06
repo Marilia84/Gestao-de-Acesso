@@ -20,14 +20,19 @@ export default function Colaboradores() {
   }, []);
 
   return (
-    <div className="bg-[#E5EDE9] min-h-screen flex items-center gap-4">
-      <Navbar />
-      <div className="flex flex-1 flex-col justify-center items-center mr-[10px]  ">
-        <div className="bg-white/10 shadow-md shadow-white  rounded-[32px] h-[895px] w-[1740px] mb-8 mt-8 p-8">
+     <div className="relative bg-[#EDEDED] min-h-screen flex items-center gap-4 overflow-hidden">
+    {/* Primeira curva verde */}
+    <div className="absolute right-0 top-10 w-[750px] h-[800px] bg-[#53A67F] rounded-tl-[400px] rounded-bl-[300px] rotate-[20deg] translate-x-1/4 -translate-y-1/4 z-0" />
+    {/* Continuação para a esquerda, formando o "Z" */}
+    <div className="absolute right-0 top-[750px] w-[2050px] h-[450px] bg-[#53A67F]  rounded-tl-[400px] rounded-br-[400px] rounded-tr-[400px] rotate-[-10deg] translate-x-1/4 -translate-y-1/4 z-0" />
+    <Navbar />
+    <div className="flex flex-1 flex-col justify-center items-center  relative z-10">
+      <h1 className="text-3xl font-bold text-[#3B7258]">
+        Gerenciar Colaboradores
+      </h1>
+        <div className="bg-white shadow-md shadow  rounded-[32px] h-[880px] w-[1740px] mb-8 mt-8 p-8">
           <div className="relative mt-2 w-[600px] mb-[35px] ">
-            <h1 className="text-3xl font-bold mb-6 text-black">
-              Gerenciar Colaboradores
-            </h1>
+            
             <button className="absolute right-[-65em] top-1/2 -translate-y-1/2 bg-[#038C3E] border-2 border-[#1FC96A] rounded-full p-3 flex items-center justify-center shadow-md">
               <img src={Add} alt="Atribuir líder" className="w-4 h-4" />
             </button>

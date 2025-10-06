@@ -1,7 +1,6 @@
 import React from "react";
 import Navbar from "../components/Navbar";
-import Lupa from "../assets/lupa.svg";
-import Add from "../assets/add.svg";
+
 export default function GerenciarLinhas() {
   
 
