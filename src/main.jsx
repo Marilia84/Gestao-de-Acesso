@@ -6,6 +6,7 @@ import Login from "./pages/Login"
 import Home from "./pages/Home"
 import PrivateRoute from "./components/PrivateRoute"
 import Colaboradores from "./pages/Colaboradores"
+import GerenciarLinhas from "./pages/Gerenciar-linhas"
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -14,6 +15,8 @@ createRoot(document.getElementById("root")).render(
         <Route path="/" element={<Login />} />
         <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
         <Route path="/colaboradores" element={<PrivateRoute><Colaboradores /></PrivateRoute>} />
+        <Route path="/gerenciar-linhas" element={<PrivateRoute><GerenciarLinhas /></PrivateRoute>} />
+
       </Routes>
     </BrowserRouter>
   </StrictMode>,

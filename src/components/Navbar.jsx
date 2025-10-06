@@ -11,15 +11,15 @@ export default function Navbar() {
   // Aqui você define seus ícones e links
   const menuItems = [
     { icon: dashboard, label: "Dashboard", path: "/home" },
-    { icon: bus, label: "Ônibus", path: "/onibus" },
-    { icon: users, label: "Usuarios", path: "/colaboradores" },
+    { icon: bus, label: "Gerenciar Linhas", path: "/gerenciar-linhas" },
+    { icon: users, label: "Colaboradores", path: "/colaboradores" },
     { icon: registry, label: "Registro", path: "/registros" },
     { icon: record, label: "Relatorio", path: "/relatorio" },
     { icon: door, label: "Perfil", path: "/perfil" },
   ];
   //vou arrumar a logo depois, falta o traço embaixo dela, e ajeitar os icons
   return (
-    <div className="h-screen w-[220px] pr-[20px] bg-white/30 text-white flex flex-col transition-all duration-300 items-center">
+    <div className="h-screen w-[240px] pr-[20px] bg-white/30 text-white flex flex-col transition-all duration-300 items-center">
       {/* Logo */}
       <div className=" justify-center py-4 flex flex-col items-center mb-4">
         <img src={logoV} alt="logo" className=" rounded-full mx-auto ml-6" />
