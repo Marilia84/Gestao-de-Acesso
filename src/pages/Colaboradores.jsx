@@ -9,17 +9,18 @@ export default function Colaboradores() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    // Exemplo de chamada à API
+
     api
-      .get("/colaboradores") // seu endpoint
+      .get("/colaboradores") 
       .then((res) => {
-        setColaboradores(res.data); // assume que res.data é um array
+        setColaboradores(res.data); 
       })
       .catch((err) => {
         console.error("Erro ao buscar colaboradores:", err);
       });
   }, []);
-  // Filtra colaboradores pelo nome
+ 
+  
   const colaboradoresFiltrados = colaboradores.filter((colab) =>
     colab.nome.toLowerCase().includes(search.toLowerCase())
   );
