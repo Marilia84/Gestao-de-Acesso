@@ -11,9 +11,9 @@ export default function Navbar() {
   // Aqui você define seus ícones e links
   const menuItems = [
     { icon: dashboard, label: "Dashboard", path: "/home" },
-    { icon: bus, label: "Gerenciar Linhas", path: "/gerenciar-linhas" },
+    { icon: bus, label: "Gerenciar Linhas", path: "/gerenciarLinhas" },
     { icon: users, label: "Colaboradores", path: "/colaboradores" },
-    { icon: users, label: "Portaria", path: "/portaria" },
+    { icon: users, label: "Portaria", path: "/visitantes" },
     { icon: registry, label: "Registro", path: "/registros" },
     { icon: record, label: "Relatorio", path: "/relatorio" },
     { icon: door, label: "Perfil", path: "/perfil" },
