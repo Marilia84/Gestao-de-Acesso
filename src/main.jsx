@@ -7,7 +7,6 @@ import Home from "./pages/Home";
 import PrivateRoute from "./components/PrivateRoute";
 import Colaboradores from "./pages/Colaboradores";
 import GerenciarLinhas from "./pages/Gerenciar-linhas";
-import Portaria from "./pages/Portaria";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -35,14 +34,6 @@ createRoot(document.getElementById("root")).render(
           element={
             <PrivateRoute>
               <GerenciarLinhas />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/portaria"
-          element={
-            <PrivateRoute>
-              <Portaria />
             </PrivateRoute>
           }
         />
