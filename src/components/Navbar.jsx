@@ -14,6 +14,7 @@ export default function Navbar() {
     { icon: bus, label: "Gerenciar Linhas", path: "/gerenciar-linhas" },
     { icon: users, label: "Colaboradores", path: "/colaboradores" },
     { icon: users, label: "Portaria", path: "/portaria" },
+    { icon: users, label: "Visitantes", path: "/visitantes" },
     { icon: registry, label: "Registro", path: "/registros" },
     { icon: record, label: "Relatorio", path: "/relatorio" },
     { icon: door, label: "Perfil", path: "/perfil" },

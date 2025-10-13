@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import PrivateRoute from "./components/PrivateRoute";
 import Colaboradores from "./pages/Colaboradores";
 import GerenciarLinhas from "./pages/Gerenciar-linhas";
+import Visitantes from "./pages/Visitantes";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -34,6 +35,14 @@ createRoot(document.getElementById("root")).render(
           element={
             <PrivateRoute>
               <GerenciarLinhas />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/visitantes"
+          element={
+            <PrivateRoute>
+              <Visitantes />
             </PrivateRoute>
           }
         />

@@ -9,33 +9,30 @@ export default function Colaboradores() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-
     api
-      .get("/colaboradores") 
+      .get("/colaboradores")
       .then((res) => {
-        setColaboradores(res.data); 
+        setColaboradores(res.data);
       })
       .catch((err) => {
         console.error("Erro ao buscar colaboradores:", err);
       });
   }, []);
- 
 
   const colaboradoresFiltrados = colaboradores.filter((colab) =>
     colab.nome.toLowerCase().includes(search.toLowerCase())
   );
   return (
-     <div className="relative bg-[#E6E6E6] min-h-screen flex items-center gap-4 overflow-hidden">
-    <div className="absolute right-0 top-10 w-[750px] h-[800px] bg-[#53A67F] rounded-tl-[400px] rounded-bl-[300px] rotate-[20deg] translate-x-1/4 -translate-y-1/4 z-0" />
-    <div className="absolute right-0 top-[750px] w-[2050px] h-[450px] bg-[#53A67F]  rounded-tl-[400px] rounded-br-[400px] rounded-tr-[400px] rotate-[-10deg] translate-x-1/4 -translate-y-1/4 z-0" />
-    <Navbar />
-    <div className="flex flex-1 flex-col justify-center items-center  relative z-10">
-      <h1 className="text-3xl font-bold text-[#3B7258]">
-        Gerenciar Colaboradores
-      </h1>
+    <div className="relative bg-[#E6E6E6] min-h-screen flex items-center gap-4 overflow-hidden">
+      <div className="absolute right-0 top-10 w-[750px] h-[800px] bg-[#53A67F] rounded-tl-[400px] rounded-bl-[300px] rotate-[20deg] translate-x-1/4 -translate-y-1/4 z-0" />
+      <div className="absolute right-0 top-[750px] w-[2050px] h-[450px] bg-[#53A67F]  rounded-tl-[400px] rounded-br-[400px] rounded-tr-[400px] rotate-[-10deg] translate-x-1/4 -translate-y-1/4 z-0" />
+      <Navbar />
+      <div className="flex flex-1 flex-col justify-center items-center  relative z-10">
+        <h1 className="text-3xl font-bold text-[#3B7258]">
+          Gerenciar Colaboradores
+        </h1>
         <div className="bg-[#EDEDED] shadow-md shadow  rounded-[32px] h-[880px] w-[1700px] mb-8 mt-8 p-8">
           <div className="relative mt-2 w-[600px] mb-[35px] ">
-            
             <button className="absolute right-[-65em] top-1/2 -translate-y-1/2 bg-[#038C3E] border-2 border-[#1FC96A] rounded-full p-3 flex items-center justify-center shadow-md">
               <img src={Add} alt="Atribuir líder" className="w-4 h-4" />
             </button>

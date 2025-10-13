@@ -20,33 +20,128 @@ const SearchIcon = () => (
 );
 
 const Visitantes = () => {
+  const [searchTerm, setSearchTerm] = React.useState("");
   // Dados de exemplo para a tabela. Em um app real, viria de uma API.
-  const visitors = Array(7).fill({
-    name: "Visitante da silva",
-    document: "CPF: 238504323",
-    reason: "Visita escolar",
-    company: "Escola da silva",
-    responsible: "Gerson alguma coisa",
-    status: "ativo",
+  const visitors = [
+    {
+      id: 1,
+      name: "Ana Carolina Souza",
+      document: "CPF: 123.456.789-10",
+      reason: "Reunião de Projeto",
+      company: "Tech Solutions",
+      responsible: "Carlos Pereira",
+      status: "ativo",
+    },
+    {
+      id: 2,
+      name: "Bruno Lima Costa",
+      document: "RG: 98.765.432-1",
+      reason: "Entrevista de Emprego",
+      company: "Inova Corp",
+      responsible: "Mariana Almeida",
+      status: "ativo",
+    },
+    {
+      id: 3,
+      name: "Carla Martins Rocha",
+      document: "CPF: 234.567.890-12",
+      reason: "Visita Técnica",
+      company: "Engenharia Global",
+      responsible: "Gerson alguma coisa",
+      status: "inativo",
+    },
+    {
+      id: 4,
+      name: "Daniel Almeida",
+      document: "Passaporte: BR123456",
+      reason: "Consultoria",
+      company: "Consultores Associados",
+      responsible: "Fernanda Lima",
+      status: "ativo",
+    },
+    {
+      id: 5,
+      name: "Eduardo Ferreira",
+      document: "CPF: 345.678.901-23",
+      reason: "Entrega de Material",
+      company: "Logística Express",
+      responsible: "Carlos Pereira",
+      status: "ativo",
+    },
+    {
+      id: 6,
+      name: "Fernanda Oliveira",
+      document: "CPF: 456.789.012-34",
+      reason: "Visita escolar",
+      company: "Escola Aprender Mais",
+      responsible: "Gerson alguma coisa",
+      status: "ativo",
+    },
+    {
+      id: 7,
+      name: "Gustavo Santos",
+      document: "RG: 11.222.333-4",
+      reason: "Manutenção de Equipamento",
+      company: "Manutenção Total",
+      responsible: "Mariana Almeida",
+      status: "inativo",
+    },
+    {
+      id: 8,
+      name: "Heloísa Ribeiro",
+      document: "CPF: 567.890.123-45",
+      reason: "Reunião Comercial",
+      company: "Vendas Pro",
+      responsible: "Fernanda Lima",
+      status: "ativo",
+    },
+    {
+      id: 9,
+      name: "Lucas Azevedo",
+      document: "CPF: 678.901.234-56",
+      reason: "Auditoria Interna",
+      company: "Auditores Brasil",
+      responsible: "Carlos Pereira",
+      status: "ativo",
+    },
+    {
+      id: 10,
+      name: "Mariana Costa",
+      document: "RG: 22.333.444-5",
+      reason: "Visita escolar",
+      company: "Escola Aprender Mais",
+      responsible: "Gerson alguma coisa",
+      status: "ativo",
+    },
+  ];
+
+  const filteredVisitors = visitors.filter((visitor) => {
+    const visitorName = visitor.name.toLowerCase();
+    const visitorDocument = visitor.document.toLowerCase();
+    const searchTermLower = searchTerm.toLowerCase();
+
+    return (
+      visitorName.includes(searchTermLower) ||
+      visitorDocument.includes(searchTermLower)
+    );
   });
 
   return (
     // Removido 'h-screen' e 'flex' para permitir que o conteúdo cresça e role naturalmente.
     // 'relative' é necessário para posicionar a forma decorativa.
-    <div className="bg-[#E5EDE9] min-h-screen flex items-center gap-4">
-    <Navbar />
+    <div className="bg-[#E5EDE9] min-h-screen flex items-top gap-4">
+      <Navbar />
+
       {/* Forma decorativa no canto superior direito */}
       <div
-        className="absolute top-0 right-0 w-1/3 h-1/3 sm:w-1/4 sm:h-1/2 bg-[#36A293] rounded-bl-full"
+        className="absolute top-0 right-0 w-1/3 h-1/3 sm:w-1/4 sm:h-1/2 bg-[#53A67F] rounded-bl-full"
         style={{ zIndex: 0 }}
       ></div>
 
-      
-
       {/* Conteúdo principal com z-index para ficar acima da forma */}
-      <div className="relative max-w-7xl mx-auto" style={{ zIndex: 1 }}>
-        <header className="mb-8">
-          <h1 className="text-4xl font-bold text-[#4A5568]">VISITANTES</h1>
+      <div className="relative mx-auto w-full px-8" style={{ zIndex: 1 }}>
+        <header className="mb-9 mt-9">
+          <h1 className="text-4xl font-bold text-[#3B7258]">VISITANTES</h1>
         </header>
 
         <main>
@@ -181,7 +276,7 @@ const Visitantes = () => {
               <div className="mt-8">
                 <button
                   type="submit"
-                  className="w-full bg-[#36A293] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#2d8a7e] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#36A293] transition-colors"
+                  className="w-full bg-[#038C3E] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#036f4c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#36A293] transition-colors"
                 >
                   Cadastrar Visitante
                 </button>
@@ -201,12 +296,14 @@ const Visitantes = () => {
               </span>
               <input
                 type="text"
-                placeholder="Buscar Por Nome/ Matrícula Do Visitante..."
+                placeholder="Buscar Por Nome/ DDocumento Do Visitante..."
                 className="block w-full rounded-md border-gray-300 bg-gray-50 pl-10 shadow-sm focus:border-[#36A293] focus:ring-[#36A293] sm:text-sm py-2"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-y-auto max-h-[400px]">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -249,9 +346,9 @@ const Visitantes = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {visitors.map((visitor, index) => (
+                  {filteredVisitors.map((visitor, index) => (
                     <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {visitor.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -267,7 +364,7 @@ const Visitantes = () => {
                         {visitor.responsible}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-[#53A67F] text-white">
                           {visitor.status}
                         </span>
                       </td>
