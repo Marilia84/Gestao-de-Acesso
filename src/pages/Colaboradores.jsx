@@ -1,5 +1,5 @@
 import Navbar from "../components/Navbar";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../api/axios";
 import Lupa from "../assets/lupa.svg";
 import Add from "../assets/add.svg";
@@ -20,7 +20,7 @@ export default function Colaboradores() {
       });
   }, []);
  
-  
+
   const colaboradoresFiltrados = colaboradores.filter((colab) =>
     colab.nome.toLowerCase().includes(search.toLowerCase())
   );

@@ -38,7 +38,7 @@ export default function Login() {
     <div className="h-screen w-screen  bg-cover flex items-center justify-center" style={{ backgroundImage: `url(${Fundo})` }}>
       <form
         onSubmit={handleSubmit}
-        className="bg-white/15 p-10 border border-white/30 rounded-3xl shadow-md  w-96 h-120 flex flex-col items-center"
+        className="bg-white/15 cursor-white p-10 border border-white/30 rounded-3xl shadow-md  w-96 h-120 flex flex-col items-center"
       >
         <img className="w-28 h-20"  src={Logo} alt="Logo de onibus"/>
         <h2 className="text-white text-3xl font-bold mb-12 text-center">TrackPass</h2>
@@ -60,13 +60,14 @@ export default function Login() {
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
         />
-
+       
         <button
           type="submit"
           className="w-40 bg-white/40 text-white/70 p-2 rounded-lg hover:bg-green-600"
         >
           ENTRAR
-        </button>
+        </button> 
+        <a  className="text-white text-[13px] ">Esqueci senha</a>
       </form>
     </div>
   );
