@@ -8,6 +8,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import Colaboradores from "./pages/Colaboradores";
 import GerenciarLinhas from "./pages/Gerenciar-linhas";
 import Visitantes from "./pages/Visitantes";
+import RegistroViagem from "./pages/registro-viagem";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -43,6 +44,14 @@ createRoot(document.getElementById("root")).render(
           element={
             <PrivateRoute>
               <Visitantes />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/registro-viagem"
+          element={
+            <PrivateRoute>
+              <RegistroViagem />
             </PrivateRoute>
           }
         />
