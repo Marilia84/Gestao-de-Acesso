@@ -2,7 +2,6 @@ import Navbar from "../components/Navbar";
 import { useEffect, useState } from "react";
 import api from "../api/axios";
 import Lupa from "../assets/lupa.svg";
-import Add from "../assets/add.svg";
 
 export default function Colaboradores() {
   const [colaboradores, setColaboradores] = useState([]);
@@ -36,7 +35,7 @@ export default function Colaboradores() {
         <div className="bg-[#EDEDED] shadow-md shadow  rounded-[32px] h-[880px] w-[1700px] mb-8 mt-8 p-8">
           <div className="relative mt-2 w-[600px] mb-[35px] ">
             
-            
+           
           </div>
           <div className="relative mt-2 w-[600px] mb-[35px]  ">
             <img
