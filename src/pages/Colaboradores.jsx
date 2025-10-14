@@ -59,6 +59,7 @@ export default function Colaboradores() {
                 <th className="px-4 py-2 text-center">Função</th>
                 <th className="px-4 py-2 text-center">Linha</th>
                 <th className="px-4 py-2 text-center">Turno</th>
+                <th className="px-4 py-2 text-center">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -70,6 +71,9 @@ export default function Colaboradores() {
                     <td className="px-4 py-2 text-center">{colab.role}</td>
                     <td className="px-4 py-2 text-center">linha D</td>
                     <td className="px-4 py-2 text-center">Diurno</td>
+                    <td className="px-4 py-2 text-center">
+                      {colab.ativo ? "Ativo" : "Inativo"}
+                    </td>
                   </tr>
                 ))
               ) : (
