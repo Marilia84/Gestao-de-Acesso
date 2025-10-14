@@ -36,9 +36,7 @@ export default function Colaboradores() {
         <div className="bg-[#EDEDED] shadow-md shadow  rounded-[32px] h-[880px] w-[1700px] mb-8 mt-8 p-8">
           <div className="relative mt-2 w-[600px] mb-[35px] ">
             
-            <button className="absolute right-[-65em] top-1/2 -translate-y-1/2 bg-[#038C3E] border-2 border-[#1FC96A] rounded-full p-3 flex items-center justify-center shadow-md">
-              <img src={Add} alt="Atribuir líder" className="w-4 h-4" />
-            </button>
+            
           </div>
           <div className="relative mt-2 w-[600px] mb-[35px]  ">
             <img
