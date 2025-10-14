@@ -141,16 +141,16 @@ const Visitantes = () => {
       {/* Conteúdo principal com z-index para ficar acima da forma */}
       <div className="relative mx-auto w-full px-8" style={{ zIndex: 1 }}>
         <header className="mb-9 mt-9">
-          <h1 className="text-4xl font-bold text-[#3B7258]">VISITANTES</h1>
+          <h1 className="text-5xl font-bold text-[#3B7258]">VISITANTES</h1>
         </header>
 
         <main>
           {/* Card de Cadastro de Visitante */}
           <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg mb-8">
-            <h2 className="text-2xl font-semibold text-gray-800">
+            <h2 className="text-3xl font-bold text-gray-800 mb-1">
               Cadastrar visitante
             </h2>
-            <p className="text-gray-500 mb-6">
+            <p className="text-sm text-gray-500 mb-6 ml-1">
               Cadastre as informações do visitante
             </p>
 
@@ -160,7 +160,7 @@ const Visitantes = () => {
                 <div className="lg:col-span-2">
                   <label
                     htmlFor="fullName"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-2sm font-semibold text-gray-700"
                   >
                     Nome completo
                   </label>
@@ -168,7 +168,7 @@ const Visitantes = () => {
                     type="text"
                     id="fullName"
                     placeholder="Digite o Nome"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#36A293] focus:ring-[#36A293] sm:text-sm"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
                   />
                 </div>
 
@@ -176,13 +176,13 @@ const Visitantes = () => {
                 <div>
                   <label
                     htmlFor="docType"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-2sm font-semibold text-gray-700"
                   >
                     Tipo de documento
                   </label>
                   <select
                     id="docType"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#36A293] focus:ring-[#36A293] sm:text-sm"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
                   >
                     <option>Selecione</option>
                     <option>CPF</option>
@@ -195,7 +195,7 @@ const Visitantes = () => {
                 <div>
                   <label
                     htmlFor="docNumber"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-2sm font-semibold text-gray-700"
                   >
                     Numero do documento
                   </label>
@@ -203,7 +203,7 @@ const Visitantes = () => {
                     type="text"
                     id="docNumber"
                     placeholder="000.000.000-00"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#36A293] focus:ring-[#36A293] sm:text-sm"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
                   />
                 </div>
 
@@ -211,7 +211,7 @@ const Visitantes = () => {
                 <div className="lg:col-span-1">
                   <label
                     htmlFor="docDetails"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-2sm font-semibold text-gray-700"
                   >
                     Detalhes do documento
                   </label>
@@ -219,7 +219,7 @@ const Visitantes = () => {
                     type="text"
                     id="docDetails"
                     placeholder="Detalhes Do Documento"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#36A293] focus:ring-[#36A293] sm:text-sm"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
                   />
                 </div>
 
@@ -227,7 +227,7 @@ const Visitantes = () => {
                 <div>
                   <label
                     htmlFor="visitReason"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-2sm font-semibold text-gray-700"
                   >
                     Motivo da visita
                   </label>
@@ -235,7 +235,7 @@ const Visitantes = () => {
                     type="text"
                     id="visitReason"
                     placeholder="Ex: Visita técnica"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#36A293] focus:ring-[#36A293] sm:text-sm"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
                   />
                 </div>
 
@@ -243,7 +243,7 @@ const Visitantes = () => {
                 <div>
                   <label
                     htmlFor="company"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-2sm font-semibold text-gray-700"
                   >
                     Empresa (opcional)
                   </label>
@@ -251,7 +251,7 @@ const Visitantes = () => {
                     type="text"
                     id="company"
                     placeholder="Ex: Empresa Exemplo"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#36A293] focus:ring-[#36A293] sm:text-sm"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
                   />
                 </div>
 
@@ -259,13 +259,13 @@ const Visitantes = () => {
                 <div>
                   <label
                     htmlFor="responsible"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-2sm font-semibold text-gray-700"
                   >
                     Responsavel
                   </label>
                   <select
                     id="responsible"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#36A293] focus:ring-[#36A293] sm:text-sm"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
                   >
                     <option>Selecione</option>
                     <option>Gerson alguma coisa</option>
@@ -276,9 +276,9 @@ const Visitantes = () => {
               <div className="mt-8">
                 <button
                   type="submit"
-                  className="w-full bg-[#038C3E] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#036f4c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#36A293] transition-colors"
+                  className="w-full bg-[#038C3E] text-white py-3 px-4 rounded-lg font-semibold text-2sm hover:bg-[#036f4c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#36A293] transition-colors"
                 >
-                  Cadastrar Visitante
+                  CADASTRAR VISITANTE
                 </button>
               </div>
             </form>
@@ -286,7 +286,7 @@ const Visitantes = () => {
 
           {/* Card de Gerenciamento de Visitantes */}
           <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+            <h2 className="text-3xl font-bold text-gray-800 mb-5">
               Gerenciar visitantes
             </h2>
 
@@ -297,7 +297,7 @@ const Visitantes = () => {
               <input
                 type="text"
                 placeholder="Buscar Por Nome/ DDocumento Do Visitante..."
-                className="block w-full rounded-md border-gray-300 bg-gray-50 pl-10 shadow-sm focus:border-[#36A293] focus:ring-[#36A293] sm:text-sm py-2"
+                className="block w-full rounded-md border-gray-300 bg-gray-50 pl-10 shadow-sm focus:border-[#36A293] focus:ring-[#36A293] sm:text-sm py-2 mb-3"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
