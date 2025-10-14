@@ -1,110 +1,83 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
-import axios from "axios";
 import api from "../api/axios";
 
 export default function GerenciarLinhas() {
+  const [tokenOk, setTokenOk] = useState(false);
+
   const [cidades, setCidades] = useState([]);
   const [novaCidade, setNovaCidade] = useState("");
   const [novaUf, setNovaUf] = useState("");
+
   const [pontos, setPontos] = useState([]);
   const [nomePonto, setNomePonto] = useState("");
   const [cidadeSelecionada, setCidadeSelecionada] = useState("");
   const [rua, setRua] = useState("");
   const [numero, setNumero] = useState("");
+
   const [novaRota, setNovaRota] = useState("");
-  const [motoristas, setMotoristas] = useState([]);
-  const [motoristaSelecionado, setMotoristaSelecionado] = useState("");
   const [capacidade, setCapacidade] = useState("");
   const [horaPartida, setHoraPartida] = useState("");
   const [horaChegada, setHoraChegada] = useState("");
+  const [periodo, setPeriodo] = useState("");
+
   const [pontoSelecionado, setPontoSelecionado] = useState("");
   const [pontosRota, setPontosRota] = useState([]);
-  const [colaboradorSelecionado, setColaboradorSelecionado] = useState("");
-  const [colaboradoresRota, setColaboradoresRota] = useState([]);
-  const [liderSelecionado, setLiderSelecionado] = useState("");
+
   const [rotas, setRotas] = useState([]);
   const [colaboradores, setColaboradores] = useState([]);
+  const [motoristas, setMotoristas] = useState([]);
 
+  // Garante token no header da instância api
   useEffect(() => {
-    api
-      .get("/cidades")
-      .then((res) => {
-        setCidades(res.data);
-      })
-      .catch((err) => {
-        console.error("Erro ao buscar cidades:", err);
-      });
-  }, []);
-useEffect(() => {
-  api
-    api.get("/motorista?status=ativo")// 👈 verifique se sua rota é "/motoristas" (no plural)
-    .then((res) => setMotoristas(res.data))
-    .catch((err) => console.error("Erro ao buscar motoristas:", err));
-}, []);
-      // Garante que cada motorista tenha id e nome válidos
-      // 🔹 Busca motoristas ativos
-useEffect(() => {
-  api
-    .get("/motorista") // ✅ Corrigido (singular)
-    .then((res) => setMotoristas(res.data))
-    .catch((err) => {
-      console.error("Erro ao buscar motoristas:", err.response?.data || err.message);
-    });
-}, []);
-
-  useEffect(() => {
-    api
-      .get("/rotas")
-      .then((res) => {
-        setRotas(res.data);
-      })
-      .catch((err) => {
-        console.error("Erro ao buscar rotas", err);
-      });
-  }, []);
-  useEffect(() => {
-    api
-      .get("/colaboradores")
-      .then((res) => {
-        setColaboradores(res.data);
-      })
-      .catch((err) => {
-        console.error("Erro ao buscar colaboradores", err);
-      });
-  }, []);
-
-  const handleAdicionarCidade = async () => {
-    if (!novaCidade.trim() || !novaUf.trim()) {
-      alert("Preencha todos os campos!");
-      return;
-    }
-
     try {
-      const response = await api.post("/cidades", {
-        nome: novaCidade,
-        uf: novaUf.toUpperCase(),
-      });
-
-      setCidades([...cidades, response.data]);
-      setNovaCidade("");
-      setNovaUf("");
-      alert("Cidade adicionada com sucesso!");
-    } catch (error) {
-      console.error("Erro ao adicionar cidade:", error);
-      alert("Erro ao cadastrar cidade.");
+      const t = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (t) {
+        api.defaults.headers.common.Authorization = `Bearer ${t}`;
+        setTokenOk(true);
+      } else {
+        console.warn("Token não encontrado em local/sessionStorage.");
+      }
+    } catch (e) {
+      console.warn("Não foi possível ler o token do storage:", e);
     }
+  }, []);
+
+  // Cargas iniciais
+  useEffect(() => {
+    if (!tokenOk) return;
+
+    const carregarTudo = async () => {
+      try {
+        const [cidadesRes, pontosRes, rotasRes, colabsRes, motosRes] = await Promise.all([
+          api.get("/cidades"),
+          api.get("/pontos"),
+          api.get("/rotas"),
+          api.get("/colaboradores"),
+          api.get("/motorista?status=ativo"),
+        ]);
+
+        setCidades(cidadesRes.data || []);
+        setPontos(pontosRes.data || []);
+        setRotas(rotasRes.data || []);
+        setColaboradores(colabsRes.data || []);
+        setMotoristas(motosRes.data || []);
+      } catch (err) {
+        console.error("Erro nas cargas iniciais:", err.response?.data || err.message || err);
+      }
+    };
+
+    carregarTudo();
+  }, [tokenOk]);
+
+  // Util: normaliza “HH:mm” -> “HH:mm:ss”
+  const toHMS = (hhmm) => {
+    if (!hhmm) return "";
+    return /^\d{2}:\d{2}$/.test(hhmm) ? `${hhmm}:00` : hhmm;
   };
 
-  useEffect(() => {
-    api
-      .get("/pontos")
-      .then((res) => setPontos(res.data))
-      .catch((err) => console.error("Erro ao buscar pontos:", err));
-  }, []);
-
   const getCoordenadas = async (enderecoCompleto) => {
-    const apiKey = "AIzaSyCrNiQt-qPLaFQRKrLJtAeGYMx8eZLB-4U";
+    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
       enderecoCompleto
     )}&key=${apiKey}`;
@@ -115,95 +88,140 @@ useEffect(() => {
     if (data.status === "OK") {
       const { lat, lng } = data.results[0].geometry.location;
       return { lat, lng };
-    } else {
-      throw new Error("Endereço não encontrado.");
     }
+    throw new Error("Endereço não encontrado.");
   };
 
-  const handleCadastrarPonto = async () => {
-    if (
-      !cidadeSelecionada ||
-      !nomePonto.trim() ||
-      !rua.trim() ||
-      !numero.trim()
-    ) {
-      alert("Preencha todos os campos!");
+  const handleAdicionarCidade = async () => {
+    if (!novaCidade.trim() || !novaUf.trim()) {
+      alert("Preencha cidade e UF.");
       return;
     }
 
     try {
-      const cidadeObj = cidades.find(
-        (c) => c.idCidade === Number(cidadeSelecionada)
-      );
-      const enderecoCompleto = `${rua}, ${numero}, ${cidadeObj.nome} - ${cidadeObj.uf}`;
+      const response = await api.post("/cidades", {
+        nome: novaCidade.trim(),
+        uf: novaUf.trim().toUpperCase(),
+      });
 
-      // Converte o endereço em latitude e longitude
+      setCidades((prev) => [...prev, response.data]);
+      setNovaCidade("");
+      setNovaUf("");
+      alert("Cidade adicionada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao adicionar cidade:", error.response?.data || error);
+      alert("Erro ao cadastrar cidade.");
+    }
+  };
+
+  const handleCadastrarPonto = async () => {
+    if (!cidadeSelecionada || !nomePonto.trim() || !rua.trim() || !numero.trim()) {
+      alert("Preencha todos os campos do ponto.");
+      return;
+    }
+
+    try {
+      const cidadeObj = cidades.find((c) => String(c.idCidade) === String(cidadeSelecionada));
+      if (!cidadeObj) {
+        alert("Cidade inválida.");
+        return;
+      }
+
+      const enderecoCompleto = `${rua}, ${numero}, ${cidadeObj.nome} - ${cidadeObj.uf}`;
       const { lat, lng } = await getCoordenadas(enderecoCompleto);
 
       const response = await api.post("/pontos", {
-        nome: nomePonto,
-        endereco: `${rua}, ${numero}`,
+        nome: nomePonto.trim(),
+        endereco: `${rua.trim()}, ${numero.trim()}`,
         latitude: lat,
         longitude: lng,
-        idCidade: cidadeSelecionada,
+        idCidade: Number(cidadeSelecionada),
       });
 
-      setPontos([...pontos, response.data]);
+      setPontos((prev) => [...prev, response.data]);
       setNomePonto("");
       setRua("");
       setNumero("");
       alert("Ponto cadastrado com sucesso!");
     } catch (error) {
-      console.error("Erro ao cadastrar ponto:", error);
+      console.error("Erro ao cadastrar ponto:", error.response?.data || error);
       alert("Erro ao cadastrar ponto.");
     }
   };
 
   const handleAdicionarPontoNaRota = () => {
-    if (!pontoSelecionado) return alert("Selecione um ponto!");
-    const ponto = pontos.find((p) => p.idPonto === Number(pontoSelecionado));
-    if (!pontosRota.some((p) => p.idPonto === ponto.idPonto)) {
-      setPontosRota([...pontosRota, ponto]);
+    if (!pontoSelecionado) {
+      alert("Selecione um ponto.");
+      return;
     }
-  };
-
-  const handleAdicionarColaborador = () => {
-    if (!colaboradorSelecionado) return alert("Selecione um colaborador!");
-    if (colaboradoresRota.length >= capacidade)
-      return alert("Capacidade máxima atingida!");
-    const colaborador = colaboradores.find(
-      (c) => c.idColaborador === Number(colaboradorSelecionado)
-    );
-    if (
-      !colaboradoresRota.some(
-        (c) => c.idColaborador === colaborador.idColaborador
-      )
-    ) {
-      setColaboradoresRota([...colaboradoresRota, colaborador]);
+    const ponto = pontos.find((p) => String(p.idPonto) === String(pontoSelecionado));
+    if (!ponto) {
+      alert("Ponto inválido.");
+      return;
     }
+    if (pontosRota.some((p) => String(p.idPonto) === String(ponto.idPonto))) {
+      alert("Este ponto já foi adicionado à rota.");
+      return;
+    }
+    setPontosRota((prev) => [...prev, ponto]);
+    setPontoSelecionado("");
   };
 
   const handleCadastrarRota = async () => {
-    if (!novaRota || !cidadeSelecionada || !motoristaSelecionado)
-      return alert("Preencha todos os campos obrigatórios!");
+    if (
+      !novaRota.trim() ||
+      !cidadeSelecionada ||
+      !periodo ||
+      !capacidade ||
+      !horaPartida ||
+      !horaChegada ||
+      pontosRota.length === 0
+    ) {
+      alert("Preencha todos os campos obrigatórios da rota.");
+      return;
+    }
+
+    // Ajusta tipos/formato
+    const payload = {
+      nome: novaRota.trim(),
+      idCidade: Number(cidadeSelecionada),
+      periodo,                          // certifique-se que casa com o enum do backend
+      capacidade: Number(capacidade),
+      ativo: true,
+       horaPartida: horaPartida.length > 5 ? horaPartida.substring(0, 5) : horaPartida, // Garante que seja "HH:mm"
+      horaChegada: horaChegada.length > 5 ? horaChegada.substring(0, 5) : horaChegada, // Garante que seja "HH:mm" // HH:mm:ss
+      pontos: pontosRota.map((p, i) => ({
+        idPonto: Number(p.idPonto),
+        ordem: i + 1,
+      })),
+    };
 
     try {
-      const response = await api.post("/rotas", {
-        nome: novaRota,
-        idCidade: cidadeSelecionada,
-        idMotorista: motoristaSelecionado,
-        capacidade,
-        horaPartida,
-        horaChegada,
-        pontos: pontosRota.map((p) => p.idPonto),
-        colaboradores: colaboradoresRota.map((c) => c.idColaborador),
-        lider: liderSelecionado,
-      });
+      // log de depuração útil
+      console.log(" Payload rota:", payload);
+      const res = await api.post("/rotas", payload);
       alert("Rota cadastrada com sucesso!");
-      console.log(response.data);
+      console.log(" Resposta:", res.data);
+
+      // limpa
+      setNovaRota("");
+      setPeriodo("");
+      setCapacidade("");
+      setHoraPartida("");
+      setHoraChegada("");
+      setPontosRota([]);
+
+      // atualiza lista
+      const rotasRes = await api.get("/rotas");
+      setRotas(rotasRes.data || []);
     } catch (error) {
-      console.error("Erro ao cadastrar rota:", error);
-      alert("Erro ao cadastrar rota.");
+      const data = error.response?.data;
+      console.error("❌ Erro ao cadastrar rota:", data || error.message || error);
+      alert(
+        `Erro ao cadastrar rota.${
+          data?.message ? `\nMensagem: ${data.message}` : ""
+        }${data?.error ? `\nDetalhe: ${data.error}` : ""}`
+      );
     }
   };
 
@@ -211,9 +229,7 @@ useEffect(() => {
     <div className="bg-[#E6E6E6] min-h-screen flex flex-col lg:flex-row items-start gap-4">
       <Navbar />
       <div className="flex flex-1 flex-col justify-center items-center mr-[10px] w-full">
-        <h1 className="text-3xl font-bold mb-10  text-[#3B7258] mt-10">
-          Gerenciar Linhas
-        </h1>
+        <h1 className="text-3xl font-bold mb-10 text-[#3B7258] mt-10">Gerenciar Linhas</h1>
 
         {/* CADASTRO DE PONTOS */}
         <div className="grid grid-cols-2 gap-6 mb-10">
@@ -222,14 +238,14 @@ useEffect(() => {
             <p className="text-sm text-gray-600 mb-4">
               Adicione novos pontos de parada com geolocalização automática
             </p>
-            {/* primeira linha */}
+
             <div className="flex gap-2 mb-4">
               <input
                 type="text"
                 placeholder="Nova cidade"
                 value={novaCidade}
                 onChange={(e) => setNovaCidade(e.target.value)}
-                className="border border-gray-500 rounded-lg px-4 py-2 w-full text-base "
+                className="border border-gray-500 rounded-lg px-4 py-2 w-full text-base"
               />
               <input
                 type="text"
@@ -246,18 +262,15 @@ useEffect(() => {
                 Adicionar
               </button>
             </div>
-{/* segunda linha */}
+
             <div className="flex flex-col mb-4">
-              <label
-                htmlFor="cidade"
-                className="text-sm font-semibold text-gray-800 mb-1"
-              >
+              <label htmlFor="cidade" className="text-sm font-semibold text-gray-800 mb-1">
                 Cidade
               </label>
-
               <select
                 id="cidade"
                 className="border border-gray-500 rounded-md px-3 py-2 text-sm text-gray-600"
+                value={cidadeSelecionada}
                 onChange={(e) => setCidadeSelecionada(e.target.value)}
               >
                 <option value="">Selecione</option>
@@ -270,11 +283,9 @@ useEffect(() => {
             </div>
 
             <div className="flex flex-col mb-4">
-              <label className="text-sm font-semibold text-gray-800 mb-1">
-                Nome do Ponto
-              </label>
+              <label className="text-sm font-semibold text-gray-800 mb-1">Nome do Ponto</label>
               <input
-                className="border border-gray-500 rounded-lg p-2  w-full text-sm"
+                className="border border-gray-500 rounded-lg p-2 w-full text-sm"
                 placeholder="Nome do ponto"
                 value={nomePonto}
                 onChange={(e) => setNomePonto(e.target.value)}
@@ -284,9 +295,7 @@ useEffect(() => {
             <div className="flex flex-col mb-4">
               <div className="flex gap-4">
                 <div className="flex flex-col flex-1">
-                  <label className="text-sm font-semibold text-gray-800 mb-1">
-                    Rua
-                  </label>
+                  <label className="text-sm font-semibold text-gray-800 mb-1">Rua</label>
                   <input
                     className="border border-gray-500 rounded-lg p-2 w-full text-sm"
                     placeholder="Rua"
@@ -295,9 +304,7 @@ useEffect(() => {
                   />
                 </div>
                 <div className="flex flex-col flex-1">
-                  <label className="text-sm font-semibold text-gray-800 mb-1">
-                    Número
-                  </label>
+                  <label className="text-sm font-semibold text-gray-800 mb-1">Número</label>
                   <input
                     className="border border-gray-500 rounded-lg p-2 w-full text-sm"
                     placeholder="Número"
@@ -309,55 +316,38 @@ useEffect(() => {
             </div>
 
             <button
-              className="bg-[#038C3E] text-white w-full py-2 text-lg rounded-lg flex items-center justify-center gap-3 hover:bg-[#027a36] transition
-              "
+              className="bg-[#038C3E] text-white w-full py-2 text-lg rounded-lg flex items-center justify-center gap-3 hover:bg-[#027a36] transition"
               onClick={handleCadastrarPonto}
             >
-              <img
-                src="src/assets/map-pin.svg"
-                alt="location"
-                className="w-6 h-6"
-              />
+              <img src="src/assets/map-pin.svg" alt="location" className="w-6 h-6" />
               Cadastrar Ponto
             </button>
           </div>
 
-          {/* Lista */}
           <div className="bg-[#EDEDED] shadow-md rounded-lg p-10 w-[600px] h-[500px]">
             <h1 className="text-xl font-semibold mb-4">Pontos cadastrados</h1>
-            <p className="text-sm text-gray-600 mb-4">
-              Lista de todos os pontos
-            </p>
+            <p className="text-sm text-gray-600 mb-4">Lista de todos os pontos</p>
             <div className="flex flex-col gap-2 h-[350px] overflow-y-auto">
-              {pontos.map((ponto, i) => (
+              {pontos.map((ponto) => (
                 <div
-                  key={i}
+                  key={ponto.idPonto}
                   className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg"
                 >
-                  <div className="flex items-center gap-2">
-                    <img
-                      src="src/assets/map-pin.svg"
-                      alt="ponto"
-                      className="w-5 h-5"
-                    />
-                    <span>{ponto.nome}</span>
-                  </div>
+                  {ponto.nome}
                 </div>
               ))}
             </div>
           </div>
         </div>
+
         {/* ROTAS */}
         <div className="mb-6">
           <div className="bg-[#EDEDED] shadow-md rounded-lg p-10 w-[1220px]">
             <h1 className="text-xl font-semibold mb-6">Cadastrar Rota</h1>
 
-            {/* Linha 1 - Nome, Cidade, Motorista */}
             <div className="flex gap-4 mb-3 items-end">
               <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">
-                  Nome da Rota
-                </label>
+                <label className="text-sm font-semibold text-gray-800 mb-1">Nome da Rota</label>
                 <input
                   type="text"
                   placeholder="Ex: Rota Matinal"
@@ -368,9 +358,7 @@ useEffect(() => {
               </div>
 
               <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">
-                  Cidade
-                </label>
+                <label className="text-sm font-semibold text-gray-800 mb-1">Cidade</label>
                 <select
                   value={cidadeSelecionada}
                   onChange={(e) => setCidadeSelecionada(e.target.value)}
@@ -386,30 +374,24 @@ useEffect(() => {
               </div>
 
               <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">
-                  Motorista
-                </label>
+                <label className="text-sm font-semibold text-gray-800 mb-1">Período</label>
                 <select
-                  value={motoristaSelecionado}
-                  onChange={(e) => setMotoristaSelecionado(e.target.value)}
+                  value={periodo}
+                  onChange={(e) => setPeriodo(e.target.value)}
                   className="border border-gray-500 rounded-lg px-4 py-2 text-gray-600"
                 >
                   <option value="">Selecione</option>
-                  {motoristas.map((m) => (
-                    <option key={m.idMotorista} value={m.idMotorista}>
-                      {m.nome}
-                    </option>
-                  ))}
+                  <option value="MANHA">Manhã</option>
+                  <option value="TARDE">Tarde</option>
+                  <option value="NOITE">Noite</option>
+                  <option value="MADRUGADA">Madrugada</option>
                 </select>
               </div>
             </div>
 
-            {/* Linha 2 - Capacidade e horários */}
             <div className="flex gap-4 mb-3 items-end">
               <div className="flex flex-col w-32">
-                <label className="text-sm font-semibold text-gray-800 mb-1">
-                  Capacidade
-                </label>
+                <label className="text-sm font-semibold text-gray-800 mb-1">Capacidade</label>
                 <input
                   type="number"
                   min="1"
@@ -421,9 +403,7 @@ useEffect(() => {
               </div>
 
               <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">
-                  Horário de Partida
-                </label>
+                <label className="text-sm font-semibold text-gray-800 mb-1">Horário de Partida</label>
                 <input
                   type="time"
                   value={horaPartida}
@@ -433,9 +413,7 @@ useEffect(() => {
               </div>
 
               <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">
-                  Horário de Chegada
-                </label>
+                <label className="text-sm font-semibold text-gray-800 mb-1">Horário de Chegada</label>
                 <input
                   type="time"
                   value={horaChegada}
@@ -445,11 +423,8 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Linha 3 - Pontos da rota */}
             <div className="flex flex-col mb-3">
-              <label className="text-sm font-semibold text-gray-800 mb-1">
-                Pontos da Rota
-              </label>
+              <label className="text-sm font-semibold text-gray-800 mb-1">Pontos da Rota</label>
               <div className="flex gap-3 mb-3">
                 <select
                   value={pontoSelecionado}
@@ -470,70 +445,13 @@ useEffect(() => {
                   Adicionar
                 </button>
               </div>
-              <ul className="list-disc ml-6 text-sm text-gray-700">
+              <ol className="list-decimal ml-6 text-sm text-gray-700">
                 {pontosRota.map((p, i) => (
-                  <li key={i}>{p.nome}</li>
+                  <li key={p.idPonto}>{i + 1}. {p.nome}</li>
                 ))}
-              </ul>
+              </ol>
             </div>
 
-            {/*  Colaboradores */}
-            <div className="flex flex-col mb-3">
-              <label className="text-sm font-semibold text-gray-800 mb-1">
-                Colaboradores ({colaboradoresRota.length}/{capacidade})
-              </label>
-              <div className="flex gap-3 mb-3">
-                <select
-                  value={colaboradorSelecionado}
-                  onChange={(e) => setColaboradorSelecionado(e.target.value)}
-                  className="border border-gray-500 rounded-lg px-4 py-2 text-gray-600 flex-1"
-                >
-                  <option value="">Selecione um colaborador</option>
-                  {colaboradores.map((c) => (
-                    <option key={c.idColaborador} value={c.idColaborador}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleAdicionarColaborador}
-                  disabled={colaboradoresRota.length >= capacidade}
-                  className={`px-6 py-2 rounded-lg ${
-                    colaboradoresRota.length >= capacidade
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-[#038C3E] text-white hover:bg-[#027a36]"
-                  }`}
-                >
-                  Adicionar
-                </button>
-              </div>
-              <ul className="list-disc ml-6 text-sm text-gray-700">
-                {colaboradoresRota.map((c, i) => (
-                  <li key={i}>{c.nome}</li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Lideres */}
-            <div className="flex flex-col mb-4">
-              <label className="text-sm font-semibold text-gray-800 mb-2">
-                Selecionar Líderes
-              </label>
-              <select
-                value={liderSelecionado}
-                onChange={(e) => setLiderSelecionado(e.target.value)}
-                className="border border-gray-500 rounded-lg px-4 py-3 text-gray-600 flex-1"
-              >
-                <option value="">Selecione um líder</option>
-                {colaboradoresRota.map((c) => (
-                  <option key={c.idColaborador} value={c.idColaborador}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Botão de cadastrar rota */}
             <button
               onClick={handleCadastrarRota}
               className="bg-[#038C3E] text-white w-full py-4 text-lg rounded-lg hover:bg-[#027a36] transition"

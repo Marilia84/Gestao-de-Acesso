@@ -18,7 +18,10 @@ export default function Colaboradores() {
         console.error("Erro ao buscar colaboradores:", err);
       });
   }, []);
- 
+ useEffect(() => {
+  console.log("Token no localStorage:", localStorage.getItem("token"));
+}, []);
+
 
   const colaboradoresFiltrados = colaboradores.filter((colab) =>
     colab.nome.toLowerCase().includes(search.toLowerCase())
