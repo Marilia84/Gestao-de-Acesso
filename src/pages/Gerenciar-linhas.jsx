@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
+import MapaRota from "../components/MapaRota";
 
 export default function GerenciarLinhas() {
   const [tokenOk, setTokenOk] = useState(false);
@@ -188,8 +189,8 @@ export default function GerenciarLinhas() {
       periodo,                          // certifique-se que casa com o enum do backend
       capacidade: Number(capacidade),
       ativo: true,
-       horaPartida: horaPartida.length > 5 ? horaPartida.substring(0, 5) : horaPartida, // Garante que seja "HH:mm"
-      horaChegada: horaChegada.length > 5 ? horaChegada.substring(0, 5) : horaChegada, // Garante que seja "HH:mm" // HH:mm:ss
+      horaPartida: horaPartida.length > 5 ? horaPartida.substring(0, 5) : horaPartida, // Garante que seja "HH:mm"
+      horaChegada: horaChegada.length > 5 ? horaChegada.substring(0, 5) : horaChegada, // Garante que seja "HH:mm" // HH:mm:ss
       pontos: pontosRota.map((p, i) => ({
         idPonto: Number(p.idPonto),
         ordem: i + 1,
@@ -218,13 +219,40 @@ export default function GerenciarLinhas() {
       const data = error.response?.data;
       console.error("❌ Erro ao cadastrar rota:", data || error.message || error);
       alert(
-        `Erro ao cadastrar rota.${
-          data?.message ? `\nMensagem: ${data.message}` : ""
+        `Erro ao cadastrar rota.${data?.message ? `\nMensagem: ${data.message}` : ""
         }${data?.error ? `\nDetalhe: ${data.error}` : ""}`
       );
     }
   };
-
+  const pontosFiltrados = cidadeSelecionada
+    ? pontos.filter((p) => String(p.idCidade) === String(cidadeSelecionada))
+    : [];
+const pontosTeste = [
+  {
+    idPonto: 1,
+    nome: "Ponto 1 - AV X",
+    endereco: "Rodovia SP-333, Km 380",
+    lat: -20.60116149,
+    lng: -47.86557543,
+    ordem: 1
+  },
+  {
+    idPonto: 2,
+    nome: "Angelo 570",
+    endereco: "Praça 21 de Abril",
+    lat: -20.58283044,
+    lng: -47.86776779,
+    ordem: 3
+  },
+  {
+    idPonto: 3,
+    nome: "Ponto 3 - Rodoviária Ribeirão Preto",
+    endereco: "Av. Jerônimo Gonçalves, 640",
+    lat: -20.59910618,
+    lng: -47.86347909,
+    ordem: 2
+  }
+];
   return (
     <div className="bg-[#E6E6E6] min-h-screen flex flex-col lg:flex-row items-start gap-4">
       <Navbar />
@@ -431,8 +459,8 @@ export default function GerenciarLinhas() {
                   onChange={(e) => setPontoSelecionado(e.target.value)}
                   className="border border-gray-500 rounded-lg px-4 py-2 text-gray-600 flex-1"
                 >
-                  <option value="">Selecione um ponto</option>
-                  {pontos.map((p) => (
+                  <option value="">Selecione</option>
+                  {pontosFiltrados.map((p) => (
                     <option key={p.idPonto} value={p.idPonto}>
                       {p.nome}
                     </option>
@@ -447,7 +475,7 @@ export default function GerenciarLinhas() {
               </div>
               <ol className="list-decimal ml-6 text-sm text-gray-700">
                 {pontosRota.map((p, i) => (
-                  <li key={p.idPonto}>{i + 1}. {p.nome}</li>
+                  <li key={p.idPonto}> {p.nome}</li>
                 ))}
               </ol>
             </div>
@@ -460,6 +488,91 @@ export default function GerenciarLinhas() {
             </button>
           </div>
         </div>
+       
+        {/* ROTAS CADASTRADAS */}
+<div className="mb-6">
+  <div className="bg-[#EDEDED] shadow-md rounded-lg p-6 lg:p-10 w-[1220px] max-w-full">
+    <div className="mb-4">
+      <h1 className="text-2xl font-bold text-gray-800">Rotas cadastradas</h1>
+      <p className="text-sm text-gray-500">visualize todas as rotas e suas configurações</p>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      {rotas.map((rota) => (
+        <div key={rota.idRota} className="bg-white rounded-2xl shadow p-5 flex gap-6">
+          {/* ===== ESQUERDA: infos ===== */}
+          <div className="flex-1 flex flex-col">
+            {/* Título + subtítulo */}
+            <div className="mb-2">
+              <h3 className="text-lg font-semibold text-gray-800">
+                {rota.nome} {rota.cidade?.nome ? `- ${rota.cidade.nome}` : ""}
+              </h3>
+              <p className="text-xs text-gray-500">
+                {rota.pontos?.length || 0} ponto{(rota.pontos?.length||0) === 1 ? "" : "s"}
+              </p>
+            </div>
+
+            {/* Turnos como pílulas */}
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm text-gray-700 font-medium">Turnos:</span>
+              <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 capitalize">
+                {(rota.periodo || "").toLowerCase()}
+              </span>
+              {/* se quiser mais de um turno no futuro, é só mapear aqui */}
+              {rota.periodoSecundario && (
+                <span className="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-700 capitalize">
+                  {(rota.periodoSecundario || "").toLowerCase()}
+                </span>
+              )}
+            </div>
+
+            {/* Lista dos pontos */}
+            <div className="mb-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" className="text-emerald-600">
+                  <path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7m0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5" />
+                </svg>
+                Pontos Da Rota
+              </div>
+
+              <ul className="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1">
+                {(rota.pontos || []).map((p, i) => (
+                  <li key={p.idPonto ?? i} className="flex items-center gap-2">
+                    {/* bolinha do ícone (opcional) */}
+                    <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center">
+                      <svg width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7m0 11a4 4 0 1 1 0-8a4 4 0 0 1 0 8"/></svg>
+                    </div>
+                    {/* badge do número + nome */}
+                    <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2 flex-1">
+                      <span className="w-8 h-8 rounded-md bg-white text-gray-700 text-xs font-semibold grid place-items-center border">
+                        {(p.ordem ?? i + 1).toString().padStart(2, "0")}
+                      </span>
+                      <span className="text-sm text-gray-700 truncate">{p.nome}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Botão */}
+            <button
+              className="mt-auto bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2.5 rounded-xl transition"
+              onClick={() => console.log("Exibir colaboradores da rota:", rota)}
+            >
+              Exibir Colaboradores
+            </button>
+          </div>
+
+          {/* ===== DIREITA: mini-mapa ===== */}
+          <div className="w-64 shrink-0">
+            <MapaRota pontos={pontosTeste} />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
       </div>
     </div>
   );
