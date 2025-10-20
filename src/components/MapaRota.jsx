@@ -74,12 +74,12 @@ export default function MapaRota({ pontos = [], height = 180 }) {
         style={{ height, width: "100%" }}
         center={coords[0]}
         zoom={14}
-        zoomControl={false}
+        zoomControl={true}
         scrollWheelZoom={false}
-        dragging={false}
-        doubleClickZoom={false}
-        attributionControl={false}
-        className="rounded-xl overflow-hidden"
+        dragging={true}
+        doubleClickZoom={true}
+        attributionControl={true}
+        className="rounded-xl overflow-hidden "
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 

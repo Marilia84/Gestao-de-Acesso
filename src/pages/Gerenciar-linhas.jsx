@@ -27,12 +27,15 @@ export default function GerenciarLinhas() {
 
   const [rotas, setRotas] = useState([]);
   const [colaboradores, setColaboradores] = useState([]);
-  const [motoristas, setMotoristas] = useState([]);
+
+  const [trajetosByRota, setTrajetosByRota] = useState({}); // { [idRota]: [{ idPonto, nome, ordem, latitude, longitude }] }
+  const [loadingTrajeto, setLoadingTrajeto] = useState({});
 
   // Garante token no header da instância api
   useEffect(() => {
     try {
-      const t = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const t =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
       if (t) {
         api.defaults.headers.common.Authorization = `Bearer ${t}`;
         setTokenOk(true);
@@ -50,26 +53,85 @@ export default function GerenciarLinhas() {
 
     const carregarTudo = async () => {
       try {
-        const [cidadesRes, pontosRes, rotasRes, colabsRes, motosRes] = await Promise.all([
+        const [cidadesRes, pontosRes, rotasRes, colabsRes] = await Promise.all([
           api.get("/cidades"),
           api.get("/pontos"),
           api.get("/rotas"),
           api.get("/colaboradores"),
-          api.get("/motorista?status=ativo"),
         ]);
+        const rotasLista = rotasRes.data || [];
 
         setCidades(cidadesRes.data || []);
         setPontos(pontosRes.data || []);
         setRotas(rotasRes.data || []);
         setColaboradores(colabsRes.data || []);
-        setMotoristas(motosRes.data || []);
+
+        await prefetchTrajetos(rotasLista);
       } catch (err) {
-        console.error("Erro nas cargas iniciais:", err.response?.data || err.message || err);
+        console.error(
+          "Erro nas cargas iniciais:",
+          err.response?.data || err.message || err
+        );
       }
     };
 
     carregarTudo();
   }, [tokenOk]);
+  // depois dos useState
+  async function prefetchTrajetos(rotasLista) {
+    const pendentes = (rotasLista || [])
+      .filter((r) => r?.idRota && !trajetosByRota[r.idRota])
+      .map((r) => r.idRota);
+
+    if (!pendentes.length) return;
+
+    setLoadingTrajeto((prev) =>
+      pendentes.reduce((acc, id) => ({ ...acc, [id]: true }), { ...prev })
+    );
+
+    const results = await Promise.allSettled(
+      pendentes.map((idRota) =>
+        api
+          .get(`/rotas/${idRota}/trajeto`)
+          .then((res) => ({ idRota, data: res.data }))
+      )
+    );
+
+    const novos = {};
+    for (const r of results) {
+      if (r.status === "fulfilled") {
+        const { idRota, data } = r.value;
+        const pontos = (data || [])
+          .map((p) => ({
+            idPonto: p.idPonto ?? p.id_ponto,
+            // nome sempre preenchido a partir de nomePonto (fallback pra nome)
+            nome: p.nomePonto ?? p.nome ?? p.nome_ponto ?? "",
+            ordem: Number(p.ordem),
+            lat: Number(
+              typeof p.latitude === "string"
+                ? p.latitude.replace(",", ".")
+                : p.latitude
+            ),
+            lng: Number(
+              typeof p.longitude === "string"
+                ? p.longitude.replace(",", ".")
+                : p.longitude
+            ),
+            endereco: p.endereco,
+          }))
+          .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+          .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+        novos[idRota] = pontos;
+      } else {
+        console.warn("Falha ao buscar trajeto:", r.reason);
+      }
+    }
+
+    setTrajetosByRota((prev) => ({ ...prev, ...novos }));
+    setLoadingTrajeto((prev) =>
+      pendentes.reduce((acc, id) => ({ ...acc, [id]: false }), { ...prev })
+    );
+  }
 
   // Util: normaliza “HH:mm” -> “HH:mm:ss”
   const toHMS = (hhmm) => {
@@ -116,13 +178,20 @@ export default function GerenciarLinhas() {
   };
 
   const handleCadastrarPonto = async () => {
-    if (!cidadeSelecionada || !nomePonto.trim() || !rua.trim() || !numero.trim()) {
+    if (
+      !cidadeSelecionada ||
+      !nomePonto.trim() ||
+      !rua.trim() ||
+      !numero.trim()
+    ) {
       alert("Preencha todos os campos do ponto.");
       return;
     }
 
     try {
-      const cidadeObj = cidades.find((c) => String(c.idCidade) === String(cidadeSelecionada));
+      const cidadeObj = cidades.find(
+        (c) => String(c.idCidade) === String(cidadeSelecionada)
+      );
       if (!cidadeObj) {
         alert("Cidade inválida.");
         return;
@@ -155,7 +224,9 @@ export default function GerenciarLinhas() {
       alert("Selecione um ponto.");
       return;
     }
-    const ponto = pontos.find((p) => String(p.idPonto) === String(pontoSelecionado));
+    const ponto = pontos.find(
+      (p) => String(p.idPonto) === String(pontoSelecionado)
+    );
     if (!ponto) {
       alert("Ponto inválido.");
       return;
@@ -186,19 +257,19 @@ export default function GerenciarLinhas() {
     const payload = {
       nome: novaRota.trim(),
       idCidade: Number(cidadeSelecionada),
-      periodo,                          // certifique-se que casa com o enum do backend
+      periodo, // certifique-se que casa com o enum do backend
       capacidade: Number(capacidade),
       ativo: true,
-      horaPartida: horaPartida.length > 5 ? horaPartida.substring(0, 5) : horaPartida, // Garante que seja "HH:mm"
-      horaChegada: horaChegada.length > 5 ? horaChegada.substring(0, 5) : horaChegada, // Garante que seja "HH:mm" // HH:mm:ss
+      horaPartida:
+        horaPartida.length > 5 ? horaPartida.substring(0, 5) : horaPartida, // Garante que seja "HH:mm"
+      horaChegada:
+        horaChegada.length > 5 ? horaChegada.substring(0, 5) : horaChegada, // Garante que seja "HH:mm" // HH:mm:ss
       pontos: pontosRota.map((p, i) => ({
         idPonto: Number(p.idPonto),
         ordem: i + 1,
       })),
     };
-
     try {
-      // log de depuração útil
       console.log(" Payload rota:", payload);
       const res = await api.post("/rotas", payload);
       alert("Rota cadastrada com sucesso!");
@@ -212,52 +283,37 @@ export default function GerenciarLinhas() {
       setHoraChegada("");
       setPontosRota([]);
 
-      // atualiza lista
+      // atualiza lista e prefetch dos trajetos
       const rotasRes = await api.get("/rotas");
-      setRotas(rotasRes.data || []);
+      const rotasLista = rotasRes.data || [];
+      setRotas(rotasLista);
+      await prefetchTrajetos(rotasLista);
     } catch (error) {
       const data = error.response?.data;
-      console.error("❌ Erro ao cadastrar rota:", data || error.message || error);
+      console.error(
+        "❌ Erro ao cadastrar rota:",
+        data || error.message || error
+      );
       alert(
-        `Erro ao cadastrar rota.${data?.message ? `\nMensagem: ${data.message}` : ""
-        }${data?.error ? `\nDetalhe: ${data.error}` : ""}`
+        `Erro ao cadastrar rota.${
+          data?.message ? `\nMensagem: ${data.message}` : ""
+        }` + `${data?.error ? `\nDetalhe: ${data.error}` : ""}`
       );
     }
   };
+  // abaixo dos useState, fora de handleCadastrarRota
+
   const pontosFiltrados = cidadeSelecionada
     ? pontos.filter((p) => String(p.idCidade) === String(cidadeSelecionada))
     : [];
-const pontosTeste = [
-  {
-    idPonto: 1,
-    nome: "Ponto 1 - AV X",
-    endereco: "Rodovia SP-333, Km 380",
-    lat: -20.60116149,
-    lng: -47.86557543,
-    ordem: 1
-  },
-  {
-    idPonto: 2,
-    nome: "Angelo 570",
-    endereco: "Praça 21 de Abril",
-    lat: -20.58283044,
-    lng: -47.86776779,
-    ordem: 3
-  },
-  {
-    idPonto: 3,
-    nome: "Ponto 3 - Rodoviária Ribeirão Preto",
-    endereco: "Av. Jerônimo Gonçalves, 640",
-    lat: -20.59910618,
-    lng: -47.86347909,
-    ordem: 2
-  }
-];
+
   return (
     <div className="bg-[#E6E6E6] min-h-screen flex flex-col lg:flex-row items-start gap-4">
       <Navbar />
       <div className="flex flex-1 flex-col justify-center items-center mr-[10px] w-full">
-        <h1 className="text-3xl font-bold mb-10 text-[#3B7258] mt-10">Gerenciar Linhas</h1>
+        <h1 className="text-3xl font-bold mb-10 text-[#3B7258] mt-10">
+          Gerenciar Linhas
+        </h1>
 
         {/* CADASTRO DE PONTOS */}
         <div className="grid grid-cols-2 gap-6 mb-10">
@@ -292,7 +348,10 @@ const pontosTeste = [
             </div>
 
             <div className="flex flex-col mb-4">
-              <label htmlFor="cidade" className="text-sm font-semibold text-gray-800 mb-1">
+              <label
+                htmlFor="cidade"
+                className="text-sm font-semibold text-gray-800 mb-1"
+              >
                 Cidade
               </label>
               <select
@@ -311,7 +370,9 @@ const pontosTeste = [
             </div>
 
             <div className="flex flex-col mb-4">
-              <label className="text-sm font-semibold text-gray-800 mb-1">Nome do Ponto</label>
+              <label className="text-sm font-semibold text-gray-800 mb-1">
+                Nome do Ponto
+              </label>
               <input
                 className="border border-gray-500 rounded-lg p-2 w-full text-sm"
                 placeholder="Nome do ponto"
@@ -323,7 +384,9 @@ const pontosTeste = [
             <div className="flex flex-col mb-4">
               <div className="flex gap-4">
                 <div className="flex flex-col flex-1">
-                  <label className="text-sm font-semibold text-gray-800 mb-1">Rua</label>
+                  <label className="text-sm font-semibold text-gray-800 mb-1">
+                    Rua
+                  </label>
                   <input
                     className="border border-gray-500 rounded-lg p-2 w-full text-sm"
                     placeholder="Rua"
@@ -332,7 +395,9 @@ const pontosTeste = [
                   />
                 </div>
                 <div className="flex flex-col flex-1">
-                  <label className="text-sm font-semibold text-gray-800 mb-1">Número</label>
+                  <label className="text-sm font-semibold text-gray-800 mb-1">
+                    Número
+                  </label>
                   <input
                     className="border border-gray-500 rounded-lg p-2 w-full text-sm"
                     placeholder="Número"
@@ -347,14 +412,20 @@ const pontosTeste = [
               className="bg-[#038C3E] text-white w-full py-2 text-lg rounded-lg flex items-center justify-center gap-3 hover:bg-[#027a36] transition"
               onClick={handleCadastrarPonto}
             >
-              <img src="src/assets/map-pin.svg" alt="location" className="w-6 h-6" />
+              <img
+                src="src/assets/map-pin.svg"
+                alt="location"
+                className="w-6 h-6"
+              />
               Cadastrar Ponto
             </button>
           </div>
 
           <div className="bg-[#EDEDED] shadow-md rounded-lg p-10 w-[600px] h-[500px]">
             <h1 className="text-xl font-semibold mb-4">Pontos cadastrados</h1>
-            <p className="text-sm text-gray-600 mb-4">Lista de todos os pontos</p>
+            <p className="text-sm text-gray-600 mb-4">
+              Lista de todos os pontos
+            </p>
             <div className="flex flex-col gap-2 h-[350px] overflow-y-auto">
               {pontos.map((ponto) => (
                 <div
@@ -375,7 +446,9 @@ const pontosTeste = [
 
             <div className="flex gap-4 mb-3 items-end">
               <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">Nome da Rota</label>
+                <label className="text-sm font-semibold text-gray-800 mb-1">
+                  Nome da Rota
+                </label>
                 <input
                   type="text"
                   placeholder="Ex: Rota Matinal"
@@ -386,7 +459,9 @@ const pontosTeste = [
               </div>
 
               <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">Cidade</label>
+                <label className="text-sm font-semibold text-gray-800 mb-1">
+                  Cidade
+                </label>
                 <select
                   value={cidadeSelecionada}
                   onChange={(e) => setCidadeSelecionada(e.target.value)}
@@ -402,7 +477,9 @@ const pontosTeste = [
               </div>
 
               <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">Período</label>
+                <label className="text-sm font-semibold text-gray-800 mb-1">
+                  Período
+                </label>
                 <select
                   value={periodo}
                   onChange={(e) => setPeriodo(e.target.value)}
@@ -419,7 +496,9 @@ const pontosTeste = [
 
             <div className="flex gap-4 mb-3 items-end">
               <div className="flex flex-col w-32">
-                <label className="text-sm font-semibold text-gray-800 mb-1">Capacidade</label>
+                <label className="text-sm font-semibold text-gray-800 mb-1">
+                  Capacidade
+                </label>
                 <input
                   type="number"
                   min="1"
@@ -431,7 +510,9 @@ const pontosTeste = [
               </div>
 
               <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">Horário de Partida</label>
+                <label className="text-sm font-semibold text-gray-800 mb-1">
+                  Horário de Partida
+                </label>
                 <input
                   type="time"
                   value={horaPartida}
@@ -441,7 +522,9 @@ const pontosTeste = [
               </div>
 
               <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">Horário de Chegada</label>
+                <label className="text-sm font-semibold text-gray-800 mb-1">
+                  Horário de Chegada
+                </label>
                 <input
                   type="time"
                   value={horaChegada}
@@ -452,7 +535,9 @@ const pontosTeste = [
             </div>
 
             <div className="flex flex-col mb-3">
-              <label className="text-sm font-semibold text-gray-800 mb-1">Pontos da Rota</label>
+              <label className="text-sm font-semibold text-gray-800 mb-1">
+                Pontos da Rota
+              </label>
               <div className="flex gap-3 mb-3">
                 <select
                   value={pontoSelecionado}
@@ -488,91 +573,127 @@ const pontosTeste = [
             </button>
           </div>
         </div>
-       
-        {/* ROTAS CADASTRADAS */}
-<div className="mb-6">
-  <div className="bg-[#EDEDED] shadow-md rounded-lg p-6 lg:p-10 w-[1220px] max-w-full">
-    <div className="mb-4">
-      <h1 className="text-2xl font-bold text-gray-800">Rotas cadastradas</h1>
-      <p className="text-sm text-gray-500">visualize todas as rotas e suas configurações</p>
-    </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-      {rotas.map((rota) => (
-        <div key={rota.idRota} className="bg-white rounded-2xl shadow p-5 flex gap-6">
-          {/* ===== ESQUERDA: infos ===== */}
-          <div className="flex-1 flex flex-col">
-            {/* Título + subtítulo */}
-            <div className="mb-2">
-              <h3 className="text-lg font-semibold text-gray-800">
-                {rota.nome} {rota.cidade?.nome ? `- ${rota.cidade.nome}` : ""}
-              </h3>
-              <p className="text-xs text-gray-500">
-                {rota.pontos?.length || 0} ponto{(rota.pontos?.length||0) === 1 ? "" : "s"}
+        {/* ROTAS CADASTRADAS */}
+        <div className="mb-6 h-[770px] overflow-x-auto">
+          <div className="bg-[#EDEDED] shadow-md rounded-lg p-6 lg:p-10 w-[1220px] max-w-full">
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold text-gray-800">
+                Rotas cadastradas
+              </h1>
+              <p className="text-sm text-gray-500">
+                visualize todas as rotas e suas configurações
               </p>
             </div>
 
-            {/* Turnos como pílulas */}
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-sm text-gray-700 font-medium">Turnos:</span>
-              <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 capitalize">
-                {(rota.periodo || "").toLowerCase()}
-              </span>
-              {/* se quiser mais de um turno no futuro, é só mapear aqui */}
-              {rota.periodoSecundario && (
-                <span className="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-700 capitalize">
-                  {(rota.periodoSecundario || "").toLowerCase()}
-                </span>
-              )}
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {rotas.map((rota) => {
+                const pontosDaRota = trajetosByRota[rota.idRota] || [];
+                return (
+                  <div
+                    key={rota.idRota}
+                    className="bg-white rounded-2xl shadow p-5 flex gap-6"
+                  >
+                    {/* ===== ESQUERDA: infos ===== */}
+                    <div className="flex-1 flex flex-col">
+                      {/* Título + subtítulo */}
+                      <div className="mb-2">
+                        <h3 className="text-lg font-semibold text-gray-800">
+                          {rota.nome}{" "}
+                          {rota.cidade?.nome ? `- ${rota.cidade.nome}` : ""}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {pontosDaRota.length} ponto
+                          {pontosDaRota.length === 1 ? "" : "s"}
+                        </p>
+                      </div>
 
-            {/* Lista dos pontos */}
-            <div className="mb-3">
-              <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" className="text-emerald-600">
-                  <path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7m0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5" />
-                </svg>
-                Pontos Da Rota
-              </div>
+                      {/* Turnos como pílulas */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-sm text-gray-700 font-medium">
+                          Turnos:
+                        </span>
+                        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 capitalize">
+                          {(rota.periodo || "").toLowerCase()}
+                        </span>
+                        {rota.periodoSecundario && (
+                          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-700 capitalize">
+                            {(rota.periodoSecundario || "").toLowerCase()}
+                          </span>
+                        )}
+                      </div>
 
-              <ul className="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1">
-                {(rota.pontos || []).map((p, i) => (
-                  <li key={p.idPonto ?? i} className="flex items-center gap-2">
-                    {/* bolinha do ícone (opcional) */}
-                    <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center">
-                      <svg width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7m0 11a4 4 0 1 1 0-8a4 4 0 0 1 0 8"/></svg>
+                      {/* Lista dos pontos (do /trajeto) */}
+                      <div className="mb-3">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            className="text-emerald-600"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7m0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5"
+                            />
+                          </svg>
+                          Pontos da Rota
+                        </div>
+
+                        <ul className="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1">
+                          {pontosDaRota.map((p, i) => (
+                            <li
+                              key={p.idPonto ?? i}
+                              className="flex items-center gap-2"
+                            >
+                              <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center">
+                                <svg width="14" height="14" viewBox="0 0 24 24">
+                                  <path
+                                    fill="currentColor"
+                                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7m0 11a4 4 0 1 1 0-8a4 4 0 0 1 0 8"
+                                  />
+                                </svg>
+                              </div>
+                              <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2 flex-1">
+                                <span className="w-8 h-8 rounded-md bg-white text-gray-700 text-xs font-semibold grid place-items-center border">
+                                  {(p.ordem ?? i + 1)
+                                    .toString()
+                                    .padStart(2, "0")}
+                                </span>
+                                <span className="text-sm text-gray-700 truncate">
+                                  {p.nome}
+                                </span>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <button
+                        className="mt-auto bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2.5 rounded-xl transition"
+                        onClick={() =>
+                          console.log("Exibir colaboradores da rota:", rota)
+                        }
+                      >
+                        Exibir Colaboradores
+                      </button>
                     </div>
-                    {/* badge do número + nome */}
-                    <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2 flex-1">
-                      <span className="w-8 h-8 rounded-md bg-white text-gray-700 text-xs font-semibold grid place-items-center border">
-                        {(p.ordem ?? i + 1).toString().padStart(2, "0")}
-                      </span>
-                      <span className="text-sm text-gray-700 truncate">{p.nome}</span>
+
+                    {/* ===== DIREITA: mini-mapa ===== */}
+                    <div className="w-64 shrink-0 relative">
+                      <MapaRota pontos={pontosDaRota} height={250} />
+                      {loadingTrajeto[rota.idRota] && (
+                        <div className="absolute inset-0 bg-white/60 grid place-items-center text-xs text-gray-600">
+                          carregando trajeto...
+                        </div>
+                      )}
                     </div>
-                  </li>
-                ))}
-              </ul>
+                  </div>
+                );
+              })}
             </div>
-
-            {/* Botão */}
-            <button
-              className="mt-auto bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2.5 rounded-xl transition"
-              onClick={() => console.log("Exibir colaboradores da rota:", rota)}
-            >
-              Exibir Colaboradores
-            </button>
-          </div>
-
-          {/* ===== DIREITA: mini-mapa ===== */}
-          <div className="w-64 shrink-0">
-            <MapaRota pontos={pontosTeste} />
           </div>
         </div>
-      ))}
-    </div>
-  </div>
-</div>
-
       </div>
     </div>
   );
