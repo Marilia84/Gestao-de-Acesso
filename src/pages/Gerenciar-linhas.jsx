@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import MapaRota from "../components/MapaRota";
+import ModalColaboradores from "../components/ModalColaboradores";
 
 export default function GerenciarLinhas() {
   const [tokenOk, setTokenOk] = useState(false);
@@ -30,7 +31,8 @@ export default function GerenciarLinhas() {
 
   const [trajetosByRota, setTrajetosByRota] = useState({}); // { [idRota]: [{ idPonto, nome, ordem, latitude, longitude }] }
   const [loadingTrajeto, setLoadingTrajeto] = useState({});
-
+const [openModalColabs, setOpenModalColabs] = useState(false);
+const [rotaSelecionada, setRotaSelecionada] = useState(null);
   // Garante token no header da instância api
   useEffect(() => {
     try {
@@ -671,9 +673,7 @@ export default function GerenciarLinhas() {
 
                       <button
                         className="mt-auto bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2.5 rounded-xl transition"
-                        onClick={() =>
-                          console.log("Exibir colaboradores da rota:", rota)
-                        }
+                        onClick={() => { setRotaSelecionada(rota); setOpenModalColabs(true); }}
                       >
                         Exibir Colaboradores
                       </button>
@@ -693,8 +693,14 @@ export default function GerenciarLinhas() {
               })}
             </div>
           </div>
-        </div>
+        </div>{/* acaba aqui */}
+        <ModalColaboradores
+  open={openModalColabs}
+  onClose={() => setOpenModalColabs(false)}
+  rota={rotaSelecionada}
+/>
       </div>
+      
     </div>
   );
 }
