@@ -63,11 +63,15 @@ const PersonIcon = () => (
 );
 // Ícone para o painel de rotas
 const RoutePanelIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 opacity-70" viewBox="0 0 20 20" fill="currentColor">
-        <path d="M7.707 3.293a1 1 0 010 1.414L5.414 7H11a7 7 0 017 7v2a1 1 0 11-2 0v-2a5 5 0 00-5-5H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" />
-    </svg>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5 mr-2 opacity-70"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+  >
+    <path d="M7.707 3.293a1 1 0 010 1.414L5.414 7H11a7 7 0 017 7v2a1 1 0 11-2 0v-2a5 5 0 00-5-5H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" />
+  </svg>
 );
-
 
 const RegistroViagem = () => {
   const [rotas, setRotas] = useState([]);
@@ -111,7 +115,9 @@ const RegistroViagem = () => {
       setEmbarques([]);
 
       try {
-        const viagensResponse = await api.get(`/viagens?idRota=${selectedRotaId}`);
+        const viagensResponse = await api.get(
+          `/viagens?idRota=${selectedRotaId}`
+        );
         const viagensIniciais = viagensResponse.data;
 
         if (viagensIniciais.length === 0) {
@@ -119,7 +125,7 @@ const RegistroViagem = () => {
           return;
         }
 
-        const contagemPromises = viagensIniciais.map(viagem =>
+        const contagemPromises = viagensIniciais.map((viagem) =>
           api.get(`/viagens/${viagem.idViagem}/embarques`)
         );
         const embarquesResponses = await Promise.all(contagemPromises);
@@ -135,7 +141,10 @@ const RegistroViagem = () => {
           setSelectedTripId(viagensComContagem[0].idViagem);
         }
       } catch (err) {
-        console.error(`Erro ao buscar dados para a rota ${selectedRotaId}:`, err);
+        console.error(
+          `Erro ao buscar dados para a rota ${selectedRotaId}:`,
+          err
+        );
         setViagens([]);
       } finally {
         setLoadingViagens(false);
@@ -155,7 +164,9 @@ const RegistroViagem = () => {
     const fetchDetalhesEmbarquesComNomes = async () => {
       setLoadingEmbarques(true);
       try {
-        const embarquesResponse = await api.get(`/viagens/${selectedTripId}/embarques`);
+        const embarquesResponse = await api.get(
+          `/viagens/${selectedTripId}/embarques`
+        );
         const embarquesDaApi = embarquesResponse.data;
 
         if (embarquesDaApi.length === 0) {
@@ -163,7 +174,7 @@ const RegistroViagem = () => {
           return;
         }
 
-        const colaboradorPromises = embarquesDaApi.map(embarque =>
+        const colaboradorPromises = embarquesDaApi.map((embarque) =>
           api.get(`/colaboradores/${embarque.idColaborador}`)
         );
         const colaboradorResponses = await Promise.all(colaboradorPromises);
@@ -176,7 +187,10 @@ const RegistroViagem = () => {
 
         setEmbarques(embarquesComNomes);
       } catch (error) {
-        console.error(`Erro ao buscar detalhes de embarque para a viagem ${selectedTripId}:`, error);
+        console.error(
+          `Erro ao buscar detalhes de embarque para a viagem ${selectedTripId}:`,
+          error
+        );
         setEmbarques([]);
       } finally {
         setLoadingEmbarques(false);
@@ -186,10 +200,12 @@ const RegistroViagem = () => {
     fetchDetalhesEmbarquesComNomes();
   }, [selectedTripId]);
 
-  const selectedTrip = viagens.find((viagem) => viagem.idViagem === selectedTripId);
+  const selectedTrip = viagens.find(
+    (viagem) => viagem.idViagem === selectedTripId
+  );
 
   const formatSimpleTime = (timeStr) => {
-    if (!timeStr || typeof timeStr !== 'string') return "N/A";
+    if (!timeStr || typeof timeStr !== "string") return "N/A";
     return timeStr.slice(0, 5);
   };
 
@@ -203,11 +219,11 @@ const RegistroViagem = () => {
   };
 
   const getInitials = (name) => {
-    if (!name || typeof name !== 'string') return "?";
-    const names = name.split(' ').filter(n => n);
+    if (!name || typeof name !== "string") return "?";
+    const names = name.split(" ").filter((n) => n);
     if (names.length === 0) return "?";
-    const firstInitial = names[0][0] || '';
-    const lastInitial = names.length > 1 ? names[names.length - 1][0] : '';
+    const firstInitial = names[0][0] || "";
+    const lastInitial = names.length > 1 ? names[names.length - 1][0] : "";
     return `${firstInitial}${lastInitial}`.toUpperCase();
   };
 
@@ -216,14 +232,13 @@ const RegistroViagem = () => {
       <Navbar />
       <main className="flex-1 p-6 md:p-10 relative">
         <header className="mb-8">
-            <h1 className="text-5xl font-bold text-[#3B7258]">
-              REGISTRO DE VIAGEM
-            </h1>
+          <h1 className="text-5xl font-bold text-[#3B7258]">
+            REGISTRO DE VIAGEM
+          </h1>
         </header>
 
         {/* 1. ESTRUTURA MASTER-DETAIL */}
         <div className="flex flex-col md:flex-row gap-8">
-
           {/* PAINEL DA ESQUERDA (MASTER): LISTA DE ROTAS */}
           <aside className="md:w-1/3 lg:w-1/4 ">
             <div className="bg-white rounded-xl shadow p-7 h-full">
@@ -240,9 +255,10 @@ const RegistroViagem = () => {
                       onClick={() => setSelectedRotaId(rota.idRota)}
                       className={`
                         w-full text-left p-3 rounded-lg transition-colors duration-200
-                        ${selectedRotaId === rota.idRota
-                          ? 'bg-[#36A293] text-white shadow-md'
-                          : 'hover:bg-gray-100 text-gray-700'
+                        ${
+                          selectedRotaId === rota.idRota
+                            ? "bg-[#36A293] text-white shadow-md"
+                            : "hover:bg-gray-100 text-gray-700"
                         }
                       `}
                     >
@@ -274,26 +290,52 @@ const RegistroViagem = () => {
                       }`}
                       onClick={() => setSelectedTripId(viagem.idViagem)}
                     >
-                        {/* Conteúdo do card da viagem... (sem alterações) */}
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <h3 className="font-bold text-lg text-gray-800">
-                                    Veículo: {viagem.idVeiculo}
-                                </h3>
-                                <p className="text-sm text-gray-500">
-                                    Data: {new Date(viagem.data).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}
-                                </p>
-                            </div>
-                            <span className={`px-3 py-1 text-xs font-semibold rounded-full ${viagem.ativo ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-700"}`}>
-                                {viagem.ativo ? "Ativa" : "Finalizada"}
-                            </span>
+                      {/* Conteúdo do card da viagem... (sem alterações) */}
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="font-bold text-lg text-gray-800">
+                            Veículo: {viagem.idVeiculo}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            Data:{" "}
+                            {new Date(viagem.data).toLocaleDateString("pt-BR", {
+                              timeZone: "UTC",
+                            })}
+                          </p>
                         </div>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                            <div className="flex items-center"><UserIcon /> Lider: <span className="font-semibold ml-1">{viagem.idMotorista}</span></div>
-                            <div className="flex items-center"><UsersIcon /> Passageiros: <span className="font-semibold ml-1">{viagem.passengerCount}</span></div>
-                            <div className="flex items-center"><ClockIcon /> Saída: <span className="font-semibold ml-1">{formatSimpleTime(viagem.saidaPrevista)}</span></div>
-                            <div className="flex items-center"><ClockIcon /> Chegada: <span className="font-semibold ml-1">{viagem.ativo ? "Em Trânsito" : formatSimpleTime(viagem.chegadaPrevista)}</span></div>
+                        <span
+                          className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                            viagem.ativo
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {viagem.ativo ? "Ativa" : "Finalizada"}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div className="flex items-center">
+                          <UsersIcon /> Passageiros:{" "}
+                          <span className="font-semibold ml-1">
+                            {viagem.passengerCount}
+                          </span>
                         </div>
+                        <div className="flex items-center"></div>
+                        <div className="flex items-center">
+                          <ClockIcon /> Saída:{" "}
+                          <span className="font-semibold ml-1">
+                            {formatSimpleTime(viagem.saidaPrevista)}
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <ClockIcon /> Chegada:{" "}
+                          <span className="font-semibold ml-1">
+                            {viagem.ativo
+                              ? "Em Trânsito"
+                              : formatSimpleTime(viagem.chegadaPrevista)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -305,7 +347,8 @@ const RegistroViagem = () => {
                         Embarques da viagem - Veículo: {selectedTrip.idVeiculo}
                       </h2>
                       <p className="text-sm text-gray-500 mb-6 ml-1">
-                        Visualize todos os embarques feitos na viagem selecionada.
+                        Visualize todos os embarques feitos na viagem
+                        selecionada.
                       </p>
 
                       {loadingEmbarques ? (
@@ -315,20 +358,30 @@ const RegistroViagem = () => {
                       ) : embarques.length > 0 ? (
                         <div className="space-y-3">
                           {embarques.map((embarque) => (
-                            <div key={embarque.idEmbarque} className="bg-white rounded-xl p-4 flex items-center justify-between shadow-sm">
-                                <div className="flex items-center">
-                                    <div className="bg-[#36A293] text-white w-10 h-10 rounded-full flex items-center justify-center font-bold mr-4">
-                                        {getInitials(embarque.nomeColaborador)}
-                                    </div>
-                                    <div>
-                                        <p className="font-semibold text-gray-800">{embarque.nomeColaborador}</p>
-                                        <p className="text-sm text-gray-500">{embarque.cargoColaborador || 'Cargo não informado'}</p>
-                                    </div>
+                            <div
+                              key={embarque.idEmbarque}
+                              className="bg-white rounded-xl p-4 flex items-center justify-between shadow-sm"
+                            >
+                              <div className="flex items-center">
+                                <div className="bg-[#36A293] text-white w-10 h-10 rounded-full flex items-center justify-center font-bold mr-4">
+                                  {getInitials(embarque.nomeColaborador)}
                                 </div>
-                                <div className="flex items-center text-gray-600 font-medium">
-                                    <ClockIcon />
-                                    <span>{formatTimestamp(embarque.dataEmbarque)}</span>
+                                <div>
+                                  <p className="font-semibold text-gray-800">
+                                    {embarque.nomeColaborador}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    {embarque.cargoColaborador ||
+                                      "Cargo não informado"}
+                                  </p>
                                 </div>
+                              </div>
+                              <div className="flex items-center text-gray-600 font-medium">
+                                <ClockIcon />
+                                <span>
+                                  {formatTimestamp(embarque.dataEmbarque)}
+                                </span>
+                              </div>
                             </div>
                           ))}
                         </div>
