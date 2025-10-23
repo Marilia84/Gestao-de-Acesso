@@ -2,10 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
-import 'leaflet/dist/leaflet.css';
-import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
-import 'leaflet-defaulticon-compatibility';
-
+import "leaflet/dist/leaflet.css";
+import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
+import "leaflet-defaulticon-compatibility";
 
 import Login from "./pages/Login";
 import Home from "./pages/Home";
@@ -14,6 +13,7 @@ import Colaboradores from "./pages/Colaboradores";
 import GerenciarLinhas from "./pages/Gerenciar-linhas";
 import Visitantes from "./pages/Visitantes";
 import RegistroViagem from "./pages/Registro-viagem";
+import Portaria from "./pages/Portaria";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -57,6 +57,14 @@ createRoot(document.getElementById("root")).render(
           element={
             <PrivateRoute>
               <RegistroViagem />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/portaria"
+          element={
+            <PrivateRoute>
+              <Portaria />
             </PrivateRoute>
           }
         />
