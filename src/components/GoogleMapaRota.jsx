@@ -6,7 +6,7 @@ import {
   Polyline,
   useJsApiLoader,
 } from "@react-google-maps/api";
-
+const GOOGLE_LIBRARIES = ["places"];
 const containerStyle = { width: "100%", height: "100%" };
 
 const polylineOptions = {
