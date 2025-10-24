@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
-import MapaRota from "../components/MapaRota";
+import GoogleMapaRota from "../components/GoogleMapaRota";
 import ModalColaboradores from "../components/ModalColaboradores";
 
 export default function GerenciarLinhas() {
@@ -31,8 +31,8 @@ export default function GerenciarLinhas() {
 
   const [trajetosByRota, setTrajetosByRota] = useState({}); // { [idRota]: [{ idPonto, nome, ordem, latitude, longitude }] }
   const [loadingTrajeto, setLoadingTrajeto] = useState({});
-const [openModalColabs, setOpenModalColabs] = useState(false);
-const [rotaSelecionada, setRotaSelecionada] = useState(null);
+  const [openModalColabs, setOpenModalColabs] = useState(false);
+  const [rotaSelecionada, setRotaSelecionada] = useState(null);
   // Garante token no header da instância api
   useEffect(() => {
     try {
@@ -297,8 +297,7 @@ const [rotaSelecionada, setRotaSelecionada] = useState(null);
         data || error.message || error
       );
       alert(
-        `Erro ao cadastrar rota.${
-          data?.message ? `\nMensagem: ${data.message}` : ""
+        `Erro ao cadastrar rota.${data?.message ? `\nMensagem: ${data.message}` : ""
         }` + `${data?.error ? `\nDetalhe: ${data.error}` : ""}`
       );
     }
@@ -681,7 +680,18 @@ const [rotaSelecionada, setRotaSelecionada] = useState(null);
 
                     {/* ===== DIREITA: mini-mapa ===== */}
                     <div className="w-64 shrink-0 relative">
-                      <MapaRota pontos={pontosDaRota} height={250} />
+                      {trajetosByRota[rota.idRota] && Array.isArray(trajetosByRota[rota.idRota]) ? (
+                        <GoogleMapaRota
+                          pontos={trajetosByRota[rota.idRota]}
+                          height={250}
+                          followRoads={true}
+                        />
+                      ) : (
+                        <div className="h-[250px] w-full bg-gray-100 text-gray-500 grid place-items-center rounded">
+                          Sem trajeto
+                        </div>
+                      )}
+
                       {loadingTrajeto[rota.idRota] && (
                         <div className="absolute inset-0 bg-white/60 grid place-items-center text-xs text-gray-600">
                           carregando trajeto...
@@ -694,13 +704,15 @@ const [rotaSelecionada, setRotaSelecionada] = useState(null);
             </div>
           </div>
         </div>{/* acaba aqui */}
-        <ModalColaboradores
-  open={openModalColabs}
-  onClose={() => setOpenModalColabs(false)}
-  rota={rotaSelecionada}
-/>
+        {openModalColabs && rotaSelecionada && (
+          <ModalColaboradores
+            open={openModalColabs}
+            onClose={() => setOpenModalColabs(false)}
+            rota={rotaSelecionada}
+          />
+        )}
       </div>
-      
+
     </div>
   );
 }
