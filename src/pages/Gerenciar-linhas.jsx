@@ -3,7 +3,7 @@ import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import GoogleMapaRota from "../components/GoogleMapaRota";
 import ModalColaboradores from "../components/ModalColaboradores";
-
+import { toast } from "react-toastify";
 export default function GerenciarLinhas() {
   const [tokenOk, setTokenOk] = useState(false);
 
@@ -159,7 +159,7 @@ export default function GerenciarLinhas() {
 
   const handleAdicionarCidade = async () => {
     if (!novaCidade.trim() || !novaUf.trim()) {
-      alert("Preencha cidade e UF.");
+      toast.warn("Preencha cidade e UF.");
       return;
     }
 
@@ -172,10 +172,10 @@ export default function GerenciarLinhas() {
       setCidades((prev) => [...prev, response.data]);
       setNovaCidade("");
       setNovaUf("");
-      alert("Cidade adicionada com sucesso!");
+      toast.success("Cidade adicionada com sucesso!");
     } catch (error) {
-      console.error("Erro ao adicionar cidade:", error.response?.data || error);
-      alert("Erro ao cadastrar cidade.");
+      toast.error("Erro ao adicionar cidade:", error.response?.data || error);
+      toast.error("Erro ao cadastrar cidade.");
     }
   };
 
@@ -186,7 +186,7 @@ export default function GerenciarLinhas() {
       !rua.trim() ||
       !numero.trim()
     ) {
-      alert("Preencha todos os campos do ponto.");
+      toast.warn("Preencha todos os campos do ponto.");
       return;
     }
 
@@ -195,7 +195,7 @@ export default function GerenciarLinhas() {
         (c) => String(c.idCidade) === String(cidadeSelecionada)
       );
       if (!cidadeObj) {
-        alert("Cidade inválida.");
+        toast.warn("Cidade inválida.");
         return;
       }
 
@@ -214,27 +214,27 @@ export default function GerenciarLinhas() {
       setNomePonto("");
       setRua("");
       setNumero("");
-      alert("Ponto cadastrado com sucesso!");
+      toast.success("Ponto cadastrado com sucesso!");
     } catch (error) {
       console.error("Erro ao cadastrar ponto:", error.response?.data || error);
-      alert("Erro ao cadastrar ponto.");
+      toast.error("Erro ao cadastrar ponto.");
     }
   };
 
   const handleAdicionarPontoNaRota = () => {
     if (!pontoSelecionado) {
-      alert("Selecione um ponto.");
+      toast.warn("Selecione um ponto.");
       return;
     }
     const ponto = pontos.find(
       (p) => String(p.idPonto) === String(pontoSelecionado)
     );
     if (!ponto) {
-      alert("Ponto inválido.");
+      toast.waarn("Ponto inválido.");
       return;
     }
     if (pontosRota.some((p) => String(p.idPonto) === String(ponto.idPonto))) {
-      alert("Este ponto já foi adicionado à rota.");
+      toast.warn("Este ponto já foi adicionado à rota.");
       return;
     }
     setPontosRota((prev) => [...prev, ponto]);
@@ -251,7 +251,7 @@ export default function GerenciarLinhas() {
       !horaChegada ||
       pontosRota.length === 0
     ) {
-      alert("Preencha todos os campos obrigatórios da rota.");
+      toast.warn("Preencha todos os campos obrigatórios da rota.");
       return;
     }
 
@@ -274,7 +274,7 @@ export default function GerenciarLinhas() {
     try {
       console.log(" Payload rota:", payload);
       const res = await api.post("/rotas", payload);
-      alert("Rota cadastrada com sucesso!");
+      toast.success("Rota cadastrada com sucesso!");
       console.log(" Resposta:", res.data);
 
       // limpa
@@ -296,7 +296,7 @@ export default function GerenciarLinhas() {
         "❌ Erro ao cadastrar rota:",
         data || error.message || error
       );
-      alert(
+      toast.error(
         `Erro ao cadastrar rota.${data?.message ? `\nMensagem: ${data.message}` : ""
         }` + `${data?.error ? `\nDetalhe: ${data.error}` : ""}`
       );

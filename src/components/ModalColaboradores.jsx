@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
+import { toast } from "react-toastify";
 
 function classNames(...xs) {
   return xs.filter(Boolean).join(" ");
@@ -82,8 +83,8 @@ export default function ModalColaboradores({ open, onClose, rota }) {
         setLideres(lideresIds);
         setColabs(colabsNorm);
       } catch (err) {
-        console.error("Erro carregando colaboradores:", err);
-        alert("Falha ao carregar dados da rota (colaboradores/pontos).");
+        toast.error("Erro carregando colaboradores:", err);
+        toast.error("Falha ao carregar dados da rota (colaboradores/pontos).");
       } finally {
         setLoading(false);
       }
@@ -169,45 +170,19 @@ export default function ModalColaboradores({ open, onClose, rota }) {
 
   // trocar liderança
   const handleToggleLeader = async (c) => {
-    const jaELider = c.isLider;
-
-    // otimista
-    setColabs((prev) =>
-      prev.map((x) =>
-        x.idColaborador === c.idColaborador
-          ? {
-            ...x,
-            isLider: !jaELider,
-            role: jaELider ? "COLABORADOR" : "LIDER",
-          }
-          : x
-      )
-    );
-
     try {
-      if (jaELider) {
-        // remover liderança
-        await api.delete(
-          `/rotas/${rota.idRota}/lideres/${c.idColaborador}`
-        );
+      if (!c.isLider) {
+        // tentar promover
+        await api.put(`/rotas/${rota.idRota}/lideres/${c.idColaborador}`);
       } else {
-        // atribuir liderança
-        await api.put(
-          `/rotas/${rota.idRota}/lideres/${c.idColaborador}`
-        );
+        // tentar remover liderança
+        await api.delete(`/rotas/${rota.idRota}/lideres/${c.idColaborador}`);
       }
+
       await refreshColabs();
     } catch (e) {
       console.error(e);
-      alert("Não foi possível atualizar a liderança.");
-      // rollback
-      setColabs((prev) =>
-        prev.map((x) =>
-          x.idColaborador === c.idColaborador
-            ? { ...x, isLider: jaELider, role: c.role }
-            : x
-        )
-      );
+      toast.error("Não foi possível atualizar a liderança.");
     }
   };
 
@@ -231,7 +206,7 @@ export default function ModalColaboradores({ open, onClose, rota }) {
       await refreshColabs();
     } catch (e) {
       console.error(e);
-      alert("Não foi possível mover o colaborador para o ponto selecionado.");
+      toast.error("Não foi possível mover o colaborador para o ponto selecionado.");
       // rollback
       setColabs(prev);
     }
@@ -256,7 +231,7 @@ export default function ModalColaboradores({ open, onClose, rota }) {
       await refreshColabs();
     } catch (e) {
       console.error(e);
-      alert("Não foi possível desvincular.");
+      toast.error("Não foi possível desvincular.");
       setColabs(prev); // rollback
     }
   };
@@ -264,27 +239,42 @@ export default function ModalColaboradores({ open, onClose, rota }) {
   // =========================
   // BUSCA GLOBAL P/ ADICIONAR
   // =========================
+  const normalizar = (s = "") =>
+    s
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase();
   const handleSearchGlobais = async (txt) => {
     setBuscaAdd(txt);
 
-    if (!txt.trim()) {
+    const texto = txt.trim();
+    if (texto.length < 2) {
+      // menos de 2 letras: não busca, não mostra nada
       setResultAdd([]);
       return;
     }
 
     try {
-      // você já tinha esse endpoint /colaboradores?query=
-      const r = await api.get(
-        `/colaboradores?query=${encodeURIComponent(
-          txt
-        )}`
-      );
-      setResultAdd(r.data || []);
+      // pega todos (ou o que a API devolver)
+      const r = await api.get(`/colaboradores`);
+      const lista = r.data || [];
+
+      // filtra no front por nome OU matrícula
+      const filtro = normalizar(texto);
+      const filtrados = lista.filter((colab) => {
+        const nome = normalizar(
+          colab.nome ||
+          colab.nomeColaborador ||
+          colab.nome_colaborador ||
+          ""
+        );
+        const mat = normalizar(colab.matricula || "");
+        return nome.includes(filtro) || mat.includes(filtro);
+      });
+
+      setResultAdd(filtrados);
     } catch (e) {
-      console.error(
-        "Falha na busca global de colaboradores:",
-        e
-      );
+      console.error(e);
       setResultAdd([]);
     }
   };
@@ -342,7 +332,7 @@ export default function ModalColaboradores({ open, onClose, rota }) {
           <div className="md:col-span-2">
             <h3 className="text-md font-semibold text-[#3B7258] ">
               Colaboradores desta rota
-            </h3> 
+            </h3>
             <h1 className="text-xs text-gray-500 mb-4">
               Apena colaboradores do primeiro ponto (ordem 1) - podem virar líder
             </h1>
@@ -401,9 +391,26 @@ export default function ModalColaboradores({ open, onClose, rota }) {
                               "px-3 py-1.5 rounded-lg border text-left",
                               c.isLider
                                 ? "border-yellow-500 text-yellow-700 hover:bg-yellow-50"
-                                : "border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                : "border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             )}
-                            onClick={() => handleToggleLeader(c)}
+                            disabled={
+                              // Se já é líder, pode SEMPRE clicar (pra remover)
+                              c.isLider
+                                ? false
+                                : // Se NÃO é líder ainda, só deixa clicar se estiver na ordem 1
+                                !canBeLeader
+                            }
+                            title={
+                              c.isLider
+                                ? "Remover liderança"
+                                : canBeLeader
+                                  ? "Marcar este colaborador como líder da rota"
+                                  : "Só pode marcar líder se o colaborador estiver no ponto de ordem 1"
+                            }
+                            onClick={() => {
+                              // Se o botão está desabilitado, o onClick nem roda.
+                              handleToggleLeader(c);
+                            }}
                           >
                             {c.isLider ? "Remover liderança" : "Marcar líder"}
                           </button>
@@ -529,26 +536,22 @@ export default function ModalColaboradores({ open, onClose, rota }) {
             <div className="text-xs text-gray-600 mb-2">
               Resultados:
             </div>
-            <div className="max-h-[30vh] overflow-y-auto space-y-2 pr-1">
+            <div className="mt-3 max-h-[45vh] overflow-y-auto space-y-2">
               {resultAdd.map((r) => (
                 <div
-                  key={
-                    r.idColaborador ??
-                    r.id_colaborador
-                  }
-                  className="border rounded-xl p-3 flex items-start justify-between gap-3"
+                  key={r.idColaborador ?? r.id_colaborador}
+                  className="border rounded-xl p-3 flex items-center justify-between"
                 >
                   <div className="min-w-0">
-                    <div className="font-semibold text-sm truncate">
-                      {r.nome ??
-                        r.nomeColaborador ??
-                        r.nome_colaborador ??
+                    <div className="font-semibold truncate">
+                      {r.nome ||
+                        r.nomeColaborador ||
+                        r.nome_colaborador ||
                         "— sem nome —"}
                     </div>
-                    {r.matricula && (
-                      <div className="text-[11px] text-gray-600">
-                        Matrícula:{" "}
-                        {r.matricula}
+                    {(r.matricula || r.matriculaColaborador) && (
+                      <div className="text-xs text-gray-600">
+                        Matrícula: {r.matricula || r.matriculaColaborador}
                       </div>
                     )}
                   </div>
@@ -567,19 +570,17 @@ export default function ModalColaboradores({ open, onClose, rota }) {
                 </div>
               ))}
 
-              {!buscaAdd && !resultAdd.length && (
-                <div className="text-xs text-gray-500">
-                  Digite para buscar
-                  colaboradores…
+              {!buscaAdd.trim() && (
+                <div className="text-sm text-gray-500">
+                  Digite pelo menos 2 letras…
                 </div>
               )}
 
-              {buscaAdd &&
-                !resultAdd.length && (
-                  <div className="text-xs text-gray-500">
-                    Nenhum resultado.
-                  </div>
-                )}
+              {buscaAdd.trim().length >= 1 && resultAdd.length === 0 && (
+                <div className="text-sm text-gray-500">
+                  Nenhum colaborador encontrado.
+                </div>
+              )}
             </div>
           </div>
         </div>
