@@ -44,11 +44,6 @@ export default function Login() {
     setError("");
     setLoading(true); // 👈 começa o carregamento
 
-    if (!validarSenhaForte(senha)) {
-      setError("Email ou senha inválidos.");
-      setLoading(false); // 👈 encerra o carregamento
-      return;
-    }
 
     try {
       const response = await api.post("/auth/login", { username, senha });
