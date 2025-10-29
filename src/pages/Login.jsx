@@ -81,17 +81,23 @@ export default function Login() {
         <input
           type="email"
           placeholder="Email"
-          className="bg-white/30 w-full text-white placeholder-white/70 p-2 rounded-lg mb-8"
+          className={`bg-white/30 w-full text-white placeholder-white/70 p-2 rounded-lg mb-8 ${
+            loading ? "cursor-not-allowed opacity-70" : ""
+          }`}
           value={username}
           onChange={(e) => setEmail(e.target.value)}
+          disabled={loading} // ← desabilita durante o carregamento
         />
 
         <input
           type="password"
           placeholder="Senha"
-          className="bg-white/30 w-full text-white placeholder-white/70 p-2 rounded-lg mb-6"
+          className={`bg-white/30 w-full text-white placeholder-white/70 p-2 rounded-lg mb-6 ${
+            loading ? "cursor-not-allowed opacity-70" : ""
+          }`}
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
+          disabled={loading} // ← desabilita durante o carregamento
         />
 
         <button
