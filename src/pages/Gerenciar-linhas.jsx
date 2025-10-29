@@ -79,7 +79,7 @@ export default function GerenciarLinhas() {
     };
 
     carregarTudo();
-    setLoadingPage(false)
+  
   }, [tokenOk]);
   // depois dos useState
   async function prefetchTrajetos(rotasLista) {
@@ -311,8 +311,7 @@ export default function GerenciarLinhas() {
     : [];
 
   return (
-    <>
-    {loadingPage && <Loading fullscreen message="Carregando dados da rota..." />}
+   
     <div className="bg-[#E6E6E6] min-h-screen flex flex-col lg:flex-row items-start gap-4">
       <Navbar />
       <div className="flex flex-1 flex-col justify-center items-center mr-[10px] w-full">
@@ -717,6 +716,6 @@ export default function GerenciarLinhas() {
         )}
       </div>
 
-    </div></>
+    </div>
   );
 }
