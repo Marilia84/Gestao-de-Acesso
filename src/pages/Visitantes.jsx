@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/Navbar";
-import api from "../api/axios"; // Certifique-se de que o caminho para sua instância do axios está correto
+// 1. IMPORTA OS NOVOS SERVIÇOS
+import { getColaboradores } from "../api/colaboradorService";
+import { getVisitantes, createVisitante } from "../api/visitanteService";
+// O import do 'api' não é mais necessário aqui
+// import api from "../api/axios";
 
-// --- ÍCONES --- (sem alterações)
+// Importa as máscaras
+import { maskCPF, maskRG, maskPhone } from "../utils/masks";
+
+// Ícone de busca em SVG
 const SearchIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -20,40 +26,13 @@ const SearchIcon = () => (
   </svg>
 );
 
-// --- FUNÇÕES DE MÁSCARA ---
-
-const maskCPF = (value) => {
-  return value
-    .replace(/\D/g, "")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d{1,2})/, "$1-$2")
-    .slice(0, 14);
-};
-
-const maskRG = (value) => {
-  return value
-    .replace(/\D/g, "")
-    .replace(/(\d{2})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d{1})/, "$1-$2")
-    .slice(0, 12);
-};
-
-// 1. NOVA FUNÇÃO DE MÁSCARA PARA TELEFONE
-const maskPhone = (value) => {
-  return value
-    .replace(/\D/g, "") // Remove tudo que não é dígito
-    .slice(0, 11) // Limita a 11 dígitos (DDD + 9 dígitos do celular)
-    .replace(/^(\d{2})(\d)/g, "($1) $2") // Coloca parênteses em volta dos dois primeiros dígitos
-    .replace(/(\d{5})(\d)/, "$1-$2"); // Coloca hífen depois do quinto dígito (para celular com 9 dígitos)
-};
-
 const Visitantes = () => {
   const [visitors, setVisitors] = useState([]);
   const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false); // Para feedback do botão
+  const [fetchError, setFetchError] = useState(null); // Para erros de busca
   const [newVisitor, setNewVisitor] = useState({
     nomeCompleto: "",
     tipoDocumento: "CPF",
@@ -66,15 +45,18 @@ const Visitantes = () => {
     ativo: true,
   });
 
+  // 2. FUNÇÃO ATUALIZADA - usa os serviços
   const fetchData = async () => {
     setLoading(true);
+    setFetchError(null); // Limpa erros antigos
     try {
-      const [visitorsRes, collaboratorsRes] = await Promise.all([
-        api.get("/visitantes"),
-        api.get("/colaboradores"),
+      // Chama as funções de serviço em paralelo
+      const [visitorsData, collaboratorsData] = await Promise.all([
+        getVisitantes(),
+        getColaboradores(),
       ]);
-      const visitorsData = visitorsRes.data;
-      const collaboratorsData = collaboratorsRes.data;
+
+      // A lógica de "enriquecer" os dados continua aqui
       const enrichedVisitors = visitorsData.map((visitor) => {
         const anfitriao = collaboratorsData.find(
           (c) => c.idColaborador === visitor.pessoaAnfitria
@@ -88,6 +70,7 @@ const Visitantes = () => {
       setCollaborators(collaboratorsData);
     } catch (error) {
       console.error("Erro ao buscar dados:", error);
+      setFetchError("Falha ao carregar dados. Tente recarregar a página.");
     } finally {
       setLoading(false);
     }
@@ -97,10 +80,9 @@ const Visitantes = () => {
     fetchData();
   }, []);
 
-  // 2. LÓGICA DE HANDLECHANGE ATUALIZADA PARA TELEFONE
+  // A função handleChange permanece a mesma, pois ela lida com o estado local
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     if (name === "tipoDocumento") {
       setNewVisitor((prevState) => ({
         ...prevState,
@@ -123,9 +105,7 @@ const Visitantes = () => {
         ...prevState,
         numeroDocumento: maskedValue,
       }));
-    }
-    // Adiciona a lógica para o campo de telefone
-    else if (name === "telefone") {
+    } else if (name === "telefone") {
       const maskedValue = maskPhone(value);
       setNewVisitor((prevState) => ({ ...prevState, telefone: maskedValue }));
     } else {
@@ -133,18 +113,17 @@ const Visitantes = () => {
     }
   };
 
+  // 3. FUNÇÃO ATUALIZADA - usa o serviço
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true); // Bloqueia o botão
     try {
-      // Remove a máscara de todos os campos antes de enviar
-      const visitorDataToSend = {
-        ...newVisitor,
-        numeroDocumento: newVisitor.numeroDocumento.replace(/\D/g, ""),
-        telefone: newVisitor.telefone.replace(/\D/g, ""),
-      };
-      await api.post("/visitantes", visitorDataToSend);
-      fetchData();
+      // A lógica de remover máscaras agora está DENTRO do createVisitante
+      await createVisitante(newVisitor);
+
+      fetchData(); // Recarrega os dados
       alert("Visitante cadastrado com sucesso!");
+      // Limpa o formulário
       setNewVisitor({
         nomeCompleto: "",
         tipoDocumento: "CPF",
@@ -158,13 +137,20 @@ const Visitantes = () => {
       });
     } catch (error) {
       console.error("Erro ao cadastrar visitante:", error);
-      alert("Falha ao cadastrar. Verifique os dados e tente novamente.");
+      // Tenta pegar uma mensagem de erro mais específica da API
+      const errorMsg =
+        error.response?.data?.message ||
+        "Falha ao cadastrar. Verifique os dados e tente novamente.";
+      alert(errorMsg);
+    } finally {
+      setIsSubmitting(false); // Libera o botão
     }
   };
 
   const filteredVisitors = visitors.filter((visitor) => {
-    const visitorName = visitor.nomeCompleto.toLowerCase();
-    const visitorDocument = visitor.numeroDocumento.toLowerCase();
+    // Adiciona verificação para garantir que os campos existem
+    const visitorName = visitor.nomeCompleto?.toLowerCase() || "";
+    const visitorDocument = visitor.numeroDocumento?.toLowerCase() || "";
     const searchTermLower = searchTerm.toLowerCase();
     return (
       visitorName.includes(searchTermLower) ||
@@ -186,26 +172,25 @@ const Visitantes = () => {
   };
   const docInputProps = getDocInputProps();
 
+  // O JSX (layout limpo) como definido no Passo 1
   return (
-    <div className="bg-[#E5EDE9] min-h-screen flex items-top gap-4">
-      <div
-        className="absolute top-0 right-0 w-1/3 h-1/3 sm:w-1/4 sm:h-1/2 bg-[#53A67F] rounded-bl-full"
-        style={{ zIndex: 0 }}
-      ></div>
-      <div className="relative mx-auto w-full px-8" style={{ zIndex: 1 }}>
-        <header className="mb-9 mt-9">
+    <div className="relative w-full p-6 md:p-10">
+      <div className="absolute top-0 right-0 w-1/3 h-1/3 sm:w-1/4 sm:h-1/2 bg-[#53A67F] rounded-bl-full -z-10"></div>
+
+      <div className="relative z-10">
+        <header className="mb-9">
           <h1 className="text-5xl font-bold text-[#3B7258]">VISITANTES</h1>
         </header>
 
-        <main>
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg mb-8">
+        <main className="space-y-8">
+          {/* Card de Cadastro de Visitante */}
+          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
             <h2 className="text-3xl font-bold text-gray-800 mb-1">
               Cadastrar visitante
             </h2>
             <p className="text-sm text-gray-500 mb-6 ml-1">
               Preencha as informações do visitante
             </p>
-
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="lg:col-span-2">
@@ -223,7 +208,7 @@ const Visitantes = () => {
                     onChange={handleChange}
                     placeholder="Digite o Nome"
                     required
-                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base focus:outline-none focus:ring-2 focus:ring-[#038C3E]"
                   />
                 </div>
                 <div>
@@ -238,7 +223,7 @@ const Visitantes = () => {
                     name="tipoDocumento"
                     value={newVisitor.tipoDocumento}
                     onChange={handleChange}
-                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base focus:outline-none focus:ring-2 focus:ring-[#038C3E]"
                   >
                     <option value="CPF">CPF</option>
                     <option value="RG">RG</option>
@@ -261,7 +246,7 @@ const Visitantes = () => {
                     placeholder={docInputProps.placeholder}
                     maxLength={docInputProps.maxLength}
                     required
-                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base focus:outline-none focus:ring-2 focus:ring-[#038C3E]"
                   />
                 </div>
                 <div>
@@ -277,7 +262,7 @@ const Visitantes = () => {
                     name="dataNascimento"
                     value={newVisitor.dataNascimento}
                     onChange={handleChange}
-                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base focus:outline-none focus:ring-2 focus:ring-[#038C3E]"
                   />
                 </div>
                 <div>
@@ -287,7 +272,6 @@ const Visitantes = () => {
                   >
                     Telefone
                   </label>
-                  {/* 3. INPUT DE TELEFONE ATUALIZADO */}
                   <input
                     type="tel"
                     id="telefone"
@@ -295,8 +279,8 @@ const Visitantes = () => {
                     value={newVisitor.telefone}
                     onChange={handleChange}
                     placeholder="(XX) XXXXX-XXXX"
-                    maxLength="15" // Comprimento máximo com a máscara: (11) 98888-7777
-                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
+                    maxLength="15"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base focus:outline-none focus:ring-2 focus:ring-[#038C3E]"
                   />
                 </div>
                 <div>
@@ -313,7 +297,7 @@ const Visitantes = () => {
                     value={newVisitor.empresaVisitante}
                     onChange={handleChange}
                     placeholder="Ex: Empresa Exemplo"
-                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base focus:outline-none focus:ring-2 focus:ring-[#038C3E]"
                   />
                 </div>
                 <div>
@@ -329,7 +313,7 @@ const Visitantes = () => {
                     value={newVisitor.pessoaAnfitria}
                     onChange={handleChange}
                     required
-                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base focus:outline-none focus:ring-2 focus:ring-[#038C3E]"
                   >
                     <option value="">Selecione um anfitrião</option>
                     {collaborators.map((col) => (
@@ -353,7 +337,7 @@ const Visitantes = () => {
                     value={newVisitor.motivoVisita}
                     onChange={handleChange}
                     placeholder="Ex: Reunião, entrevista, etc."
-                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base"
+                    className="mt-1 border-2 border-gray-400 rounded-lg px-4 py-3 w-full h-12 text-base focus:outline-none focus:ring-2 focus:ring-[#038C3E]"
                   />
                 </div>
               </div>
@@ -361,14 +345,16 @@ const Visitantes = () => {
               <div className="mt-8">
                 <button
                   type="submit"
-                  className="w-full bg-[#038C3E] text-white py-3 px-4 rounded-lg font-semibold text-sm hover:bg-[#036f4c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#36A293] transition-colors"
+                  disabled={isSubmitting} // Desabilita o botão ao enviar
+                  className="w-full bg-[#038C3E] text-white py-3 px-4 rounded-lg font-semibold text-sm hover:bg-[#036f4c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#36A293] transition-colors disabled:opacity-50 disabled:cursor-wait"
                 >
-                  CADASTRAR VISITANTE
+                  {isSubmitting ? "CADASTRANDO..." : "CADASTRAR VISITANTE"}
                 </button>
               </div>
             </form>
           </div>
 
+          {/* Card de Gerenciamento de Visitantes */}
           <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
             <h2 className="text-3xl font-bold text-gray-800 mb-5">
               Gerenciar visitantes
@@ -380,11 +366,14 @@ const Visitantes = () => {
               <input
                 type="text"
                 placeholder="Buscar por Nome ou Documento do Visitante..."
-                className="pl-12 w-1/2 rounded-[8px] placeholder-[#859990] h-8 bg-[#53A67F]/15 transition-border focus:outline-none focus:ring-1 focus:ring-[#038C3E]"
+                className="pl-12 w-full md:w-1/2 rounded-[8px] placeholder-[#859990] h-8 bg-[#53A67F]/15 transition-border focus:outline-none focus:ring-1 focus:ring-[#038C3E]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            {fetchError && (
+              <p className="text-red-600 text-center py-4">{fetchError}</p>
+            )}
             <div className="overflow-y-auto max-h-[400px]">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0">
@@ -430,18 +419,21 @@ const Visitantes = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {loading ? (
                     <tr>
-                      <td colSpan="6" className="text-center py-4">
+                      <td
+                        colSpan="6"
+                        className="text-center py-4 text-gray-500"
+                      >
                         Carregando visitantes...
                       </td>
                     </tr>
-                  ) : (
+                  ) : filteredVisitors.length > 0 ? (
                     filteredVisitors.map((visitor) => (
                       <tr key={visitor.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">
                           {visitor.nomeCompleto}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{`${visitor.tipoDocumento}: ${visitor.numeroDocumento}`}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-noww-rap text-sm text-gray-500">
                           {visitor.motivoVisita}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -454,8 +446,8 @@ const Visitantes = () => {
                           <span
                             className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                               visitor.ativo
-                                ? "bg-[#53A67F] text-white"
-                                : "bg-[#E51212] text-white"
+                                ? "bg-[#53A67F] text-white" // Verde
+                                : "bg-red-600 text-white" // Vermelho
                             }`}
                           >
                             {visitor.ativo ? "Ativo" : "Inativo"}
@@ -463,6 +455,17 @@ const Visitantes = () => {
                         </td>
                       </tr>
                     ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="6"
+                        className="text-center py-4 text-gray-500"
+                      >
+                        {searchTerm
+                          ? "Nenhum visitante encontrado."
+                          : "Nenhum visitante cadastrado."}
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
