@@ -79,7 +79,6 @@ export default function GerenciarLinhas() {
     };
 
     carregarTudo();
-  
   }, [tokenOk]);
   // depois dos useState
   async function prefetchTrajetos(rotasLista) {
@@ -299,7 +298,8 @@ export default function GerenciarLinhas() {
         data || error.message || error
       );
       toast.error(
-        `Erro ao cadastrar rota.${data?.message ? `\nMensagem: ${data.message}` : ""
+        `Erro ao cadastrar rota.${
+          data?.message ? `\nMensagem: ${data.message}` : ""
         }` + `${data?.error ? `\nDetalhe: ${data.error}` : ""}`
       );
     }
@@ -311,9 +311,7 @@ export default function GerenciarLinhas() {
     : [];
 
   return (
-   
     <div className="bg-[#E6E6E6] min-h-screen flex flex-col lg:flex-row items-start gap-4">
-      <Navbar />
       <div className="flex flex-1 flex-col justify-center items-center mr-[10px] w-full">
         <h1 className="text-3xl font-bold mb-10 text-[#3B7258] mt-10">
           Gerenciar Linhas
@@ -675,7 +673,10 @@ export default function GerenciarLinhas() {
 
                       <button
                         className="mt-auto bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2.5 rounded-xl transition"
-                        onClick={() => { setRotaSelecionada(rota); setOpenModalColabs(true); }}
+                        onClick={() => {
+                          setRotaSelecionada(rota);
+                          setOpenModalColabs(true);
+                        }}
                       >
                         Exibir Colaboradores
                       </button>
@@ -683,7 +684,8 @@ export default function GerenciarLinhas() {
 
                     {/* ===== DIREITA: mini-mapa ===== */}
                     <div className="w-64 shrink-0 relative">
-                      {trajetosByRota[rota.idRota] && Array.isArray(trajetosByRota[rota.idRota]) ? (
+                      {trajetosByRota[rota.idRota] &&
+                      Array.isArray(trajetosByRota[rota.idRota]) ? (
                         <GoogleMapaRota
                           pontos={trajetosByRota[rota.idRota]}
                           height={250}
@@ -706,7 +708,8 @@ export default function GerenciarLinhas() {
               })}
             </div>
           </div>
-        </div>{/* acaba aqui */}
+        </div>
+        {/* acaba aqui */}
         {openModalColabs && rotaSelecionada && (
           <ModalColaboradores
             open={openModalColabs}
@@ -715,7 +718,6 @@ export default function GerenciarLinhas() {
           />
         )}
       </div>
-
     </div>
   );
 }

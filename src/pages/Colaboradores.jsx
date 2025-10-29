@@ -7,7 +7,6 @@ import Lupa from "../assets/lupa.svg";
 export default function Colaboradores() {
   const [colaboradores, setColaboradores] = useState([]);
   const [search, setSearch] = useState("");
- 
 
   useEffect(() => {
     api
@@ -20,19 +19,14 @@ export default function Colaboradores() {
     colab.nome.toLowerCase().includes(search.toLowerCase())
   );
 
-  
-
   return (
     <div className="relative bg-[#E6E6E6] min-h-screen flex overflow-hidden">
-    
       {/* Fundos decorativos */}
-      
+
       <div className="absolute right-0 top-[750px] w-[1200px] h-[550px] bg-[#53A67F] rounded-tl-[400px] rounded-br-[400px] rounded-tr-[400px] rotate-[-10deg] translate-x-1/4 -translate-y-1/4 z-0" />
-       
+
       {/* Navbar sobre os fundos (fixa à esquerda) */}
-      <div className="absolute top-0 left-0 h-full z-20 w-56">
-        <Navbar />
-      </div>
+      <div className="absolute top-0 left-0 h-full z-20 w-56"></div>
 
       {/* Conteúdo principal: usa margin-left para criar somente espaçamento lateral entre navbar e tabela */}
       <div className="flex-1 relative z-10 p-8 ml-60 overflow-auto">
@@ -75,7 +69,9 @@ export default function Colaboradores() {
                   colaboradoresFiltrados.map((colab) => (
                     <tr key={colab.id}>
                       <td className="px-8 py-2 text-center">{colab.nome}</td>
-                      <td className="px-4 py-2 text-center">{colab.matricula}</td>
+                      <td className="px-4 py-2 text-center">
+                        {colab.matricula}
+                      </td>
                       <td className="px-4 py-2 text-center">{colab.role}</td>
                       <td className="px-4 py-2 text-center">Linha D</td>
                       <td className="px-4 py-2 text-center">Diurno</td>

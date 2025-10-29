@@ -278,7 +278,6 @@ const Portaria = () => {
 
   return (
     <div className="flex bg-[#F4F7F6] min-h-screen">
-      <Navbar />
       <main className="flex-1 p-6 md:p-10 space-y-8">
         <header>
           <h1 className="text-4xl font-bold text-[#3B7258]">

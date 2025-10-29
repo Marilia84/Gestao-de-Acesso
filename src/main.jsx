@@ -1,23 +1,16 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom"; // Importamos apenas o BrowserRouter
 import "./index.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import Login from "./pages/Login";
-import Home from "./pages/Home";
-import PrivateRoute from "./components/PrivateRoute";
-import Colaboradores from "./pages/Colaboradores";
-import GerenciarLinhas from "./pages/Gerenciar-linhas";
-import Visitantes from "./pages/Visitantes";
-import RegistroViagem from "./pages/Registro-viagem";
-import Portaria from "./pages/Portaria";
+import App from "./App"; // Nosso componente principal que cuidará das rotas
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
-     <ToastContainer
+      <ToastContainer
         position="top-right"
         autoClose={4000}
         hideProgressBar={false}
@@ -27,57 +20,7 @@ createRoot(document.getElementById("root")).render(
         draggable
         theme="light"
       />
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route
-          path="/home"
-          element={
-            <PrivateRoute>
-              <Home />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/colaboradores"
-          element={
-            <PrivateRoute>
-              <Colaboradores />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/gerenciarLinhas"
-          element={
-            <PrivateRoute>
-              <GerenciarLinhas />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/visitantes"
-          element={
-            <PrivateRoute>
-              <Visitantes />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/registro-viagem"
-          element={
-            <PrivateRoute>
-              <RegistroViagem />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/portaria"
-          element={
-            <PrivateRoute>
-              <Portaria />
-            </PrivateRoute>
-          }
-        />
-      </Routes>
+      <App /> {/* O App agora é o ponto central */}
     </BrowserRouter>
   </StrictMode>
 );

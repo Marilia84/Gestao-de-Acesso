@@ -120,7 +120,6 @@ export default function Home() {
     <div className="flex bg-[#F4F7F6] min-h-screen">
       {" "}
       {/* Cor de fundo consistente */}
-      <Navbar />
       {/* Área do Chat (ocupa o espaço restante) */}
       <div className="flex-1 flex flex-col max-h-screen overflow-hidden">
         {" "}

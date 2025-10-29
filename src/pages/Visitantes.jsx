@@ -188,7 +188,6 @@ const Visitantes = () => {
 
   return (
     <div className="bg-[#E5EDE9] min-h-screen flex items-top gap-4">
-      <Navbar />
       <div
         className="absolute top-0 right-0 w-1/3 h-1/3 sm:w-1/4 sm:h-1/2 bg-[#53A67F] rounded-bl-full"
         style={{ zIndex: 0 }}

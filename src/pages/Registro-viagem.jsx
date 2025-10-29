@@ -229,7 +229,6 @@ const RegistroViagem = () => {
 
   return (
     <div className="flex bg-[#F4F7F6] min-h-screen">
-      <Navbar />
       <main className="flex-1 p-6 md:p-10 relative">
         <header className="mb-8">
           <h1 className="text-5xl font-bold text-[#3B7258]">
