@@ -1,54 +1,46 @@
 // src/pages/Colaboradores.jsx
-
 import React, { useEffect, useState, useMemo } from "react";
-// import { useNavigate } from "react-router-dom"; // Não está sendo usado, podemos remover por enquanto
-import { Search } from "lucide-react"; // 1. Importa o ícone do Lucide
-import { getColaboradores } from "../api/colaboradorService"; // 2. Importa nosso novo serviço de API
+import { Search } from "lucide-react";
+import { getColaboradores } from "../api/colaboradorService";
+import Loading from "../components/Loading"; // 👈 importa seu loader
 
 export default function Colaboradores() {
   const [colaboradores, setColaboradores] = useState([]);
   const [search, setSearch] = useState("");
-  // 3. Adiciona estados de Loading e Erro
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // já começa carregando
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // 4. Lógica de busca de dados refatorada
     const fetchData = async () => {
       try {
-        setLoading(true); // Inicia o loading
-        setError(null); // Limpa erros anteriores
-        const data = await getColaboradores(); // Chama o serviço
-        setColaboradores(Array.isArray(data) ? data : []); // Garante que seja um array
+        setLoading(true);
+        setError(null);
+        const data = await getColaboradores();
+        setColaboradores(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Erro ao buscar colaboradores:", err);
-        setError("Não foi possível carregar os colaboradores."); // Define msg de erro
+        setError("Não foi possível carregar os colaboradores.");
       } finally {
-        setLoading(false); // Finaliza o loading
+        setLoading(false);
       }
     };
 
     fetchData();
-  }, []); // Roda apenas uma vez na montagem
+  }, []);
 
-  // 5. Otimização: Memoiza a filtragem para não rodar a cada renderização
-  const colaboradoresFiltrados = useMemo(
-    () =>
-      colaboradores.filter(
-        (colab) =>
-          colab.nome.toLowerCase().includes(search.toLowerCase()) ||
-          colab.matricula.toLowerCase().includes(search.toLowerCase()) // Bônus: filtra por matrícula também
-      ),
-    [colaboradores, search] // Recalcula apenas se 'colaboradores' ou 'search' mudar
-  );
+  // evita erro se algum registro vier sem nome/matricula
+  const colaboradoresFiltrados = useMemo(() => {
+    const term = search.toLowerCase();
 
-  // 6. O return agora começa direto no <main>, sem Navbar ou divs de layout
+    return colaboradores.filter((colab) => {
+      const nome = colab?.nome?.toLowerCase?.() || "";
+      const matricula = colab?.matricula?.toLowerCase?.() || "";
+      return nome.includes(term) || matricula.includes(term);
+    });
+  }, [colaboradores, search]);
+
   return (
     <main className="flex-1 p-6 md:p-10">
-      {" "}
-      {/* Padding consistente */}
-      {/* Removemos os fundos decorativos absolutos para um visual mais limpo */}
-      {/* O fundo geral já é controlado pelo App.jsx -> MainLayout */}
       <div className="relative z-10 bg-white shadow-md rounded-xl w-full mx-auto p-6 md:p-8">
         <h1 className="text-3xl font-bold text-[#3B7258] mb-6">
           Gerenciar Colaboradores
@@ -56,23 +48,29 @@ export default function Colaboradores() {
 
         {/* Campo de busca */}
         <div className="relative mt-2 w-full max-w-md mb-6">
-          <Search // 7. Usa o ícone Lucide
+          <Search
             className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
             strokeWidth={2.5}
           />
           <input
             type="text"
-            placeholder="Buscar por nome ou matrícula..." // Texto atualizado
+            placeholder="Buscar por nome ou matrícula..."
             className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#038C3E]"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        {/* 8. Tabela com estados de Loading e Erro */}
-        <div className="overflow-x-auto">
+        {/* Área da tabela / loading / erro */}
+        <div className="overflow-x-auto min-h-[150px]">
           {loading ? (
-            <p className="text-center text-gray-500 py-4">Carregando...</p>
+            <div className="flex justify-center py-8">
+              <Loading
+                message="Carregando colaboradores..."
+                size={180}         // 👈 aumentei o tamanho
+                className="[&_p]:mt-1" // 👈 aproxima o texto usando Tailwind arbitrário
+              />
+            </div>
           ) : error ? (
             <p className="text-center text-red-500 py-4">{error}</p>
           ) : (
@@ -99,28 +97,28 @@ export default function Colaboradores() {
               <tbody className="divide-y divide-gray-200">
                 {colaboradoresFiltrados.length > 0 ? (
                   colaboradoresFiltrados.map((colab) => (
-                    // 9. Key corrigida para idColaborador
-                    <tr key={colab.idColaborador} className="hover:bg-gray-50">
+                    <tr
+                      key={colab.idColaborador || colab.id || colab.matricula}
+                      className="hover:bg-gray-50"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {colab.nome}
+                        {colab.nome || "Sem nome"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {colab.matricula}
+                        {colab.matricula || "—"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {colab.role}
+                        {colab.role || "—"}
                       </td>
-                      {/* 10. Colunas ajustadas para dados reais da API */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {colab.cidadeNome || "N/A"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            colab.ativo
+                          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${colab.ativo
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
-                          }`}
+                            }`}
                         >
                           {colab.ativo ? "Ativo" : "Inativo"}
                         </span>

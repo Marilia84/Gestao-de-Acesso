@@ -1,9 +1,13 @@
+// src/pages/Gerenciar-linhas.jsx
+
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import GoogleMapaRota from "../components/GoogleMapaRota";
 import ModalColaboradores from "../components/ModalColaboradores";
 import { toast } from "react-toastify";
+import Loading from "../components/Loading"; // 👈 usa o seu loading
+
 export default function GerenciarLinhas() {
   const [tokenOk, setTokenOk] = useState(false);
 
@@ -29,12 +33,19 @@ export default function GerenciarLinhas() {
   const [rotas, setRotas] = useState([]);
   const [colaboradores, setColaboradores] = useState([]);
 
-  const [trajetosByRota, setTrajetosByRota] = useState({}); // { [idRota]: [{ idPonto, nome, ordem, latitude, longitude }] }
+  const [trajetosByRota, setTrajetosByRota] = useState({});
   const [loadingTrajeto, setLoadingTrajeto] = useState({});
   const [openModalColabs, setOpenModalColabs] = useState(false);
   const [rotaSelecionada, setRotaSelecionada] = useState(null);
-  const [loadingPage, setLoadingPage] = useState(true);
-  // Garante token no header da instância api
+
+  // 👇 novos loadings por bloco
+  const [loadingAdicionarCidade, setLoadingAdicionarCidade] = useState(false);
+  const [loadingCadastrarPonto, setLoadingCadastrarPonto] = useState(false);
+  const [loadingListaPontos, setLoadingListaPontos] = useState(true);
+  const [loadingCadastrarRota, setLoadingCadastrarRota] = useState(false);
+  const [loadingRotasCadastradas, setLoadingRotasCadastradas] = useState(true);
+
+  // Garante token
   useEffect(() => {
     try {
       const t =
@@ -55,6 +66,10 @@ export default function GerenciarLinhas() {
     if (!tokenOk) return;
 
     const carregarTudo = async () => {
+      // quando começar: lista de pontos e rotas estão carregando
+      setLoadingListaPontos(true);
+      setLoadingRotasCadastradas(true);
+
       try {
         const [cidadesRes, pontosRes, rotasRes, colabsRes] = await Promise.all([
           api.get("/cidades"),
@@ -66,7 +81,7 @@ export default function GerenciarLinhas() {
 
         setCidades(cidadesRes.data || []);
         setPontos(pontosRes.data || []);
-        setRotas(rotasRes.data || []);
+        setRotas(rotasLista);
         setColaboradores(colabsRes.data || []);
 
         await prefetchTrajetos(rotasLista);
@@ -75,12 +90,17 @@ export default function GerenciarLinhas() {
           "Erro nas cargas iniciais:",
           err.response?.data || err.message || err
         );
+        toast.error("Não foi possível carregar os dados iniciais.");
+      } finally {
+        setLoadingListaPontos(false);
+        setLoadingRotasCadastradas(false);
       }
     };
 
     carregarTudo();
   }, [tokenOk]);
-  // depois dos useState
+
+  // prefetch de trajetos
   async function prefetchTrajetos(rotasLista) {
     const pendentes = (rotasLista || [])
       .filter((r) => r?.idRota && !trajetosByRota[r.idRota])
@@ -107,7 +127,6 @@ export default function GerenciarLinhas() {
         const pontos = (data || [])
           .map((p) => ({
             idPonto: p.idPonto ?? p.id_ponto,
-            // nome sempre preenchido a partir de nomePonto (fallback pra nome)
             nome: p.nomePonto ?? p.nome ?? p.nome_ponto ?? "",
             ordem: Number(p.ordem),
             lat: Number(
@@ -136,12 +155,6 @@ export default function GerenciarLinhas() {
     );
   }
 
-  // Util: normaliza “HH:mm” -> “HH:mm:ss”
-  const toHMS = (hhmm) => {
-    if (!hhmm) return "";
-    return /^\d{2}:\d{2}$/.test(hhmm) ? `${hhmm}:00` : hhmm;
-  };
-
   const getCoordenadas = async (enderecoCompleto) => {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
@@ -158,12 +171,14 @@ export default function GerenciarLinhas() {
     throw new Error("Endereço não encontrado.");
   };
 
+  // ====== ADICIONAR CIDADE ======
   const handleAdicionarCidade = async () => {
     if (!novaCidade.trim() || !novaUf.trim()) {
       toast.warn("Preencha cidade e UF.");
       return;
     }
 
+    setLoadingAdicionarCidade(true);
     try {
       const response = await api.post("/cidades", {
         nome: novaCidade.trim(),
@@ -175,11 +190,14 @@ export default function GerenciarLinhas() {
       setNovaUf("");
       toast.success("Cidade adicionada com sucesso!");
     } catch (error) {
-      toast.error("Erro ao adicionar cidade:", error.response?.data || error);
+      console.error(error);
       toast.error("Erro ao cadastrar cidade.");
+    } finally {
+      setLoadingAdicionarCidade(false);
     }
   };
 
+  // ====== CADASTRAR PONTO ======
   const handleCadastrarPonto = async () => {
     if (
       !cidadeSelecionada ||
@@ -191,12 +209,14 @@ export default function GerenciarLinhas() {
       return;
     }
 
+    setLoadingCadastrarPonto(true);
     try {
       const cidadeObj = cidades.find(
         (c) => String(c.idCidade) === String(cidadeSelecionada)
       );
       if (!cidadeObj) {
         toast.warn("Cidade inválida.");
+        setLoadingCadastrarPonto(false);
         return;
       }
 
@@ -211,6 +231,7 @@ export default function GerenciarLinhas() {
         idCidade: Number(cidadeSelecionada),
       });
 
+      // atualiza a lista do card ao lado
       setPontos((prev) => [...prev, response.data]);
       setNomePonto("");
       setRua("");
@@ -219,9 +240,12 @@ export default function GerenciarLinhas() {
     } catch (error) {
       console.error("Erro ao cadastrar ponto:", error.response?.data || error);
       toast.error("Erro ao cadastrar ponto.");
+    } finally {
+      setLoadingCadastrarPonto(false);
     }
   };
 
+  // ====== ADICIONAR PONTO NA ROTA (lista local) ======
   const handleAdicionarPontoNaRota = () => {
     if (!pontoSelecionado) {
       toast.warn("Selecione um ponto.");
@@ -231,7 +255,7 @@ export default function GerenciarLinhas() {
       (p) => String(p.idPonto) === String(pontoSelecionado)
     );
     if (!ponto) {
-      toast.waarn("Ponto inválido.");
+      toast.warn("Ponto inválido.");
       return;
     }
     if (pontosRota.some((p) => String(p.idPonto) === String(ponto.idPonto))) {
@@ -242,6 +266,7 @@ export default function GerenciarLinhas() {
     setPontoSelecionado("");
   };
 
+  // ====== CADASTRAR ROTA ======
   const handleCadastrarRota = async () => {
     if (
       !novaRota.trim() ||
@@ -256,29 +281,28 @@ export default function GerenciarLinhas() {
       return;
     }
 
-    // Ajusta tipos/formato
     const payload = {
       nome: novaRota.trim(),
       idCidade: Number(cidadeSelecionada),
-      periodo, // certifique-se que casa com o enum do backend
+      periodo,
       capacidade: Number(capacidade),
       ativo: true,
       horaPartida:
-        horaPartida.length > 5 ? horaPartida.substring(0, 5) : horaPartida, // Garante que seja "HH:mm"
+        horaPartida.length > 5 ? horaPartida.substring(0, 5) : horaPartida,
       horaChegada:
-        horaChegada.length > 5 ? horaChegada.substring(0, 5) : horaChegada, // Garante que seja "HH:mm" // HH:mm:ss
+        horaChegada.length > 5 ? horaChegada.substring(0, 5) : horaChegada,
       pontos: pontosRota.map((p, i) => ({
         idPonto: Number(p.idPonto),
         ordem: i + 1,
       })),
     };
-    try {
-      console.log(" Payload rota:", payload);
-      const res = await api.post("/rotas", payload);
-      toast.success("Rota cadastrada com sucesso!");
-      console.log(" Resposta:", res.data);
 
-      // limpa
+    setLoadingCadastrarRota(true);
+    try {
+      await api.post("/rotas", payload);
+      toast.success("Rota cadastrada com sucesso!");
+
+      // limpa formulário
       setNovaRota("");
       setPeriodo("");
       setCapacidade("");
@@ -286,25 +310,25 @@ export default function GerenciarLinhas() {
       setHoraChegada("");
       setPontosRota([]);
 
-      // atualiza lista e prefetch dos trajetos
+      // recarrega rotas + mostra loading no card de rotas cadastradas
+      setLoadingRotasCadastradas(true);
       const rotasRes = await api.get("/rotas");
       const rotasLista = rotasRes.data || [];
       setRotas(rotasLista);
       await prefetchTrajetos(rotasLista);
     } catch (error) {
       const data = error.response?.data;
-      console.error(
-        "❌ Erro ao cadastrar rota:",
-        data || error.message || error
-      );
+      console.error("❌ Erro ao cadastrar rota:", data || error.message || error);
       toast.error(
         `Erro ao cadastrar rota.${
           data?.message ? `\nMensagem: ${data.message}` : ""
-        }` + `${data?.error ? `\nDetalhe: ${data.error}` : ""}`
+        }${data?.error ? `\nDetalhe: ${data.error}` : ""}`
       );
+    } finally {
+      setLoadingCadastrarRota(false);
+      setLoadingRotasCadastradas(false);
     }
   };
-  // abaixo dos useState, fora de handleCadastrarRota
 
   const pontosFiltrados = cidadeSelecionada
     ? pontos.filter((p) => String(p.idCidade) === String(cidadeSelecionada))
@@ -319,7 +343,15 @@ export default function GerenciarLinhas() {
 
         {/* CADASTRO DE PONTOS */}
         <div className="grid grid-cols-2 gap-6 mb-10">
-          <div className="bg-[#EDEDED] shadow-md rounded-lg p-10 w-[600px] h-[500px]">
+          {/* CARD 1 - adicionar cidade / cadastrar ponto */}
+          <div className="relative bg-[#EDEDED] shadow-md rounded-lg p-10 w-[600px] h-[500px]">
+            {/* overlay de loading do card 1 */}
+            {(loadingAdicionarCidade || loadingCadastrarPonto) && (
+              <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
+                <Loading size={80} message="" />
+              </div>
+            )}
+
             <h1 className="text-xl font-semibold mb-4">Cadastrar ponto</h1>
             <p className="text-sm text-gray-600 mb-4">
               Adicione novos pontos de parada com geolocalização automática
@@ -344,8 +376,9 @@ export default function GerenciarLinhas() {
               <button
                 onClick={handleAdicionarCidade}
                 className="bg-[#038C3E] text-white w-40 px-6 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-[#027a36] transition"
+                disabled={loadingAdicionarCidade}
               >
-                Adicionar
+                {loadingAdicionarCidade ? "Salvando..." : "Adicionar"}
               </button>
             </div>
 
@@ -413,17 +446,25 @@ export default function GerenciarLinhas() {
             <button
               className="bg-[#038C3E] text-white w-full py-2 text-lg rounded-lg flex items-center justify-center gap-3 hover:bg-[#027a36] transition"
               onClick={handleCadastrarPonto}
+              disabled={loadingCadastrarPonto}
             >
               <img
                 src="src/assets/map-pin.svg"
                 alt="location"
                 className="w-6 h-6"
               />
-              Cadastrar Ponto
+              {loadingCadastrarPonto ? "Cadastrando..." : "Cadastrar Ponto"}
             </button>
           </div>
 
-          <div className="bg-[#EDEDED] shadow-md rounded-lg p-10 w-[600px] h-[500px]">
+          {/* CARD 2 - lista de pontos */}
+          <div className="relative bg-[#EDEDED] shadow-md rounded-lg p-10 w-[600px] h-[500px]">
+            {loadingListaPontos && (
+              <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
+                <Loading size={70} message="Carregando pontos..." />
+              </div>
+            )}
+
             <h1 className="text-xl font-semibold mb-4">Pontos cadastrados</h1>
             <p className="text-sm text-gray-600 mb-4">
               Lista de todos os pontos
@@ -437,13 +478,22 @@ export default function GerenciarLinhas() {
                   {ponto.nome}
                 </div>
               ))}
+              {!pontos.length && !loadingListaPontos && (
+                <p className="text-gray-500 text-sm">Nenhum ponto cadastrado.</p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* ROTAS */}
+        {/* CARD 3 - CADASTRAR ROTA */}
         <div className="mb-6">
-          <div className="bg-[#EDEDED] shadow-md rounded-lg p-10 w-[1220px]">
+          <div className="relative bg-[#EDEDED] shadow-md rounded-lg p-10 w-[1220px]">
+            {loadingCadastrarRota && (
+              <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
+                <Loading size={90} message="Salvando rota..." />
+              </div>
+            )}
+
             <h1 className="text-xl font-semibold mb-6">Cadastrar Rota</h1>
 
             <div className="flex gap-4 mb-3 items-end">
@@ -555,7 +605,7 @@ export default function GerenciarLinhas() {
                 </select>
                 <button
                   onClick={handleAdicionarPontoNaRota}
-                  className="bg-[#038C3E] text-white px-6 py-2 rounded-lg hover:bg-[#027a36]"
+                  className="bg-[#038C3E] text-white px-6 py-2 rounded-lg hover:bg-[#027a36] transition"
                 >
                   Adicionar
                 </button>
@@ -570,15 +620,22 @@ export default function GerenciarLinhas() {
             <button
               onClick={handleCadastrarRota}
               className="bg-[#038C3E] text-white w-full py-4 text-lg rounded-lg hover:bg-[#027a36] transition"
+              disabled={loadingCadastrarRota}
             >
-              Cadastrar Rota
+              {loadingCadastrarRota ? "Cadastrando rota..." : "Cadastrar Rota"}
             </button>
           </div>
         </div>
 
         {/* ROTAS CADASTRADAS */}
         <div className="mb-6 h-[770px] overflow-x-auto">
-          <div className="bg-[#EDEDED] shadow-md rounded-lg p-6 lg:p-10 w-[1220px] max-w-full">
+          <div className="relative bg-[#EDEDED] shadow-md rounded-lg p-6 lg:p-10 w-[1220px] max-w-full">
+            {loadingRotasCadastradas && (
+              <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
+                <Loading size={90} message="Carregando rotas..." />
+              </div>
+            )}
+
             <div className="mb-4">
               <h1 className="text-2xl font-bold text-gray-800">
                 Rotas cadastradas
@@ -594,11 +651,10 @@ export default function GerenciarLinhas() {
                 return (
                   <div
                     key={rota.idRota}
-                    className="bg-white rounded-2xl shadow p-5 flex gap-6"
+                    className="bg-white rounded-2xl shadow p-5 flex gap-6 relative"
                   >
-                    {/* ===== ESQUERDA: infos ===== */}
+                    {/* ===== ESQUERDA ===== */}
                     <div className="flex-1 flex flex-col">
-                      {/* Título + subtítulo */}
                       <div className="mb-2">
                         <h3 className="text-lg font-semibold text-gray-800">
                           {rota.nome}{" "}
@@ -610,7 +666,6 @@ export default function GerenciarLinhas() {
                         </p>
                       </div>
 
-                      {/* Turnos como pílulas */}
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-sm text-gray-700 font-medium">
                           Turnos:
@@ -625,7 +680,6 @@ export default function GerenciarLinhas() {
                         )}
                       </div>
 
-                      {/* Lista dos pontos (do /trajeto) */}
                       <div className="mb-3">
                         <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                           <svg
@@ -698,8 +752,8 @@ export default function GerenciarLinhas() {
                       )}
 
                       {loadingTrajeto[rota.idRota] && (
-                        <div className="absolute inset-0 bg-white/60 grid place-items-center text-xs text-gray-600">
-                          carregando trajeto...
+                        <div className="absolute inset-0 bg-white/60 grid place-items-center rounded">
+                          <Loading size={65} message="" />
                         </div>
                       )}
                     </div>
@@ -709,7 +763,7 @@ export default function GerenciarLinhas() {
             </div>
           </div>
         </div>
-        {/* acaba aqui */}
+
         {openModalColabs && rotaSelecionada && (
           <ModalColaboradores
             open={openModalColabs}
