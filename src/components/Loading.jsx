@@ -4,7 +4,7 @@ import loaderAnimation from "../assets/loading.json";
 
 function Loading({
   fullscreen = false,
-  message = "Carregando...",
+  message = "",
   size = 120,
   className = "",
 }) {

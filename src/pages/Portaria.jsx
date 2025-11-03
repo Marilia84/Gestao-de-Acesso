@@ -219,7 +219,7 @@ const Portaria = () => {
       <section className="bg-white p-6 rounded-xl shadow-lg relative px-4 md:px-12">
         {loadingInitial && (
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-xl z-10">
-            <Loading size={140} message="Carregando opções..." />
+            <Loading size={140} message="" />
           </div>
         )}
 
@@ -372,7 +372,7 @@ const Portaria = () => {
       <section className="bg-white p-6 rounded-xl shadow-lg relative px-4 md:px-12">
         {loadingHistorico && (
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-xl z-10">
-            <Loading size={130} message="Carregando histórico..." />
+            <Loading size={130} message="" />
           </div>
         )}
 

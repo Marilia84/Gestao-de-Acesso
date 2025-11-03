@@ -65,7 +65,7 @@ export default function Colaboradores() {
     <div className="overflow-x-auto min-h-[150px]">
       {loading ? (
         <div className="flex justify-center py-8">
-          <Loading message="Carregando colaboradores..." size={180} className="[&_p]:mt-1" />
+          <Loading  size={180} className="[&_p]:mt-1" />
         </div>
       ) : error ? (
         <p className="text-center text-red-500 py-4">{error}</p>
