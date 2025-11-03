@@ -335,7 +335,7 @@ export default function GerenciarLinhas() {
     : [];
 
   return (
-    <div className="bg-[#E6E6E6] min-h-screen flex flex-col lg:flex-row items-start ml-12">
+    <div className="min-h-screen flex flex-col lg:flex-row items-start ml-12">
       <div className="flex flex-1 flex-col justify-center items-center mr-[10px] w-full">
         <h1 className="text-3xl font-bold mb-10 text-[#3B7258] mt-10">
           Gerenciar Linhas
@@ -344,26 +344,26 @@ export default function GerenciarLinhas() {
         {/* CADASTRO DE PONTOS */}
         <div className="grid grid-cols-2 gap-6 mb-10">
           {/* CARD 1 - adicionar cidade / cadastrar ponto */}
-          <div className="relative bg-[#EDEDED] shadow-md rounded-lg p-10 w-[600px] h-[500px]">
+          <div className="relative bg-white shadow-md rounded-lg p-10 w-[600px] h-[500px]">
             {/* overlay de loading do card 1 */}
             {(loadingAdicionarCidade || loadingCadastrarPonto) && (
-              <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
+              <div className="absolute inset-0 bg-white/70  flex items-center justify-center rounded-lg z-10">
                 <Loading size={80} message="" />
               </div>
             )}
 
-            <h1 className="text-xl font-semibold mb-4">Cadastrar ponto</h1>
+            <h1 className="text-2xl font-semibold text-[#3B7258] mb-2">Cadastrar ponto</h1>
             <p className="text-sm text-gray-600 mb-4">
               Adicione novos pontos de parada com geolocalização automática
             </p>
 
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-2 mb-4 ">
               <input
                 type="text"
                 placeholder="Nova cidade"
                 value={novaCidade}
                 onChange={(e) => setNovaCidade(e.target.value)}
-                className="border border-gray-500 rounded-lg px-4 py-2 w-full text-base"
+                className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 w-full text-base"
               />
               <input
                 type="text"
@@ -371,7 +371,7 @@ export default function GerenciarLinhas() {
                 maxLength={2}
                 value={novaUf}
                 onChange={(e) => setNovaUf(e.target.value.toUpperCase())}
-                className="border border-gray-500 rounded-lg px-4 py-2 w-24 text-base text-center uppercase"
+                className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 w-24 text-base text-center uppercase"
               />
               <button
                 onClick={handleAdicionarCidade}
@@ -391,7 +391,7 @@ export default function GerenciarLinhas() {
               </label>
               <select
                 id="cidade"
-                className="border border-gray-500 rounded-md px-3 py-2 text-sm text-gray-600"
+                className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-md px-3 py-2 text-sm text-gray-600"
                 value={cidadeSelecionada}
                 onChange={(e) => setCidadeSelecionada(e.target.value)}
               >
@@ -409,7 +409,7 @@ export default function GerenciarLinhas() {
                 Nome do Ponto
               </label>
               <input
-                className="border border-gray-500 rounded-lg p-2 w-full text-sm"
+                className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg p-2 w-full text-sm"
                 placeholder="Nome do ponto"
                 value={nomePonto}
                 onChange={(e) => setNomePonto(e.target.value)}
@@ -423,7 +423,7 @@ export default function GerenciarLinhas() {
                     Rua
                   </label>
                   <input
-                    className="border border-gray-500 rounded-lg p-2 w-full text-sm"
+                    className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg p-2 w-full text-sm"
                     placeholder="Rua"
                     value={rua}
                     onChange={(e) => setRua(e.target.value)}
@@ -434,7 +434,7 @@ export default function GerenciarLinhas() {
                     Número
                   </label>
                   <input
-                    className="border border-gray-500 rounded-lg p-2 w-full text-sm"
+                    className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg p-2 w-full text-sm"
                     placeholder="Número"
                     value={numero}
                     onChange={(e) => setNumero(e.target.value)}
@@ -448,24 +448,20 @@ export default function GerenciarLinhas() {
               onClick={handleCadastrarPonto}
               disabled={loadingCadastrarPonto}
             >
-              <img
-                src="src/assets/map-pin.svg"
-                alt="location"
-                className="w-6 h-6"
-              />
+             
               {loadingCadastrarPonto ? "Cadastrando..." : "Cadastrar Ponto"}
             </button>
           </div>
 
           {/* CARD 2 - lista de pontos */}
-          <div className="relative bg-[#EDEDED] shadow-md rounded-lg p-10 w-[600px] h-[500px]">
+          <div className="relative bg-white shadow-md rounded-lg p-10 w-[600px] h-[500px]">
             {loadingListaPontos && (
               <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
                 <Loading size={70} message="Carregando pontos..." />
               </div>
             )}
 
-            <h1 className="text-xl font-semibold mb-4">Pontos cadastrados</h1>
+            <h1 className="text-2xl font-semibold text-[#3B7258] mb-2">Pontos cadastrados</h1>
             <p className="text-sm text-gray-600 mb-4">
               Lista de todos os pontos
             </p>
@@ -473,7 +469,7 @@ export default function GerenciarLinhas() {
               {pontos.map((ponto) => (
                 <div
                   key={ponto.idPonto}
-                  className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg"
+                  className="flex items-center justify-between bg-white border-2 border-[#038C3E]/50  px-4 py-2 rounded-lg"
                 >
                   {ponto.nome}
                 </div>
@@ -487,14 +483,14 @@ export default function GerenciarLinhas() {
 
         {/* CARD 3 - CADASTRAR ROTA */}
         <div className="mb-6">
-          <div className="relative bg-[#EDEDED] shadow-md rounded-lg p-10 w-[1220px]">
+          <div className="relative bg-white shadow-md rounded-lg p-10 w-[1220px]">
             {loadingCadastrarRota && (
               <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
                 <Loading size={90} message="Salvando rota..." />
               </div>
             )}
 
-            <h1 className="text-xl font-semibold mb-6">Cadastrar Rota</h1>
+            <h1 className="text-2xl font-semibold text-[#3B7258] mb-4">Cadastrar Rota</h1>
 
             <div className="flex gap-4 mb-3 items-end">
               <div className="flex flex-col flex-1">
@@ -506,7 +502,7 @@ export default function GerenciarLinhas() {
                   placeholder="Ex: Rota Matinal"
                   value={novaRota}
                   onChange={(e) => setNovaRota(e.target.value)}
-                  className="border border-gray-500 rounded-lg px-4 py-2 w-full text-base"
+                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 w-full text-base"
                 />
               </div>
 
@@ -517,7 +513,7 @@ export default function GerenciarLinhas() {
                 <select
                   value={cidadeSelecionada}
                   onChange={(e) => setCidadeSelecionada(e.target.value)}
-                  className="border border-gray-500 rounded-lg px-4 py-2 text-gray-600"
+                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 text-gray-600"
                 >
                   <option value="">Selecione</option>
                   {cidades.map((cidade) => (
@@ -535,7 +531,7 @@ export default function GerenciarLinhas() {
                 <select
                   value={periodo}
                   onChange={(e) => setPeriodo(e.target.value)}
-                  className="border border-gray-500 rounded-lg px-4 py-2 text-gray-600"
+                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 text-gray-600"
                 >
                   <option value="">Selecione</option>
                   <option value="MANHA">Manhã</option>
@@ -557,7 +553,7 @@ export default function GerenciarLinhas() {
                   placeholder="Qtd"
                   value={capacidade}
                   onChange={(e) => setCapacidade(e.target.value)}
-                  className="border border-gray-500 rounded-lg px-4 py-2 text-center"
+                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 text-center"
                 />
               </div>
 
@@ -569,7 +565,7 @@ export default function GerenciarLinhas() {
                   type="time"
                   value={horaPartida}
                   onChange={(e) => setHoraPartida(e.target.value)}
-                  className="border border-gray-500 rounded-lg px-4 py-2"
+                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2"
                 />
               </div>
 
@@ -581,7 +577,7 @@ export default function GerenciarLinhas() {
                   type="time"
                   value={horaChegada}
                   onChange={(e) => setHoraChegada(e.target.value)}
-                  className="border border-gray-500 rounded-lg px-4 py-2"
+                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2"
                 />
               </div>
             </div>
@@ -594,7 +590,7 @@ export default function GerenciarLinhas() {
                 <select
                   value={pontoSelecionado}
                   onChange={(e) => setPontoSelecionado(e.target.value)}
-                  className="border border-gray-500 rounded-lg px-4 py-2 text-gray-600 flex-1"
+                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 text-gray-600 flex-1"
                 >
                   <option value="">Selecione</option>
                   {pontosFiltrados.map((p) => (
@@ -605,7 +601,7 @@ export default function GerenciarLinhas() {
                 </select>
                 <button
                   onClick={handleAdicionarPontoNaRota}
-                  className="bg-[#038C3E] text-white px-6 py-2 rounded-lg hover:bg-[#027a36] transition"
+                  className="bg-white text-white px-2 py-2 rounded-lg hover:bg-[#027a36] transition"
                 >
                   Adicionar
                 </button>
@@ -619,7 +615,7 @@ export default function GerenciarLinhas() {
 
             <button
               onClick={handleCadastrarRota}
-              className="bg-[#038C3E] text-white w-full py-4 text-lg rounded-lg hover:bg-[#027a36] transition"
+              className="bg-[#038C3E] text-white w-full py-2 text-lg rounded-lg flex items-center justify-center gap-3 hover:bg-[#027a36] transition"
               disabled={loadingCadastrarRota}
             >
               {loadingCadastrarRota ? "Cadastrando rota..." : "Cadastrar Rota"}
@@ -628,8 +624,8 @@ export default function GerenciarLinhas() {
         </div>
 
         {/* ROTAS CADASTRADAS */}
-        <div className="mb-6 h-[770px] overflow-x-auto">
-          <div className="relative bg-[#EDEDED] shadow-md rounded-lg p-6 lg:p-10 w-[1220px] max-w-full">
+        <div className="mb-6 h-[770px] w-md overflow-x-auto shadow-md w-[1220px]">
+          <div className="relative bg-white shadow-md rounded-lg p-6 lg:p-10 w-[1220px] max-w-full">
             {loadingRotasCadastradas && (
               <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
                 <Loading size={90} message="Carregando rotas..." />
@@ -637,7 +633,7 @@ export default function GerenciarLinhas() {
             )}
 
             <div className="mb-4">
-              <h1 className="text-2xl font-bold text-gray-800">
+              <h1 className="text-2xl font-semibold text-[#3B7258] mb-2">
                 Rotas cadastradas
               </h1>
               <p className="text-sm text-gray-500">
@@ -645,13 +641,13 @@ export default function GerenciarLinhas() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 ">
               {rotas.map((rota) => {
                 const pontosDaRota = trajetosByRota[rota.idRota] || [];
                 return (
                   <div
                     key={rota.idRota}
-                    className="bg-white rounded-2xl shadow p-5 flex gap-6 relative"
+                    className="bg-white rounded-2xl shadow-md p-5 flex gap-6 relative"
                   >
                     {/* ===== ESQUERDA ===== */}
                     <div className="flex-1 flex flex-col">
@@ -700,7 +696,7 @@ export default function GerenciarLinhas() {
                           {pontosDaRota.map((p, i) => (
                             <li
                               key={p.idPonto ?? i}
-                              className="flex items-center gap-2"
+                              className="flex items-center gap-2 "
                             >
                               <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center">
                                 <svg width="14" height="14" viewBox="0 0 24 24">
@@ -710,13 +706,13 @@ export default function GerenciarLinhas() {
                                   />
                                 </svg>
                               </div>
-                              <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2 flex-1">
-                                <span className="w-8 h-8 rounded-md bg-white text-gray-700 text-xs font-semibold grid place-items-center border">
+                              <div className="flex items-center gap-2 bg-white-100 rounded-lg px-3 py-2 flex-1">
+                                <span className="w-8 h-8 rounded-md bg-white text-gray-700 text-xs font-semibold grid place-items-center border border-gray-300 shadow-sm">
                                   {(p.ordem ?? i + 1)
                                     .toString()
                                     .padStart(2, "0")}
                                 </span>
-                                <span className="text-sm text-gray-700 truncate">
+                                <span className="text-sm text-gray-700 truncate ">
                                   {p.nome}
                                 </span>
                               </div>
@@ -746,7 +742,7 @@ export default function GerenciarLinhas() {
                           followRoads={true}
                         />
                       ) : (
-                        <div className="h-[250px] w-full bg-gray-100 text-gray-500 grid place-items-center rounded">
+                        <div className="h-[250px] w-full bg-white text-gray-500 grid place-items-center rounded">
                           Sem trajeto
                         </div>
                       )}
