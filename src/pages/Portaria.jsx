@@ -9,7 +9,7 @@ import {
   registrarSaida,
 } from "../api/acessoService";
 import { formatDateTime } from "../utils/formatters";
-import Loading from "../components/Loading"; // 👈 usa o seu loading
+import Loading from "../components/Loading"; 
 
 // Lista fixa de portarias
 const portariasDisponiveis = [
