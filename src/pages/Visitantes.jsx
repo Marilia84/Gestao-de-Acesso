@@ -174,7 +174,7 @@ const Visitantes = () => {
 
   // O JSX (layout limpo) como definido no Passo 1
   return (
-    <div className="relative w-full p-6 md:p-10">
+    <div className="flex-1 p-6 md:p-10 space-y-8 ml-12">
       <div className="absolute top-0 right-0 w-1/3 h-1/3 sm:w-1/4 sm:h-1/2 bg-[#53A67F] rounded-bl-full -z-10"></div>
 
       <div className="relative z-10">

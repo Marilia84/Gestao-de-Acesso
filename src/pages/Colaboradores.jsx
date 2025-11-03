@@ -40,7 +40,7 @@ export default function Colaboradores() {
   }, [colaboradores, search]);
 
   return (
-    <main className="flex-1 p-6 md:p-10">
+    <main className="flex-1 p-4 md:p-10 ml-12">
       <div className="relative z-10 bg-white shadow-md rounded-xl w-full mx-auto p-6 md:p-8">
         <h1 className="text-3xl font-bold text-[#3B7258] mb-6">
           Gerenciar Colaboradores

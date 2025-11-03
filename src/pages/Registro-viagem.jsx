@@ -162,7 +162,7 @@ const RegistroViagem = () => {
 
   // JSX (layout limpo e com ícones Lucide)
   return (
-    <main className="flex-1 p-6 md:p-10 relative">
+    <main className="flex-1 p-6 md:p-10 relative ml-12">
       <header className="mb-8">
         <h1 className="text-5xl font-bold text-[#3B7258]">
           REGISTRO DE VIAGEM

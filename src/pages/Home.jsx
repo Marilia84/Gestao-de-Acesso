@@ -117,7 +117,7 @@ export default function Home() {
 
   return (
     // Layout principal: Navbar à esquerda, Chat ocupa o restante
-    <div className="flex bg-[#F4F7F6] min-h-screen">
+    <div className="flex bg-[#F4F7F6] min-h-screen ml-20">
       {" "}
       {/* Cor de fundo consistente */}
       {/* Área do Chat (ocupa o espaço restante) */}

@@ -335,7 +335,7 @@ export default function GerenciarLinhas() {
     : [];
 
   return (
-    <div className="bg-[#E6E6E6] min-h-screen flex flex-col lg:flex-row items-start gap-4">
+    <div className="bg-[#E6E6E6] min-h-screen flex flex-col lg:flex-row items-start ml-12">
       <div className="flex flex-1 flex-col justify-center items-center mr-[10px] w-full">
         <h1 className="text-3xl font-bold mb-10 text-[#3B7258] mt-10">
           Gerenciar Linhas

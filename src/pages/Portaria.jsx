@@ -1,5 +1,6 @@
+// src/pages/Portaria.jsx
 import React, { useState, useEffect, useMemo } from "react";
-// 1. Importa os serviços de API
+// serviços de API
 import { getColaboradores } from "../api/colaboradorService";
 import { getVisitantes } from "../api/visitanteService";
 import {
@@ -7,9 +8,8 @@ import {
   registrarEntrada,
   registrarSaida,
 } from "../api/acessoService";
-// 2. Importa o utilitário de formatação
-import { formatDateTime } from "../utils/formatters"; // Ajuste o caminho se necessário
-// 3. 'api' e 'Navbar' não são mais importados diretamente aqui
+import { formatDateTime } from "../utils/formatters";
+import Loading from "../components/Loading"; // 👈 usa o seu loading
 
 // Lista fixa de portarias
 const portariasDisponiveis = [
@@ -18,7 +18,6 @@ const portariasDisponiveis = [
 ];
 
 const Portaria = () => {
-  // --- Estados (sem alteração) ---
   const [colaboradores, setColaboradores] = useState([]);
   const [visitantes, setVisitantes] = useState([]);
   const [historicoBase, setHistoricoBase] = useState([]);
@@ -27,20 +26,23 @@ const Portaria = () => {
   const [selectedPortariaId, setSelectedPortariaId] = useState(
     portariasDisponiveis[0]?.id || ""
   );
-  const [currentOcupanteSelection, setCurrentOcupanteSelection] = useState("");
+  const [currentOcupanteSelection, setCurrentOcupanteSelection] =
+    useState("");
   const [selectedOcupantes, setSelectedOcupantes] = useState([]);
+
   const today = new Date().toISOString().slice(0, 10);
   const [filtroDataDe, setFiltroDataDe] = useState(today);
   const [filtroDataAte, setFiltroDataAte] = useState(today);
   const [filtroTipo, setFiltroTipo] = useState("TODOS");
   const [filtroPortaria, setFiltroPortaria] = useState("");
+
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Feedback do botão
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [fetchError, setFetchError] = useState("");
 
-  // 4. useEffect ATUALIZADO para usar serviços
+  // carrega colaboradores + visitantes
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoadingInitial(true);
@@ -50,7 +52,7 @@ const Portaria = () => {
           getColaboradores(),
           getVisitantes(),
         ]);
-        setColaboradores(colabData); // Já esperamos que o serviço retorne um array
+        setColaboradores(colabData);
         setVisitantes(visitData);
       } catch (error) {
         console.error("Erro ao buscar dados iniciais:", error);
@@ -72,7 +74,7 @@ const Portaria = () => {
     fetchInitialData();
   }, []);
 
-  // 4. useEffect ATUALIZADO para usar serviço
+  // carrega histórico
   useEffect(() => {
     const fetchHistorico = async () => {
       setLoadingHistorico(true);
@@ -86,6 +88,7 @@ const Portaria = () => {
         setLoadingHistorico(false);
       }
     };
+
     if (
       filtroDataDe &&
       filtroDataAte &&
@@ -97,7 +100,7 @@ const Portaria = () => {
     }
   }, [filtroDataDe, filtroDataAte]);
 
-  // --- useMemos (sem alteração) ---
+  // memos
   const ocupantesDisponiveis = useMemo(() => {
     if (!Array.isArray(colaboradores)) return [];
     return colaboradores
@@ -120,7 +123,7 @@ const Portaria = () => {
     });
   }, [historicoBase, filtroTipo, filtroPortaria]);
 
-  // --- Handlers ---
+  // handlers
   const handleAddOcupante = () => {
     if (!currentOcupanteSelection) return;
     if (selectedOcupantes.length >= 10) {
@@ -151,11 +154,11 @@ const Portaria = () => {
     setSelectedOcupantes((prev) => prev.filter((o) => o.id !== idToRemove));
   };
 
-  // 4. Handler ATUALIZADO para usar serviço
   const handleRegisterEntry = async (e) => {
     e.preventDefault();
     setFormError("");
     setIsSubmitting(true);
+
     if (!selectedPessoaId || !selectedPortariaId) {
       setFormError("Selecione a pessoa principal e a portaria.");
       setIsSubmitting(false);
@@ -200,17 +203,19 @@ const Portaria = () => {
       ocupanteMatriculas: ocupanteMatriculas || [],
     };
 
-    console.log("Enviando payload para registro de entrada:", payload);
-
     try {
-      await registrarEntrada(payload); // Usa o serviço
+      await registrarEntrada(payload);
       alert("Entrada(s) registrada(s) com sucesso!");
       setSelectedPessoaId("");
       setSelectedOcupantes([]);
       setCurrentOcupanteSelection("");
-      // Recarrega o histórico
+
+      // recarrega histórico
       try {
-        const histRes = await getAcessosHistorico(filtroDataDe, filtroDataAte); // Usa o serviço
+        const histRes = await getAcessosHistorico(
+          filtroDataDe,
+          filtroDataAte
+        );
         setHistoricoBase(histRes);
       } catch (histError) {
         console.error("Erro ao recarregar histórico após registro:", histError);
@@ -235,16 +240,17 @@ const Portaria = () => {
     }
   };
 
-  // 4. Handler ATUALIZADO para usar serviço
   const handleRegisterExit = async (idAcesso) => {
     if (!idAcesso) return;
-    console.log(`Tentando registrar saída para acesso ID: ${idAcesso}`);
     try {
-      await registrarSaida(idAcesso); // Usa o serviço
+      await registrarSaida(idAcesso);
       alert("Saída registrada com sucesso!");
-      // Recarrega histórico
+      // recarrega histórico
       try {
-        const histRes = await getAcessosHistorico(filtroDataDe, filtroDataAte); // Usa o serviço
+        const histRes = await getAcessosHistorico(
+          filtroDataDe,
+          filtroDataAte
+        );
         setHistoricoBase(histRes);
       } catch (histError) {
         console.error(
@@ -258,11 +264,8 @@ const Portaria = () => {
     }
   };
 
-  // 5. Função formatDateTime REMOVIDA DAQUI (está importada)
-
-  // 6. JSX ATUALIZADO (layout limpo, como você enviou)
   return (
-    <main className="flex-1 p-6 md:p-10 space-y-8">
+    <main className="flex-1 p-6 md:p-10 space-y-8 ml-12">
       <header>
         <h1 className="text-4xl font-bold text-[#3B7258]">
           Controle de Portaria
@@ -279,16 +282,26 @@ const Portaria = () => {
         </div>
       )}
 
-      {/* Seção de Registro */}
-      <section className="bg-white p-6 rounded-xl shadow-lg">
+      {/* CARD: Registrar entrada */}
+      <section className="bg-white p-6 rounded-xl shadow-lg relative">
+        {/* 👇 loading DENTRO DO CARD, sem fullscreen */}
+        {loadingInitial && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center rounded-xl z-10">
+            <Loading
+              size={140}
+              message="Carregando opções..."
+              className="p-0"
+            />
+          </div>
+        )}
+
         <h2 className="text-2xl font-bold text-gray-800 mb-4">
           Registrar Entrada
         </h2>
-        {loadingInitial ? (
-          <p>Carregando opções...</p>
-        ) : (
+
+        {!loadingInitial && (
           <form onSubmit={handleRegisterEntry}>
-            {/* Linha 1: Pessoa Principal e Portaria */}
+            {/* Linha 1 */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6">
               <div>
                 <label
@@ -379,7 +392,7 @@ const Portaria = () => {
               </div>
             </div>
 
-            {/* Linha 2: Seleção de Ocupantes (Colaboradores) */}
+            {/* Linha 2: Ocupantes */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
               <div className="md:col-span-3">
                 <label
@@ -405,7 +418,6 @@ const Portaria = () => {
                       : "Selecione um colaborador..."}
                   </option>
                   {ocupantesDisponiveis
-                    // Filtra pessoa principal (se for colaborador) e já adicionados
                     .filter(
                       (p) =>
                         (tipoPessoa === "VISITANTE" ||
@@ -433,7 +445,7 @@ const Portaria = () => {
               </div>
             </div>
 
-            {/* Linha 3: Lista de Ocupantes Adicionados */}
+            {/* Ocupantes adicionados */}
             {selectedOcupantes.length > 0 && (
               <div className="mb-6 border rounded-md p-4 bg-gray-50 max-h-40 overflow-y-auto">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">
@@ -461,16 +473,25 @@ const Portaria = () => {
               </div>
             )}
 
-            {/* Mensagem de Erro e Botão de Submissão */}
+            {/* Erro do formulário */}
             {formError && (
               <p className="text-red-600 text-sm mb-4">{formError}</p>
             )}
+
+            {/* Botão */}
             <div className="mt-6 text-right">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-[#038C4C] text-white py-2 px-6 rounded-md font-semibold hover:bg-[#036f4c] transition-colors disabled:opacity-50 disabled:cursor-wait"
+                className="bg-[#038C4C] text-white py-2 px-6 rounded-md font-semibold hover:bg-[#036f4c] transition-colors disabled:opacity-50 disabled:cursor-wait inline-flex items-center gap-2"
               >
+                {isSubmitting && (
+                  <Loading
+                    size={30}
+                    message="" // texto já está no botão
+                    className="p-0"
+                  />
+                )}
                 {isSubmitting ? "Registrando..." : "Registrar Entrada(s)"}
               </button>
             </div>
@@ -478,11 +499,23 @@ const Portaria = () => {
         )}
       </section>
 
-      {/* Seção de Histórico */}
-      <section className="bg-white p-6 rounded-xl shadow-lg">
+      {/* CARD: Histórico */}
+      <section className="bg-white p-6 rounded-xl shadow-lg relative">
+        {/* overlay de loading só nesse card */}
+        {loadingHistorico && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center rounded-xl z-10">
+            <Loading
+              size={130}
+              message="Carregando histórico..."
+              className="p-0"
+            />
+          </div>
+        )}
+
         <h2 className="text-2xl font-bold text-gray-800 mb-4">
           Histórico de Acessos
         </h2>
+
         {/* Filtros */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-end">
           <div>
@@ -555,19 +588,12 @@ const Portaria = () => {
             </select>
           </div>
         </div>
-        {/* Tabela de Histórico */}
-        {loadingHistorico ? (
-          <p className="text-center text-gray-500 py-4">
-            Carregando histórico...
-          </p>
-        ) : historicoFiltrado.length > 0 ? (
+
+        {/* Tabela */}
+        {!loadingHistorico && historicoFiltrado.length > 0 ? (
           <div className="overflow-x-auto max-h-96">
-            {" "}
-            {/* Limitador de altura e scroll */}
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-50 sticky top-0">
-                {" "}
-                {/* Cabeçalho fixo */}
                 <tr>
                   <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
                     Nome (Condutor)
@@ -643,7 +669,9 @@ const Portaria = () => {
               </tbody>
             </table>
           </div>
-        ) : (
+        ) : null}
+
+        {!loadingHistorico && historicoFiltrado.length === 0 && (
           <p className="text-center text-gray-500 py-4">
             Nenhum registro encontrado para os filtros selecionados.
           </p>
