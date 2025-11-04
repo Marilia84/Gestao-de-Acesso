@@ -1,6 +1,5 @@
 // src/pages/Gerenciar-linhas.jsx
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import GoogleMapaRota from "../components/GoogleMapaRota";
 import ModalColaboradores from "../components/ModalColaboradores";
@@ -27,16 +26,11 @@ export default function GerenciarLinhas() {
   const [rotas, setRotas] = useState([]);
   const [colaboradores, setColaboradores] = useState([]);
   const [trajetosByRota, setTrajetosByRota] = useState({});
-  const [loadingTrajeto, setLoadingTrajeto] = useState({});
   const [openModalColabs, setOpenModalColabs] = useState(false);
   const [rotaSelecionada, setRotaSelecionada] = useState(null);
 
-  // Loadings
-  const [loadingAdicionarCidade, setLoadingAdicionarCidade] = useState(false);
-  const [loadingCadastrarPonto, setLoadingCadastrarPonto] = useState(false);
-  const [loadingListaPontos, setLoadingListaPontos] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [loadingCadastrarRota, setLoadingCadastrarRota] = useState(false);
-  const [loadingRotasCadastradas, setLoadingRotasCadastradas] = useState(true);
 
   useEffect(() => {
     const t = localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -49,8 +43,7 @@ export default function GerenciarLinhas() {
   useEffect(() => {
     if (!tokenOk) return;
     const carregarTudo = async () => {
-      setLoadingListaPontos(true);
-      setLoadingRotasCadastradas(true);
+      setLoading(true);
       try {
         const [cidadesRes, pontosRes, rotasRes, colabsRes] = await Promise.all([
           api.get("/cidades"),
@@ -65,8 +58,7 @@ export default function GerenciarLinhas() {
       } catch {
         toast.error("Erro ao carregar dados iniciais.");
       } finally {
-        setLoadingListaPontos(false);
-        setLoadingRotasCadastradas(false);
+        setLoading(false);
       }
     };
     carregarTudo();
@@ -76,132 +68,114 @@ export default function GerenciarLinhas() {
     ? pontos.filter((p) => String(p.idCidade) === String(cidadeSelecionada))
     : [];
 
+  if (loading) return <Loading size={80} message="Carregando dados..." />;
+
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gray-50">
-      <Navbar />
-      <div className="flex-1 w-full px-4 sm:px-6 md:px-10 py-8 mt-20 space-y-10 max-w-7xl">
-        <h1 className="text-3xl font-bold text-center text-[#3B7258] mb-8">
-          Gerenciar Linhas
-        </h1>
+    <main className="flex-1 p-6 md:p-10 ml-16 mt-20 bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto space-y-10">
+        {/* CARD: Cadastrar Ponto */}
+        <div className="bg-white shadow-md rounded-lg p-6 sm:p-8">
+          <h1 className="text-2xl font-semibold text-[#3B7258] mb-2">
+            Cadastrar ponto
+          </h1>
+          <p className="text-sm text-gray-600 mb-4">
+            Adicione novos pontos com localização automática
+          </p>
 
-        {/* SEÇÃO: CADASTRAR PONTO */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* CARD: cadastrar ponto */}
-          <div className="relative bg-white shadow-md rounded-lg p-6 sm:p-8">
-            {(loadingAdicionarCidade || loadingCadastrarPonto) && (
-              <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
-                <Loading size={60} message="" />
-              </div>
-            )}
-
-            <h1 className="text-2xl font-semibold text-[#3B7258] mb-2">
-              Cadastrar ponto
-            </h1>
-            <p className="text-sm text-gray-600 mb-4">
-              Adicione novos pontos com localização automática
-            </p>
-
-            {/* Inputs cidade */}
-            <div className="flex flex-col sm:flex-row gap-2 mb-4">
-              <input
-                type="text"
-                placeholder="Nova cidade"
-                value={novaCidade}
-                onChange={(e) => setNovaCidade(e.target.value)}
-                className="border border-gray-400 rounded-lg px-4 py-2 flex-1"
-              />
-              <input
-                type="text"
-                placeholder="UF"
-                maxLength={2}
-                value={novaUf}
-                onChange={(e) => setNovaUf(e.target.value.toUpperCase())}
-                className="border border-gray-400 rounded-lg px-4 py-2 w-20 text-center uppercase"
-              />
-              <button
-                onClick={() => {}}
-                className="bg-[#038C3E] text-white px-4 py-2 rounded-lg hover:bg-[#027a36] transition w-full sm:w-auto"
-              >
-                Adicionar
-              </button>
-            </div>
-
-            {/* Cidade e Ponto */}
-            <div className="flex flex-col gap-3 mb-3">
-              <select
-                value={cidadeSelecionada}
-                onChange={(e) => setCidadeSelecionada(e.target.value)}
-                className="border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-600"
-              >
-                <option value="">Selecione a cidade</option>
-                {cidades.map((c) => (
-                  <option key={c.idCidade} value={c.idCidade}>
-                    {c.nome} - {c.uf}
-                  </option>
-                ))}
-              </select>
-
-              <input
-                placeholder="Nome do ponto"
-                value={nomePonto}
-                onChange={(e) => setNomePonto(e.target.value)}
-                className="border border-gray-400 rounded-lg px-3 py-2 text-sm"
-              />
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input
-                  placeholder="Rua"
-                  value={rua}
-                  onChange={(e) => setRua(e.target.value)}
-                  className="border border-gray-400 rounded-lg px-3 py-2 flex-1 text-sm"
-                />
-                <input
-                  placeholder="Número"
-                  value={numero}
-                  onChange={(e) => setNumero(e.target.value)}
-                  className="border border-gray-400 rounded-lg px-3 py-2 w-24 text-sm"
-                />
-              </div>
-
-              <button className="bg-[#038C3E] text-white py-2 rounded-lg hover:bg-[#027a36] transition mt-2">
-                Cadastrar Ponto
-              </button>
-            </div>
+          {/* Inputs cidade */}
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
+            <input
+              type="text"
+              placeholder="Nova cidade"
+              value={novaCidade}
+              onChange={(e) => setNovaCidade(e.target.value)}
+              className="border border-gray-400 rounded-lg px-4 py-2 flex-1"
+            />
+            <input
+              type="text"
+              placeholder="UF"
+              maxLength={2}
+              value={novaUf}
+              onChange={(e) => setNovaUf(e.target.value.toUpperCase())}
+              className="border border-gray-400 rounded-lg px-4 py-2 w-20 text-center uppercase"
+            />
+            <button
+              onClick={() => {}}
+              className="bg-[#038C3E] text-white px-4 py-2 rounded-lg hover:bg-[#027a36] transition w-full sm:w-auto"
+            >
+              Adicionar
+            </button>
           </div>
 
-          {/* CARD: pontos cadastrados */}
-          <div className="relative bg-white shadow-md rounded-lg p-6 sm:p-8 overflow-y-auto max-h-[500px]">
-            {loadingListaPontos && (
-              <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
-                <Loading size={60} message="Carregando pontos..." />
-              </div>
-            )}
+          {/* Cidade e Ponto */}
+          <div className="flex flex-col gap-3 mb-3">
+            <select
+              value={cidadeSelecionada}
+              onChange={(e) => setCidadeSelecionada(e.target.value)}
+              className="border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-600"
+            >
+              <option value="">Selecione a cidade</option>
+              {cidades.map((c) => (
+                <option key={c.idCidade} value={c.idCidade}>
+                  {c.nome} - {c.uf}
+                </option>
+              ))}
+            </select>
 
-            <h1 className="text-2xl font-semibold text-[#3B7258] mb-2">
-              Pontos cadastrados
-            </h1>
-            <p className="text-sm text-gray-600 mb-4">
-              Lista de todos os pontos disponíveis
-            </p>
+            <input
+              placeholder="Nome do ponto"
+              value={nomePonto}
+              onChange={(e) => setNomePonto(e.target.value)}
+              className="border border-gray-400 rounded-lg px-3 py-2 text-sm"
+            />
 
-            <div className="flex flex-col gap-2 overflow-y-auto max-h-80">
-              {pontos.length ? (
-                pontos.map((p) => (
-                  <div
-                    key={p.idPonto}
-                    className="bg-white border border-emerald-300 px-3 py-2 rounded-md text-gray-800 text-sm"
-                  >
-                    {p.nome}
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-sm">Nenhum ponto cadastrado.</p>
-              )}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                placeholder="Rua"
+                value={rua}
+                onChange={(e) => setRua(e.target.value)}
+                className="border border-gray-400 rounded-lg px-3 py-2 flex-1 text-sm"
+              />
+              <input
+                placeholder="Número"
+                value={numero}
+                onChange={(e) => setNumero(e.target.value)}
+                className="border border-gray-400 rounded-lg px-3 py-2 w-24 text-sm"
+              />
             </div>
+
+            <button className="bg-[#038C3E] text-white py-2 rounded-lg hover:bg-[#027a36] transition mt-2">
+              Cadastrar Ponto
+            </button>
           </div>
         </div>
 
-        {/* SEÇÃO: CADASTRAR ROTA */}
+        {/* CARD: Pontos cadastrados */}
+        <div className="relative bg-white shadow-md rounded-lg p-6 sm:p-8 overflow-y-auto max-h-[500px]">
+          <h1 className="text-2xl font-semibold text-[#3B7258] mb-2">
+            Pontos cadastrados
+          </h1>
+          <p className="text-sm text-gray-600 mb-4">
+            Lista de todos os pontos disponíveis
+          </p>
+
+          <div className="flex flex-col gap-2 overflow-y-auto max-h-80">
+            {pontos.length ? (
+              pontos.map((p) => (
+                <div
+                  key={p.idPonto}
+                  className="bg-white border border-emerald-300 px-3 py-2 rounded-md text-gray-800 text-sm"
+                >
+                  {p.nome}
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm">Nenhum ponto cadastrado.</p>
+            )}
+          </div>
+        </div>
+
+        {/* CARD: Cadastrar Rota */}
         <div className="relative bg-white shadow-md rounded-lg p-6 sm:p-10 overflow-x-auto">
           {loadingCadastrarRota && (
             <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
@@ -300,7 +274,7 @@ export default function GerenciarLinhas() {
           </button>
         </div>
 
-        {/* SEÇÃO: ROTAS CADASTRADAS */}
+        {/* CARD: Rotas cadastradas */}
         <div className="relative bg-white shadow-md rounded-lg p-6 sm:p-10 overflow-x-auto">
           <h1 className="text-2xl font-semibold text-[#3B7258] mb-4">
             Rotas cadastradas
@@ -347,6 +321,6 @@ export default function GerenciarLinhas() {
           rota={rotaSelecionada}
         />
       )}
-    </div>
+    </main>
   );
 }
