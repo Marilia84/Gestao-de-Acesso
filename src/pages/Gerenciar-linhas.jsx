@@ -1,75 +1,56 @@
 // src/pages/Gerenciar-linhas.jsx
-
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
 import GoogleMapaRota from "../components/GoogleMapaRota";
 import ModalColaboradores from "../components/ModalColaboradores";
 import { toast } from "react-toastify";
-import Loading from "../components/Loading"; // 👈 usa o seu loading
+import Loading from "../components/Loading";
 
 export default function GerenciarLinhas() {
   const [tokenOk, setTokenOk] = useState(false);
-
   const [cidades, setCidades] = useState([]);
   const [novaCidade, setNovaCidade] = useState("");
   const [novaUf, setNovaUf] = useState("");
-
   const [pontos, setPontos] = useState([]);
   const [nomePonto, setNomePonto] = useState("");
   const [cidadeSelecionada, setCidadeSelecionada] = useState("");
   const [rua, setRua] = useState("");
   const [numero, setNumero] = useState("");
-
   const [novaRota, setNovaRota] = useState("");
   const [capacidade, setCapacidade] = useState("");
   const [horaPartida, setHoraPartida] = useState("");
   const [horaChegada, setHoraChegada] = useState("");
   const [periodo, setPeriodo] = useState("");
-
   const [pontoSelecionado, setPontoSelecionado] = useState("");
   const [pontosRota, setPontosRota] = useState([]);
-
   const [rotas, setRotas] = useState([]);
   const [colaboradores, setColaboradores] = useState([]);
-
   const [trajetosByRota, setTrajetosByRota] = useState({});
   const [loadingTrajeto, setLoadingTrajeto] = useState({});
   const [openModalColabs, setOpenModalColabs] = useState(false);
   const [rotaSelecionada, setRotaSelecionada] = useState(null);
 
-  // 👇 novos loadings por bloco
+  // Loadings
   const [loadingAdicionarCidade, setLoadingAdicionarCidade] = useState(false);
   const [loadingCadastrarPonto, setLoadingCadastrarPonto] = useState(false);
   const [loadingListaPontos, setLoadingListaPontos] = useState(true);
   const [loadingCadastrarRota, setLoadingCadastrarRota] = useState(false);
   const [loadingRotasCadastradas, setLoadingRotasCadastradas] = useState(true);
 
-  // Garante token
   useEffect(() => {
-    try {
-      const t =
-        localStorage.getItem("token") || sessionStorage.getItem("token");
-      if (t) {
-        api.defaults.headers.common.Authorization = `Bearer ${t}`;
-        setTokenOk(true);
-      } else {
-        console.warn("Token não encontrado em local/sessionStorage.");
-      }
-    } catch (e) {
-      console.warn("Não foi possível ler o token do storage:", e);
+    const t = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (t) {
+      api.defaults.headers.common.Authorization = `Bearer ${t}`;
+      setTokenOk(true);
     }
   }, []);
 
-  // Cargas iniciais
   useEffect(() => {
     if (!tokenOk) return;
-
     const carregarTudo = async () => {
-      // quando começar: lista de pontos e rotas estão carregando
       setLoadingListaPontos(true);
       setLoadingRotasCadastradas(true);
-
       try {
         const [cidadesRes, pontosRes, rotasRes, colabsRes] = await Promise.all([
           api.get("/cidades"),
@@ -77,293 +58,57 @@ export default function GerenciarLinhas() {
           api.get("/rotas"),
           api.get("/colaboradores"),
         ]);
-        const rotasLista = rotasRes.data || [];
-
         setCidades(cidadesRes.data || []);
         setPontos(pontosRes.data || []);
-        setRotas(rotasLista);
+        setRotas(rotasRes.data || []);
         setColaboradores(colabsRes.data || []);
-
-        await prefetchTrajetos(rotasLista);
-      } catch (err) {
-        console.error(
-          "Erro nas cargas iniciais:",
-          err.response?.data || err.message || err
-        );
-        toast.error("Não foi possível carregar os dados iniciais.");
+      } catch {
+        toast.error("Erro ao carregar dados iniciais.");
       } finally {
         setLoadingListaPontos(false);
         setLoadingRotasCadastradas(false);
       }
     };
-
     carregarTudo();
   }, [tokenOk]);
-
-  // prefetch de trajetos
-  async function prefetchTrajetos(rotasLista) {
-    const pendentes = (rotasLista || [])
-      .filter((r) => r?.idRota && !trajetosByRota[r.idRota])
-      .map((r) => r.idRota);
-
-    if (!pendentes.length) return;
-
-    setLoadingTrajeto((prev) =>
-      pendentes.reduce((acc, id) => ({ ...acc, [id]: true }), { ...prev })
-    );
-
-    const results = await Promise.allSettled(
-      pendentes.map((idRota) =>
-        api
-          .get(`/rotas/${idRota}/trajeto`)
-          .then((res) => ({ idRota, data: res.data }))
-      )
-    );
-
-    const novos = {};
-    for (const r of results) {
-      if (r.status === "fulfilled") {
-        const { idRota, data } = r.value;
-        const pontos = (data || [])
-          .map((p) => ({
-            idPonto: p.idPonto ?? p.id_ponto,
-            nome: p.nomePonto ?? p.nome ?? p.nome_ponto ?? "",
-            ordem: Number(p.ordem),
-            lat: Number(
-              typeof p.latitude === "string"
-                ? p.latitude.replace(",", ".")
-                : p.latitude
-            ),
-            lng: Number(
-              typeof p.longitude === "string"
-                ? p.longitude.replace(",", ".")
-                : p.longitude
-            ),
-            endereco: p.endereco,
-          }))
-          .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
-          .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
-        novos[idRota] = pontos;
-      } else {
-        console.warn("Falha ao buscar trajeto:", r.reason);
-      }
-    }
-
-    setTrajetosByRota((prev) => ({ ...prev, ...novos }));
-    setLoadingTrajeto((prev) =>
-      pendentes.reduce((acc, id) => ({ ...acc, [id]: false }), { ...prev })
-    );
-  }
-
-  const getCoordenadas = async (enderecoCompleto) => {
-    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-      enderecoCompleto
-    )}&key=${apiKey}`;
-
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data.status === "OK") {
-      const { lat, lng } = data.results[0].geometry.location;
-      return { lat, lng };
-    }
-    throw new Error("Endereço não encontrado.");
-  };
-
-  // ====== ADICIONAR CIDADE ======
-  const handleAdicionarCidade = async () => {
-    if (!novaCidade.trim() || !novaUf.trim()) {
-      toast.warn("Preencha cidade e UF.");
-      return;
-    }
-
-    setLoadingAdicionarCidade(true);
-    try {
-      const response = await api.post("/cidades", {
-        nome: novaCidade.trim(),
-        uf: novaUf.trim().toUpperCase(),
-      });
-
-      setCidades((prev) => [...prev, response.data]);
-      setNovaCidade("");
-      setNovaUf("");
-      toast.success("Cidade adicionada com sucesso!");
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro ao cadastrar cidade.");
-    } finally {
-      setLoadingAdicionarCidade(false);
-    }
-  };
-
-  // ====== CADASTRAR PONTO ======
-  const handleCadastrarPonto = async () => {
-    if (
-      !cidadeSelecionada ||
-      !nomePonto.trim() ||
-      !rua.trim() ||
-      !numero.trim()
-    ) {
-      toast.warn("Preencha todos os campos do ponto.");
-      return;
-    }
-
-    setLoadingCadastrarPonto(true);
-    try {
-      const cidadeObj = cidades.find(
-        (c) => String(c.idCidade) === String(cidadeSelecionada)
-      );
-      if (!cidadeObj) {
-        toast.warn("Cidade inválida.");
-        setLoadingCadastrarPonto(false);
-        return;
-      }
-
-      const enderecoCompleto = `${rua}, ${numero}, ${cidadeObj.nome} - ${cidadeObj.uf}`;
-      const { lat, lng } = await getCoordenadas(enderecoCompleto);
-
-      const response = await api.post("/pontos", {
-        nome: nomePonto.trim(),
-        endereco: `${rua.trim()}, ${numero.trim()}`,
-        latitude: lat,
-        longitude: lng,
-        idCidade: Number(cidadeSelecionada),
-      });
-
-      // atualiza a lista do card ao lado
-      setPontos((prev) => [...prev, response.data]);
-      setNomePonto("");
-      setRua("");
-      setNumero("");
-      toast.success("Ponto cadastrado com sucesso!");
-    } catch (error) {
-      console.error("Erro ao cadastrar ponto:", error.response?.data || error);
-      toast.error("Erro ao cadastrar ponto.");
-    } finally {
-      setLoadingCadastrarPonto(false);
-    }
-  };
-
-  // ====== ADICIONAR PONTO NA ROTA (lista local) ======
-  const handleAdicionarPontoNaRota = () => {
-    if (!pontoSelecionado) {
-      toast.warn("Selecione um ponto.");
-      return;
-    }
-    const ponto = pontos.find(
-      (p) => String(p.idPonto) === String(pontoSelecionado)
-    );
-    if (!ponto) {
-      toast.warn("Ponto inválido.");
-      return;
-    }
-    if (pontosRota.some((p) => String(p.idPonto) === String(ponto.idPonto))) {
-      toast.warn("Este ponto já foi adicionado à rota.");
-      return;
-    }
-    setPontosRota((prev) => [...prev, ponto]);
-    setPontoSelecionado("");
-  };
-
-  // ====== CADASTRAR ROTA ======
-  const handleCadastrarRota = async () => {
-    if (
-      !novaRota.trim() ||
-      !cidadeSelecionada ||
-      !periodo ||
-      !capacidade ||
-      !horaPartida ||
-      !horaChegada ||
-      pontosRota.length === 0
-    ) {
-      toast.warn("Preencha todos os campos obrigatórios da rota.");
-      return;
-    }
-
-    const payload = {
-      nome: novaRota.trim(),
-      idCidade: Number(cidadeSelecionada),
-      periodo,
-      capacidade: Number(capacidade),
-      ativo: true,
-      horaPartida:
-        horaPartida.length > 5 ? horaPartida.substring(0, 5) : horaPartida,
-      horaChegada:
-        horaChegada.length > 5 ? horaChegada.substring(0, 5) : horaChegada,
-      pontos: pontosRota.map((p, i) => ({
-        idPonto: Number(p.idPonto),
-        ordem: i + 1,
-      })),
-    };
-
-    setLoadingCadastrarRota(true);
-    try {
-      await api.post("/rotas", payload);
-      toast.success("Rota cadastrada com sucesso!");
-
-      // limpa formulário
-      setNovaRota("");
-      setPeriodo("");
-      setCapacidade("");
-      setHoraPartida("");
-      setHoraChegada("");
-      setPontosRota([]);
-
-      // recarrega rotas + mostra loading no card de rotas cadastradas
-      setLoadingRotasCadastradas(true);
-      const rotasRes = await api.get("/rotas");
-      const rotasLista = rotasRes.data || [];
-      setRotas(rotasLista);
-      await prefetchTrajetos(rotasLista);
-    } catch (error) {
-      const data = error.response?.data;
-      console.error("❌ Erro ao cadastrar rota:", data || error.message || error);
-      toast.error(
-        `Erro ao cadastrar rota.${
-          data?.message ? `\nMensagem: ${data.message}` : ""
-        }${data?.error ? `\nDetalhe: ${data.error}` : ""}`
-      );
-    } finally {
-      setLoadingCadastrarRota(false);
-      setLoadingRotasCadastradas(false);
-    }
-  };
 
   const pontosFiltrados = cidadeSelecionada
     ? pontos.filter((p) => String(p.idCidade) === String(cidadeSelecionada))
     : [];
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row items-start ml-12">
-      <div className="flex flex-1 flex-col justify-center items-center mr-[10px] w-full">
-        <h1 className="text-3xl font-bold mb-10 text-[#3B7258] mt-10">
+    <div className="min-h-screen flex flex-col items-center bg-gray-50">
+      <Navbar />
+      <div className="flex-1 w-full px-4 sm:px-6 md:px-10 py-8 mt-20 space-y-10 max-w-7xl">
+        <h1 className="text-3xl font-bold text-center text-[#3B7258] mb-8">
           Gerenciar Linhas
         </h1>
 
-        {/* CADASTRO DE PONTOS */}
-        <div className="grid grid-cols-2 gap-6 mb-10">
-          {/* CARD 1 - adicionar cidade / cadastrar ponto */}
-          <div className="relative bg-white shadow-md rounded-lg p-10 w-[600px] h-[500px]">
-            {/* overlay de loading do card 1 */}
+        {/* SEÇÃO: CADASTRAR PONTO */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* CARD: cadastrar ponto */}
+          <div className="relative bg-white shadow-md rounded-lg p-6 sm:p-8">
             {(loadingAdicionarCidade || loadingCadastrarPonto) && (
-              <div className="absolute inset-0 bg-white/70  flex items-center justify-center rounded-lg z-10">
-                <Loading size={80} message="" />
+              <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
+                <Loading size={60} message="" />
               </div>
             )}
 
-            <h1 className="text-2xl font-semibold text-[#3B7258] mb-2">Cadastrar ponto</h1>
+            <h1 className="text-2xl font-semibold text-[#3B7258] mb-2">
+              Cadastrar ponto
+            </h1>
             <p className="text-sm text-gray-600 mb-4">
-              Adicione novos pontos de parada com geolocalização automática
+              Adicione novos pontos com localização automática
             </p>
 
-            <div className="flex gap-2 mb-4 ">
+            {/* Inputs cidade */}
+            <div className="flex flex-col sm:flex-row gap-2 mb-4">
               <input
                 type="text"
                 placeholder="Nova cidade"
                 value={novaCidade}
                 onChange={(e) => setNovaCidade(e.target.value)}
-                className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 w-full text-base"
+                className="border border-gray-400 rounded-lg px-4 py-2 flex-1"
               />
               <input
                 type="text"
@@ -371,403 +116,237 @@ export default function GerenciarLinhas() {
                 maxLength={2}
                 value={novaUf}
                 onChange={(e) => setNovaUf(e.target.value.toUpperCase())}
-                className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 w-24 text-base text-center uppercase"
+                className="border border-gray-400 rounded-lg px-4 py-2 w-20 text-center uppercase"
               />
               <button
-                onClick={handleAdicionarCidade}
-                className="bg-[#038C3E] text-white w-40 px-6 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-[#027a36] transition"
-                disabled={loadingAdicionarCidade}
+                onClick={() => {}}
+                className="bg-[#038C3E] text-white px-4 py-2 rounded-lg hover:bg-[#027a36] transition w-full sm:w-auto"
               >
-                {loadingAdicionarCidade ? "Salvando..." : "Adicionar"}
+                Adicionar
               </button>
             </div>
 
-            <div className="flex flex-col mb-4">
-              <label
-                htmlFor="cidade"
-                className="text-sm font-semibold text-gray-800 mb-1"
-              >
-                Cidade
-              </label>
+            {/* Cidade e Ponto */}
+            <div className="flex flex-col gap-3 mb-3">
               <select
-                id="cidade"
-                className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-md px-3 py-2 text-sm text-gray-600"
                 value={cidadeSelecionada}
                 onChange={(e) => setCidadeSelecionada(e.target.value)}
+                className="border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-600"
               >
-                <option value="">Selecione</option>
-                {cidades.map((cidade) => (
-                  <option key={cidade.idCidade} value={cidade.idCidade}>
-                    {cidade.nome} - {cidade.uf}
+                <option value="">Selecione a cidade</option>
+                {cidades.map((c) => (
+                  <option key={c.idCidade} value={c.idCidade}>
+                    {c.nome} - {c.uf}
                   </option>
                 ))}
               </select>
-            </div>
 
-            <div className="flex flex-col mb-4">
-              <label className="text-sm font-semibold text-gray-800 mb-1">
-                Nome do Ponto
-              </label>
               <input
-                className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg p-2 w-full text-sm"
                 placeholder="Nome do ponto"
                 value={nomePonto}
                 onChange={(e) => setNomePonto(e.target.value)}
+                className="border border-gray-400 rounded-lg px-3 py-2 text-sm"
               />
-            </div>
 
-            <div className="flex flex-col mb-4">
-              <div className="flex gap-4">
-                <div className="flex flex-col flex-1">
-                  <label className="text-sm font-semibold text-gray-800 mb-1">
-                    Rua
-                  </label>
-                  <input
-                    className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg p-2 w-full text-sm"
-                    placeholder="Rua"
-                    value={rua}
-                    onChange={(e) => setRua(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col flex-1">
-                  <label className="text-sm font-semibold text-gray-800 mb-1">
-                    Número
-                  </label>
-                  <input
-                    className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg p-2 w-full text-sm"
-                    placeholder="Número"
-                    value={numero}
-                    onChange={(e) => setNumero(e.target.value)}
-                  />
-                </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  placeholder="Rua"
+                  value={rua}
+                  onChange={(e) => setRua(e.target.value)}
+                  className="border border-gray-400 rounded-lg px-3 py-2 flex-1 text-sm"
+                />
+                <input
+                  placeholder="Número"
+                  value={numero}
+                  onChange={(e) => setNumero(e.target.value)}
+                  className="border border-gray-400 rounded-lg px-3 py-2 w-24 text-sm"
+                />
               </div>
-            </div>
 
-            <button
-              className="bg-[#038C3E] text-white w-full py-2 text-lg rounded-lg flex items-center justify-center gap-3 hover:bg-[#027a36] transition"
-              onClick={handleCadastrarPonto}
-              disabled={loadingCadastrarPonto}
-            >
-             
-              {loadingCadastrarPonto ? "Cadastrando..." : "Cadastrar Ponto"}
-            </button>
+              <button className="bg-[#038C3E] text-white py-2 rounded-lg hover:bg-[#027a36] transition mt-2">
+                Cadastrar Ponto
+              </button>
+            </div>
           </div>
 
-          {/* CARD 2 - lista de pontos */}
-          <div className="relative bg-white shadow-md rounded-lg p-10 w-[600px] h-[500px]">
+          {/* CARD: pontos cadastrados */}
+          <div className="relative bg-white shadow-md rounded-lg p-6 sm:p-8 overflow-y-auto max-h-[500px]">
             {loadingListaPontos && (
               <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
-                <Loading size={70} message="Carregando pontos..." />
+                <Loading size={60} message="Carregando pontos..." />
               </div>
             )}
 
-            <h1 className="text-2xl font-semibold text-[#3B7258] mb-2">Pontos cadastrados</h1>
+            <h1 className="text-2xl font-semibold text-[#3B7258] mb-2">
+              Pontos cadastrados
+            </h1>
             <p className="text-sm text-gray-600 mb-4">
-              Lista de todos os pontos
+              Lista de todos os pontos disponíveis
             </p>
-            <div className="flex flex-col gap-2 h-[350px] overflow-y-auto">
-              {pontos.map((ponto) => (
-                <div
-                  key={ponto.idPonto}
-                  className="flex items-center justify-between bg-white border-2 border-[#038C3E]/50  px-4 py-2 rounded-lg"
-                >
-                  {ponto.nome}
-                </div>
-              ))}
-              {!pontos.length && !loadingListaPontos && (
+
+            <div className="flex flex-col gap-2 overflow-y-auto max-h-80">
+              {pontos.length ? (
+                pontos.map((p) => (
+                  <div
+                    key={p.idPonto}
+                    className="bg-white border border-emerald-300 px-3 py-2 rounded-md text-gray-800 text-sm"
+                  >
+                    {p.nome}
+                  </div>
+                ))
+              ) : (
                 <p className="text-gray-500 text-sm">Nenhum ponto cadastrado.</p>
               )}
             </div>
           </div>
         </div>
 
-        {/* CARD 3 - CADASTRAR ROTA */}
-        <div className="mb-6">
-          <div className="relative bg-white shadow-md rounded-lg p-10 w-[1220px]">
-            {loadingCadastrarRota && (
-              <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
-                <Loading size={90} message="Salvando rota..." />
-              </div>
-            )}
-
-            <h1 className="text-2xl font-semibold text-[#3B7258] mb-4">Cadastrar Rota</h1>
-
-            <div className="flex gap-4 mb-3 items-end">
-              <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">
-                  Nome da Rota
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: Rota Matinal"
-                  value={novaRota}
-                  onChange={(e) => setNovaRota(e.target.value)}
-                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 w-full text-base"
-                />
-              </div>
-
-              <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">
-                  Cidade
-                </label>
-                <select
-                  value={cidadeSelecionada}
-                  onChange={(e) => setCidadeSelecionada(e.target.value)}
-                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 text-gray-600"
-                >
-                  <option value="">Selecione</option>
-                  {cidades.map((cidade) => (
-                    <option key={cidade.idCidade} value={cidade.idCidade}>
-                      {cidade.nome} - {cidade.uf}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">
-                  Período
-                </label>
-                <select
-                  value={periodo}
-                  onChange={(e) => setPeriodo(e.target.value)}
-                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 text-gray-600"
-                >
-                  <option value="">Selecione</option>
-                  <option value="MANHA">Manhã</option>
-                  <option value="TARDE">Tarde</option>
-                  <option value="NOITE">Noite</option>
-                  <option value="MADRUGADA">Madrugada</option>
-                </select>
-              </div>
+        {/* SEÇÃO: CADASTRAR ROTA */}
+        <div className="relative bg-white shadow-md rounded-lg p-6 sm:p-10 overflow-x-auto">
+          {loadingCadastrarRota && (
+            <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
+              <Loading size={80} message="Salvando rota..." />
             </div>
+          )}
 
-            <div className="flex gap-4 mb-3 items-end">
-              <div className="flex flex-col w-32">
-                <label className="text-sm font-semibold text-gray-800 mb-1">
-                  Capacidade
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="Qtd"
-                  value={capacidade}
-                  onChange={(e) => setCapacidade(e.target.value)}
-                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 text-center"
-                />
-              </div>
+          <h1 className="text-2xl font-semibold text-[#3B7258] mb-4">
+            Cadastrar Rota
+          </h1>
 
-              <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">
-                  Horário de Partida
-                </label>
-                <input
-                  type="time"
-                  value={horaPartida}
-                  onChange={(e) => setHoraPartida(e.target.value)}
-                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2"
-                />
-              </div>
-
-              <div className="flex flex-col flex-1">
-                <label className="text-sm font-semibold text-gray-800 mb-1">
-                  Horário de Chegada
-                </label>
-                <input
-                  type="time"
-                  value={horaChegada}
-                  onChange={(e) => setHoraChegada(e.target.value)}
-                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col mb-3">
-              <label className="text-sm font-semibold text-gray-800 mb-1">
-                Pontos da Rota
-              </label>
-              <div className="flex gap-3 mb-3">
-                <select
-                  value={pontoSelecionado}
-                  onChange={(e) => setPontoSelecionado(e.target.value)}
-                  className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-4 py-2 text-gray-600 flex-1"
-                >
-                  <option value="">Selecione</option>
-                  {pontosFiltrados.map((p) => (
-                    <option key={p.idPonto} value={p.idPonto}>
-                      {p.nome}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleAdicionarPontoNaRota}
-                  className="bg-white text-white px-2 py-2 rounded-lg hover:bg-[#027a36] transition"
-                >
-                  Adicionar
-                </button>
-              </div>
-              <ol className="list-decimal ml-6 text-sm text-gray-700">
-                {pontosRota.map((p, i) => (
-                  <li key={p.idPonto}> {p.nome}</li>
-                ))}
-              </ol>
-            </div>
-
-            <button
-              onClick={handleCadastrarRota}
-              className="bg-[#038C3E] text-white w-full py-2 text-lg rounded-lg flex items-center justify-center gap-3 hover:bg-[#027a36] transition"
-              disabled={loadingCadastrarRota}
+          <div className="flex flex-col md:flex-row gap-4 mb-3">
+            <input
+              placeholder="Nome da rota"
+              value={novaRota}
+              onChange={(e) => setNovaRota(e.target.value)}
+              className="border border-gray-400 rounded-lg px-3 py-2 flex-1 text-sm"
+            />
+            <select
+              value={cidadeSelecionada}
+              onChange={(e) => setCidadeSelecionada(e.target.value)}
+              className="border border-gray-400 rounded-lg px-3 py-2 flex-1 text-sm text-gray-600"
             >
-              {loadingCadastrarRota ? "Cadastrando rota..." : "Cadastrar Rota"}
-            </button>
+              <option value="">Cidade</option>
+              {cidades.map((c) => (
+                <option key={c.idCidade} value={c.idCidade}>
+                  {c.nome} - {c.uf}
+                </option>
+              ))}
+            </select>
+            <select
+              value={periodo}
+              onChange={(e) => setPeriodo(e.target.value)}
+              className="border border-gray-400 rounded-lg px-3 py-2 flex-1 text-sm text-gray-600"
+            >
+              <option value="">Período</option>
+              <option value="MANHA">Manhã</option>
+              <option value="TARDE">Tarde</option>
+              <option value="NOITE">Noite</option>
+            </select>
           </div>
+
+          <div className="flex flex-col md:flex-row gap-4 mb-3">
+            <input
+              type="number"
+              min="1"
+              placeholder="Capacidade"
+              value={capacidade}
+              onChange={(e) => setCapacidade(e.target.value)}
+              className="border border-gray-400 rounded-lg px-3 py-2 text-sm w-full md:w-32 text-center"
+            />
+            <input
+              type="time"
+              value={horaPartida}
+              onChange={(e) => setHoraPartida(e.target.value)}
+              className="border border-gray-400 rounded-lg px-3 py-2 text-sm flex-1"
+            />
+            <input
+              type="time"
+              value={horaChegada}
+              onChange={(e) => setHoraChegada(e.target.value)}
+              className="border border-gray-400 rounded-lg px-3 py-2 text-sm flex-1"
+            />
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <label className="text-sm font-semibold text-gray-700">
+              Pontos da Rota
+            </label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <select
+                value={pontoSelecionado}
+                onChange={(e) => setPontoSelecionado(e.target.value)}
+                className="border border-gray-400 rounded-lg px-3 py-2 text-sm flex-1 text-gray-600"
+              >
+                <option value="">Selecione</option>
+                {pontosFiltrados.map((p) => (
+                  <option key={p.idPonto} value={p.idPonto}>
+                    {p.nome}
+                  </option>
+                ))}
+              </select>
+              <button className="bg-[#038C3E] text-white px-4 py-2 rounded-lg hover:bg-[#027a36] transition w-full sm:w-auto">
+                Adicionar
+              </button>
+            </div>
+            <ol className="list-decimal ml-5 text-sm text-gray-700">
+              {pontosRota.map((p, i) => (
+                <li key={p.idPonto}>{p.nome}</li>
+              ))}
+            </ol>
+          </div>
+
+          <button className="bg-[#038C3E] text-white w-full py-2 mt-4 rounded-lg hover:bg-[#027a36] transition">
+            Cadastrar Rota
+          </button>
         </div>
 
-        {/* ROTAS CADASTRADAS */}
-        <div className="mb-6 h-[770px] w-md overflow-x-auto shadow-md w-[1220px]">
-          <div className="relative bg-white shadow-md rounded-lg p-6 lg:p-10 w-[1220px] max-w-full">
-            {loadingRotasCadastradas && (
-              <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
-                <Loading size={90} message="Carregando rotas..." />
+        {/* SEÇÃO: ROTAS CADASTRADAS */}
+        <div className="relative bg-white shadow-md rounded-lg p-6 sm:p-10 overflow-x-auto">
+          <h1 className="text-2xl font-semibold text-[#3B7258] mb-4">
+            Rotas cadastradas
+          </h1>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {rotas.map((rota) => (
+              <div
+                key={rota.idRota}
+                className="bg-white rounded-xl shadow p-5 flex flex-col md:flex-row gap-4"
+              >
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {rota.nome}
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-2">
+                    {rota.periodo?.toLowerCase()}
+                  </p>
+                  <ul className="text-sm text-gray-700 space-y-1 max-h-32 overflow-y-auto">
+                    {(trajetosByRota[rota.idRota] || []).map((p, i) => (
+                      <li key={i}>• {p.nome}</li>
+                    ))}
+                  </ul>
+                  <button className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-2 px-4 mt-3 rounded-lg">
+                    Exibir Colaboradores
+                  </button>
+                </div>
+
+                <div className="md:w-64 w-full">
+                  <GoogleMapaRota
+                    pontos={trajetosByRota[rota.idRota] || []}
+                    height={200}
+                  />
+                </div>
               </div>
-            )}
-
-            <div className="mb-4">
-              <h1 className="text-2xl font-semibold text-[#3B7258] mb-2">
-                Rotas cadastradas
-              </h1>
-              <p className="text-sm text-gray-500">
-                visualize todas as rotas e suas configurações
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 ">
-              {rotas.map((rota) => {
-                const pontosDaRota = trajetosByRota[rota.idRota] || [];
-                return (
-                  <div
-                    key={rota.idRota}
-                    className="bg-white rounded-2xl shadow-md p-5 flex gap-6 relative"
-                  >
-                    {/* ===== ESQUERDA ===== */}
-                    <div className="flex-1 flex flex-col">
-                      <div className="mb-2">
-                        <h3 className="text-lg font-semibold text-gray-800">
-                          {rota.nome}{" "}
-                          {rota.cidade?.nome ? `- ${rota.cidade.nome}` : ""}
-                        </h3>
-                        <p className="text-xs text-gray-500">
-                          {pontosDaRota.length} ponto
-                          {pontosDaRota.length === 1 ? "" : "s"}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-sm text-gray-700 font-medium">
-                          Turnos:
-                        </span>
-                        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 capitalize">
-                          {(rota.periodo || "").toLowerCase()}
-                        </span>
-                        {rota.periodoSecundario && (
-                          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-700 capitalize">
-                            {(rota.periodoSecundario || "").toLowerCase()}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="mb-3">
-                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            className="text-emerald-600"
-                          >
-                            <path
-                              fill="currentColor"
-                              d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7m0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5"
-                            />
-                          </svg>
-                          Pontos da Rota
-                        </div>
-
-                        <ul className="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1">
-                          {pontosDaRota.map((p, i) => (
-                            <li
-                              key={p.idPonto ?? i}
-                              className="flex items-center gap-2 "
-                            >
-                              <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center">
-                                <svg width="14" height="14" viewBox="0 0 24 24">
-                                  <path
-                                    fill="currentColor"
-                                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7m0 11a4 4 0 1 1 0-8a4 4 0 0 1 0 8"
-                                  />
-                                </svg>
-                              </div>
-                              <div className="flex items-center gap-2 bg-white-100 rounded-lg px-3 py-2 flex-1">
-                                <span className="w-8 h-8 rounded-md bg-white text-gray-700 text-xs font-semibold grid place-items-center border border-gray-300 shadow-sm">
-                                  {(p.ordem ?? i + 1)
-                                    .toString()
-                                    .padStart(2, "0")}
-                                </span>
-                                <span className="text-sm text-gray-700 truncate ">
-                                  {p.nome}
-                                </span>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <button
-                        className="mt-auto bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2.5 rounded-xl transition"
-                        onClick={() => {
-                          setRotaSelecionada(rota);
-                          setOpenModalColabs(true);
-                        }}
-                      >
-                        Exibir Colaboradores
-                      </button>
-                    </div>
-
-                    {/* ===== DIREITA: mini-mapa ===== */}
-                    <div className="w-64 shrink-0 relative">
-                      {trajetosByRota[rota.idRota] &&
-                      Array.isArray(trajetosByRota[rota.idRota]) ? (
-                        <GoogleMapaRota
-                          pontos={trajetosByRota[rota.idRota]}
-                          height={250}
-                          followRoads={true}
-                        />
-                      ) : (
-                        <div className="h-[250px] w-full bg-white text-gray-500 grid place-items-center rounded">
-                          Sem trajeto
-                        </div>
-                      )}
-
-                      {loadingTrajeto[rota.idRota] && (
-                        <div className="absolute inset-0 bg-white/60 grid place-items-center rounded">
-                          <Loading size={65} message="" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            ))}
           </div>
         </div>
-
-        {openModalColabs && rotaSelecionada && (
-          <ModalColaboradores
-            open={openModalColabs}
-            onClose={() => setOpenModalColabs(false)}
-            rota={rotaSelecionada}
-          />
-        )}
       </div>
+
+      {openModalColabs && rotaSelecionada && (
+        <ModalColaboradores
+          open={openModalColabs}
+          onClose={() => setOpenModalColabs(false)}
+          rota={rotaSelecionada}
+        />
+      )}
     </div>
   );
 }
