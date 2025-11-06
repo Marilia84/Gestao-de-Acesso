@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import Navbar from "../components/Navbar"; // Seu componente Navbar
+import React, { useState, useRef, useEffect } from "react";
 
-// --- Ícones (Exemplos, use SVGs ou biblioteca de ícones) ---
+import api from "../api/axios";
+
 const UserAvatar = () => (
   <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
     U {/* Ou use uma imagem/ícone */}
@@ -41,6 +41,19 @@ const CopyIcon = () => (
     />
   </svg>
 );
+
+const CheckIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-4 w-4"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+  </svg>
+);
 // --- Fim dos Ícones ---
 
 export default function Home() {
@@ -51,17 +64,23 @@ export default function Home() {
       sender: "ai",
       text: "Olá! 👋 Em que posso ajudar hoje com a gestão de transportes ou acesso?",
     },
-    // Exemplo de como adicionar mais mensagens:
-    // { id: 2, sender: 'user', text: 'Preciso gerar um relatório de acessos da portaria principal de ontem.' },
-    // { id: 3, sender: 'ai', text: 'Claro! Gerando o relatório de acessos da Portaria Principal para ontem...' },
   ]);
   // Estado para o input do usuário
   const [inputText, setInputText] = useState("");
   // Estado para indicar se a IA está "pensando"
   const [isAiThinking, setIsAiThinking] = useState(false);
+  // Estado para feedback de "Copiado!"
+  const [copiedMessageId, setCopiedMessageId] = useState(null);
+
+  // Referência para o final do chat
+  const chatEndRef = useRef(null);
+
+  // Efeito para rolar para a última mensagem
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isAiThinking]);
 
   const handleSendMessage = async (e) => {
-    // Tornando a função async
     e.preventDefault();
     const trimmedInput = inputText.trim();
     if (!trimmedInput) return;
@@ -72,21 +91,26 @@ export default function Home() {
       text: trimmedInput,
     };
 
-    // Adiciona a mensagem do usuário imediatamente
+    // Adiciona a mensagem do usuário e limpa o input
     setMessages((prevMessages) => [...prevMessages, newUserMessage]);
-    setInputText(""); // Limpa o input
-    setIsAiThinking(true); // Mostra que a IA está processando
+    setInputText("");
+    setIsAiThinking(true);
 
-    // --- SIMULAÇÃO DA CHAMADA À API DA IA ---
+    // --- INÍCIO DA CHAMADA REAL À API ---
     try {
-      // Substitua isso pela sua chamada real:
-      // const response = await api.post('/chatbot', { message: trimmedInput });
-      // const aiText = response.data.reply;
+      const response = await api.get("/chat", {
+        params: {
+          mensagem: trimmedInput,
+        },
+      });
 
-      // Simulação:
-      await new Promise((resolve) => setTimeout(resolve, 1500)); // Espera 1.5 segundos
-      const aiText = `Entendido! Você pediu para: "${trimmedInput}". Executando a tarefa... (Resposta simulada 🤖)`;
-      // Fim da Simulação
+      const aiText = response.data;
+
+      if (!aiText) {
+        throw new Error(
+          "A API retornou uma resposta, mas sem o texto esperado."
+        );
+      }
 
       const aiResponse = {
         id: Date.now() + 1, // Garante ID único
@@ -105,29 +129,37 @@ export default function Home() {
     } finally {
       setIsAiThinking(false); // IA terminou de processar
     }
-    // --- Fim da Lógica ---
+    // --- FIM DA LÓGICA DA API ---
   };
 
-  const handleCopy = (text) => {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => alert("Texto copiado para a área de transferência!"))
-      .catch((err) => console.error("Erro ao copiar texto:", err));
+  const handleCopy = (text, messageId) => {
+    // Usamos 'document.execCommand' para melhor compatibilidade em iframes
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand("copy");
+      setCopiedMessageId(messageId); // Define qual mensagem foi copiada
+      setTimeout(() => {
+        setCopiedMessageId(null); // Limpa o feedback após 2 segundos
+      }, 2000);
+    } catch (err) {
+      console.error("Falha ao copiar texto:", err);
+    }
+    document.body.removeChild(textArea);
   };
 
   return (
     // Layout principal: Navbar à esquerda, Chat ocupa o restante
+    // O 'ml-20' assume que sua Navbar tem 20 unidades (ex: w-20 ou 5rem)
     <div className="flex bg-[#F4F7F6] min-h-screen ml-20">
-      {" "}
-      {/* Cor de fundo consistente */}
+      {/* <Navbar /> */} {/* Seu componente Navbar fixo à esquerda */}
       {/* Área do Chat (ocupa o espaço restante) */}
       <div className="flex-1 flex flex-col max-h-screen overflow-hidden">
-        {" "}
-        {/* Previne scroll da página inteira */}
         {/* Histórico de Mensagens */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {" "}
-          {/* Scroll apenas aqui */}
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -142,22 +174,34 @@ export default function Home() {
               <div
                 className={`max-w-xl lg:max-w-2xl p-4 rounded-xl shadow-md ${
                   msg.sender === "user"
-                    ? "bg-[#038C4C] text-white ml-auto rounded-br-none" // Estilo User (verde escuro, canto ajustado)
-                    : "bg-white text-gray-800 rounded-bl-none" // Estilo AI (branco, canto ajustado)
+                    ? "bg-[#038C4C] text-white ml-auto rounded-br-none" // Estilo User
+                    : "bg-white text-gray-800 rounded-bl-none" // Estilo AI
                 }`}
               >
-                <p className="text-sm leading-relaxed">{msg.text}</p>
+                {/* O 'whitespace-pre-wrap' preserva quebras de linha e espaços da IA */}
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {msg.text}
+                </p>
+
                 {/* Botões de Ação para IA */}
                 {msg.sender === "ai" && (
                   <div className="flex justify-end gap-3 mt-2 text-xs text-gray-500">
                     <button
-                      onClick={() => handleCopy(msg.text)}
+                      onClick={() => handleCopy(msg.text, msg.id)}
                       className="flex items-center gap-1 hover:text-gray-800 transition-colors"
                       title="Copiar texto"
+                      disabled={copiedMessageId === msg.id} // Desabilita o botão brevemente
                     >
-                      <CopyIcon /> Copiar
+                      {copiedMessageId === msg.id ? (
+                        <>
+                          <CheckIcon /> Copiado!
+                        </>
+                      ) : (
+                        <>
+                          <CopyIcon /> Copiar
+                        </>
+                      )}
                     </button>
-                    {/* Outros botões podem ser adicionados aqui */}
                   </div>
                 )}
               </div>
@@ -166,6 +210,7 @@ export default function Home() {
               {msg.sender === "user" && <UserAvatar />}
             </div>
           ))}
+
           {/* Indicador de "pensando" */}
           {isAiThinking && (
             <div className="flex items-start gap-3.5">
@@ -175,9 +220,10 @@ export default function Home() {
               </div>
             </div>
           )}
-          {/* Espaço no final para não colar no input */}
-          <div className="h-4"></div>
+          {/* Elemento invisível para forçar o scroll para baixo */}
+          <div ref={chatEndRef} />
         </div>
+
         {/* Área de Input Fixa na Base */}
         <div className="p-4 border-t border-gray-200 bg-gray-50">
           <form
@@ -189,7 +235,7 @@ export default function Home() {
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Pergunte ou peça algo..."
               rows="1"
-              className="flex-1 px-2 py-1 border-none resize-none focus:ring-0 outline-none text-sm bg-transparent" // Estilo mais limpo
+              className="flex-1 px-2 py-1 border-none resize-none focus:ring-0 outline-none text-sm bg-transparent"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
