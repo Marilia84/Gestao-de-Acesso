@@ -1,4 +1,3 @@
-// src/pages/RegistroViagem.jsx
 import React, { useState, useEffect } from "react";
 import { getRotas } from "../api/rotaService";
 import { getViagensPorRota, getEmbarquesDaViagem } from "../api/viagemService";
@@ -20,7 +19,6 @@ const RegistroViagem = () => {
   const [loadingRotas, setLoadingRotas] = useState(true);
   const [loadingViagens, setLoadingViagens] = useState(false);
   const [loadingEmbarques, setLoadingEmbarques] = useState(false);
-
   const [errorRotas, setErrorRotas] = useState(null);
   const [errorViagens, setErrorViagens] = useState(null);
 
@@ -54,6 +52,7 @@ const RegistroViagem = () => {
         const embarquesPorViagem = await Promise.all(
           viagensData.map((v) => getEmbarquesDaViagem(v.idViagem))
         );
+
         const viagensComContagem = viagensData.map((v, i) => ({
           ...v,
           passengerCount: embarquesPorViagem[i].length,
@@ -73,7 +72,6 @@ const RegistroViagem = () => {
   // === BUSCAR EMBARQUES ===
   useEffect(() => {
     if (!selectedTripId) return setEmbarques([]);
-
     const fetchEmbarques = async () => {
       try {
         setLoadingEmbarques(true);
@@ -101,9 +99,9 @@ const RegistroViagem = () => {
   const selectedTrip = viagens.find((v) => v.idViagem === selectedTripId);
 
   return (
-    <main className="flex-1 px-4 sm:px-6 md:px-10 py-8 mt-20 md:ml-12 overflow-x-hidden">
+    <main className="flex-1 px-3 sm:px-5 md:px-10 py-8 mt-20 md:ml-12 overflow-x-hidden">
       {/* Cabeçalho */}
-      <header className="mb-10 text-center md:text-left">
+      <header className="mb-8 text-center md:text-left">
         <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-[#3B7258] leading-tight">
           REGISTRO DE VIAGEM
         </h1>
@@ -112,18 +110,18 @@ const RegistroViagem = () => {
         </p>
       </header>
 
-      {/* Layout Principal */}
+      {/* === CONTEÚDO PRINCIPAL === */}
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* === PAINEL DE ROTAS === */}
-        <aside className="lg:w-1/3 xl:w-1/4 w-full">
-          <div className="bg-white rounded-2xl shadow-md p-5 sm:p-6 h-full">
-            <h2 className="text-lg sm:text-2xl font-bold text-gray-800 mb-5 flex items-center gap-2">
+        <aside className="w-full lg:w-1/3 xl:w-1/4">
+          <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6 h-fit">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
               <Route size={22} className="text-gray-600" />
               Rotas Disponíveis
             </h2>
 
             {loadingRotas ? (
-              <div className="flex items-center justify-center text-gray-500">
+              <div className="flex items-center justify-center text-gray-500 py-6">
                 <Loader2 className="animate-spin w-5 h-5 mr-2" />
                 Carregando rotas...
               </div>
@@ -149,7 +147,9 @@ const RegistroViagem = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm">Nenhuma rota encontrada.</p>
+              <p className="text-gray-500 text-sm">
+                Nenhuma rota encontrada.
+              </p>
             )}
           </div>
         </aside>
@@ -167,69 +167,68 @@ const RegistroViagem = () => {
             </div>
           ) : viagens.length > 0 ? (
             <>
-              {/* Lista de Viagens */}
-              <div className="flex flex-wrap lg:flex-nowrap gap-4 overflow-x-auto pb-4">
-                {viagens.map((viagem) => (
-                  <div
-                    key={viagem.idViagem}
-                    onClick={() => setSelectedTripId(viagem.idViagem)}
-                    className={`bg-white rounded-2xl p-5 shadow-md w-full sm:w-[280px] md:w-[320px] cursor-pointer transition-all ${
-                      selectedTripId === viagem.idViagem
-                        ? "border-2 border-[#36A293] shadow-lg"
-                        : "border-2 border-transparent hover:shadow-lg"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="w-full">
-                        <h3 className="font-bold text-lg text-gray-800 truncate">
-                          Veículo: {viagem.idVeiculo}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          Data:{" "}
-                          {new Date(viagem.data).toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-3 py-1 text-xs font-semibold rounded-full shrink-0 ${
-                          viagem.ativo
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {viagem.ativo ? "Ativa" : "Finalizada"}
-                      </span>
-                    </div>
+              
+              {/* === LISTA DE VIAGENS === */}
+<div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 sm:gap-6">
+  {viagens.map((viagem) => (
+    <div
+      key={viagem.idViagem}
+      onClick={() => setSelectedTripId(viagem.idViagem)}
+      className={`bg-white rounded-2xl p-5 shadow-md cursor-pointer transition-all ${
+        selectedTripId === viagem.idViagem
+          ? "border-2 border-[#36A293] shadow-lg"
+          : "border-2 border-transparent hover:shadow-lg"
+      }`}
+    >
+      <div className="flex justify-between items-start mb-4">
+        <div className="w-full">
+          <h3 className="font-bold text-lg text-gray-800 truncate">
+            Veículo: {viagem.idVeiculo}
+          </h3>
+          <p className="text-sm text-gray-500">
+            Data: {new Date(viagem.data).toLocaleDateString("pt-BR")}
+          </p>
+        </div>
+        <span
+          className={`px-3 py-1 text-xs font-semibold rounded-full shrink-0 ${
+            viagem.ativo
+              ? "bg-blue-100 text-blue-800"
+              : "bg-gray-100 text-gray-700"
+          }`}
+        >
+          {viagem.ativo ? "Ativa" : "Finalizada"}
+        </span>
+      </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-sm">
-                      <div className="flex items-center">
-                        <Users size={16} className="mr-2 text-gray-500" />
-                        Passageiros:
-                        <span className="font-semibold ml-1">
-                          {viagem.passengerCount}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <Clock size={16} className="mr-2 text-gray-500" />
-                        Saída:
-                        <span className="font-semibold ml-1">
-                          {formatSimpleTime(viagem.saidaPrevista)}
-                        </span>
-                      </div>
-                      <div className="flex items-center col-span-2">
-                        <Clock size={16} className="mr-2 text-gray-500" />
-                        Chegada:
-                        <span className="font-semibold ml-1">
-                          {viagem.ativo
-                            ? "Em Trânsito"
-                            : formatSimpleTime(viagem.chegadaPrevista)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      <div className="flex flex-col gap-2 text-sm">
+        <div className="flex items-center">
+          <Users size={16} className="mr-2 text-gray-500" />
+          Passageiros:
+          <span className="font-semibold ml-1">{viagem.passengerCount}</span>
+        </div>
+        <div className="flex items-center">
+          <Clock size={16} className="mr-2 text-gray-500" />
+          Saída:
+          <span className="font-semibold ml-1">
+            {formatSimpleTime(viagem.saidaPrevista)}
+          </span>
+        </div>
+        <div className="flex items-center">
+          <Clock size={16} className="mr-2 text-gray-500" />
+          Chegada:
+          <span className="font-semibold ml-1">
+            {viagem.ativo
+              ? "Em Trânsito"
+              : formatSimpleTime(viagem.chegadaPrevista)}
+          </span>
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
 
-              {/* Lista de Embarques */}
+
+              {/* === LISTA DE EMBARQUES === */}
               <div className="mt-10">
                 {selectedTrip ? (
                   <>
@@ -246,7 +245,7 @@ const RegistroViagem = () => {
                         Carregando embarques...
                       </div>
                     ) : embarques.length > 0 ? (
-                      <div className="space-y-3">
+                      <div className="flex flex-col gap-3">
                         {embarques.map((e) => (
                           <div
                             key={e.idEmbarque}
