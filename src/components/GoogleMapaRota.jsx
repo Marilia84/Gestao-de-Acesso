@@ -174,7 +174,7 @@ export default function GoogleMapaRota({
               position={{ lat: pt.lat, lng: pt.lng }}
               label={{
                 text: String((pt.ordem ?? idx + 1)),
-                className: "text-[10px] font-bold",
+                className: "text-[10px] font-bold ",
               }}
               title={pt.nome || `Ponto ${idx + 1}`}
             />
@@ -197,6 +197,7 @@ export default function GoogleMapaRota({
               path={directions}
               options={{
                 strokeOpacity: 1,
+                strokeColor: '#066adb',
                 strokeWeight: 5,
               }}
             />
