@@ -137,7 +137,7 @@ const RegistroViagem = () => {
                     onClick={() => setSelectedRotaId(rota.idRota)}
                     className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
                       selectedRotaId === rota.idRota
-                        ? "bg-[#36A293] text-white shadow-md"
+                        ? "bg-[#038C4C] text-white shadow-md"
                         : "hover:bg-gray-100 text-gray-700"
                     }`}
                   >
@@ -175,7 +175,7 @@ const RegistroViagem = () => {
                     onClick={() => setSelectedTripId(viagem.idViagem)}
                     className={`bg-white rounded-2xl p-5 shadow-md w-full sm:w-[280px] md:w-[320px] cursor-pointer transition-all ${
                       selectedTripId === viagem.idViagem
-                        ? "border-2 border-[#36A293] shadow-lg"
+                        ? "border-2 border-[#038C4C] shadow-lg"
                         : "border-2 border-transparent hover:shadow-lg"
                     }`}
                   >
