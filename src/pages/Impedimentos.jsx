@@ -12,7 +12,7 @@ const getSeveridadeProps = (severidade) => {
   switch (severidade) {
     case "ALTA":
       return {
-        className: "bg-red-100 text-red-800",
+        className: "bg-orange-100 text-orange-800",
         label: "Alta",
       };
     case "MEDIA": // Assumindo que "MEDIA" possa existir
@@ -27,7 +27,7 @@ const getSeveridadeProps = (severidade) => {
       };
     default:
       return {
-        className: "bg-gray-100 text-gray-800",
+        className: "bg-red-100 text-red-800",
         label: severidade || "N/A",
       };
   }

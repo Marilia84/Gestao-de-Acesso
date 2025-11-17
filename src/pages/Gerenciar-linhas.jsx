@@ -225,7 +225,7 @@ export default function GerenciarLinhas() {
 
       const response = await api.post("/pontos", {
         nome: nomePonto.trim(),
-        endereco: `${rua.trim()}, ${numero.trim()}`,
+        endereco: `${rua.trim()}, ${numero.trim()} ${cidadeObj.nome}`,
         latitude: lat,
         longitude: lng,
         idCidade: Number(cidadeSelecionada),
