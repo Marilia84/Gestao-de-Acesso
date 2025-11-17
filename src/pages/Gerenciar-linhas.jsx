@@ -280,7 +280,6 @@ export default function GerenciarLinhas() {
       toast.warn("Preencha todos os campos obrigatórios da rota.");
       return;
     }
-
     const payload = {
       nome: novaRota.trim(),
       idCidade: Number(cidadeSelecionada),
@@ -301,8 +300,6 @@ export default function GerenciarLinhas() {
     try {
       await api.post("/rotas", payload);
       toast.success("Rota cadastrada com sucesso!");
-
-      // limpa formulário
       setNovaRota("");
       setPeriodo("");
       setCapacidade("");
@@ -310,7 +307,6 @@ export default function GerenciarLinhas() {
       setHoraChegada("");
       setPontosRota([]);
 
-      // recarrega rotas + mostra loading no card de rotas cadastradas
       setLoadingRotasCadastradas(true);
       const rotasRes = await api.get("/rotas");
       const rotasLista = rotasRes.data || [];
@@ -338,14 +334,15 @@ export default function GerenciarLinhas() {
     : [];
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-4 lg:px-12 py-6">
-<div className="flex flex-1 flex-col justify-center items-center w-full">
-        <h1 className="text-3xl font-bold mb-10 text-[#3B7258] mt-4 text-center">
+    <div className=" flex-1 p-4 sm:p-6 md:p-10 space-y-2 ml-0 md:ml-24">
+      <Navbar />
+      <div className="flex flex-1 flex-col justify-center items-center w-full">
+        <h1 className="text-3xl font-bold mb-6 text-[#3B7258] mt-4 text-center">
           Gerenciar Linhas
         </h1>
 
         {/* CADASTRO DE PONTOS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 w-full w-[100%] max-w-[1910px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 w-full ">
           {/* CARD 1 - adicionar cidade / cadastrar ponto */}
           <div className="relative bg-white shadow-md rounded-lg p-6 md:p-10  h-full  min-h-[500px]">
             {/* overlay de loading do card 1 */}
