@@ -152,13 +152,8 @@ export default function Home() {
   };
 
   return (
-    // Layout principal: Navbar à esquerda, Chat ocupa o restante
-    // O 'ml-20' assume que sua Navbar tem 20 unidades (ex: w-20 ou 5rem)
     <div className="flex bg-[#F4F7F6] min-h-screen ml-20">
-      {/* <Navbar /> */} {/* Seu componente Navbar fixo à esquerda */}
-      {/* Área do Chat (ocupa o espaço restante) */}
       <div className="flex-1 flex flex-col max-h-screen overflow-hidden">
-        {/* Histórico de Mensagens */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {messages.map((msg) => (
             <div
@@ -167,10 +162,8 @@ export default function Home() {
                 msg.sender === "user" ? "justify-end" : ""
               }`}
             >
-              {/* Avatar da IA (à esquerda) */}
               {msg.sender === "ai" && <AiAvatar />}
 
-              {/* Balão de Mensagem */}
               <div
                 className={`max-w-xl lg:max-w-2xl p-4 rounded-xl shadow-md ${
                   msg.sender === "user"
@@ -178,12 +171,9 @@ export default function Home() {
                     : "bg-white text-gray-800 rounded-bl-none" // Estilo AI
                 }`}
               >
-                {/* O 'whitespace-pre-wrap' preserva quebras de linha e espaços da IA */}
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
                   {msg.text}
                 </p>
-
-                {/* Botões de Ação para IA */}
                 {msg.sender === "ai" && (
                   <div className="flex justify-end gap-3 mt-2 text-xs text-gray-500">
                     <button
@@ -205,13 +195,9 @@ export default function Home() {
                   </div>
                 )}
               </div>
-
-              {/* Avatar do Usuário (à direita) */}
               {msg.sender === "user" && <UserAvatar />}
             </div>
           ))}
-
-          {/* Indicador de "pensando" */}
           {isAiThinking && (
             <div className="flex items-start gap-3.5">
               <AiAvatar />
@@ -220,11 +206,11 @@ export default function Home() {
               </div>
             </div>
           )}
-          {/* Elemento invisível para forçar o scroll para baixo */}
+       
           <div ref={chatEndRef} />
         </div>
 
-        {/* Área de Input Fixa na Base */}
+      
         <div className="p-4 border-t border-gray-200 bg-gray-50">
           <form
             onSubmit={handleSendMessage}

@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import logoV from "../assets/logoV.png";
 import {
   LayoutDashboard,
@@ -12,7 +11,6 @@ import {
   LogOut,
   Menu,
   X,
-  FileIcon,
   Flag,
 } from "lucide-react";
 
@@ -31,15 +29,6 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
-
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");

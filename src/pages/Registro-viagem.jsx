@@ -1,4 +1,3 @@
-// src/pages/RegistroViagem.jsx
 import React, { useState, useEffect } from "react";
 import { getRotas } from "../api/rotaService";
 import { getViagensPorRota, getEmbarquesDaViagem } from "../api/viagemService";
@@ -20,7 +19,6 @@ const RegistroViagem = () => {
   const [loadingRotas, setLoadingRotas] = useState(true);
   const [loadingViagens, setLoadingViagens] = useState(false);
   const [loadingEmbarques, setLoadingEmbarques] = useState(false);
-
   const [errorRotas, setErrorRotas] = useState(null);
   const [errorViagens, setErrorViagens] = useState(null);
 
@@ -54,6 +52,7 @@ const RegistroViagem = () => {
         const embarquesPorViagem = await Promise.all(
           viagensData.map((v) => getEmbarquesDaViagem(v.idViagem))
         );
+
         const viagensComContagem = viagensData.map((v, i) => ({
           ...v,
           passengerCount: embarquesPorViagem[i].length,
@@ -73,7 +72,6 @@ const RegistroViagem = () => {
   // === BUSCAR EMBARQUES ===
   useEffect(() => {
     if (!selectedTripId) return setEmbarques([]);
-
     const fetchEmbarques = async () => {
       try {
         setLoadingEmbarques(true);
@@ -101,9 +99,9 @@ const RegistroViagem = () => {
   const selectedTrip = viagens.find((v) => v.idViagem === selectedTripId);
 
   return (
-    <main className="flex-1 px-4 sm:px-6 md:px-10 py-8 mt-20 md:ml-12 overflow-x-hidden">
+    <main className="flex-1 px-3 sm:px-5 md:px-10 py-8 mt-20 md:ml-12 overflow-x-hidden">
       {/* Cabeçalho */}
-      <header className="mb-10 text-center md:text-left">
+      <header className="mb-8 text-center md:text-left">
         <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-[#3B7258] leading-tight">
           REGISTRO DE VIAGEM
         </h1>
@@ -112,18 +110,18 @@ const RegistroViagem = () => {
         </p>
       </header>
 
-      {/* Layout Principal */}
+      {/* === CONTEÚDO PRINCIPAL === */}
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* === PAINEL DE ROTAS === */}
-        <aside className="lg:w-1/3 xl:w-1/4 w-full">
-          <div className="bg-white rounded-2xl shadow-md p-5 sm:p-6 h-full">
-            <h2 className="text-lg sm:text-2xl font-bold text-gray-800 mb-5 flex items-center gap-2">
+        <aside className="w-full lg:w-1/3 xl:w-1/4">
+          <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6 h-fit">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
               <Route size={22} className="text-gray-600" />
               Rotas Disponíveis
             </h2>
 
             {loadingRotas ? (
-              <div className="flex items-center justify-center text-gray-500">
+              <div className="flex items-center justify-center text-gray-500 py-6">
                 <Loader2 className="animate-spin w-5 h-5 mr-2" />
                 Carregando rotas...
               </div>
@@ -149,7 +147,9 @@ const RegistroViagem = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm">Nenhuma rota encontrada.</p>
+              <p className="text-gray-500 text-sm">
+                Nenhuma rota encontrada.
+              </p>
             )}
           </div>
         </aside>
@@ -200,36 +200,35 @@ const RegistroViagem = () => {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-sm">
-                      <div className="flex items-center">
-                        <Users size={16} className="mr-2 text-gray-500" />
-                        Passageiros:
-                        <span className="font-semibold ml-1">
-                          {viagem.passengerCount}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <Clock size={16} className="mr-2 text-gray-500" />
-                        Saída:
-                        <span className="font-semibold ml-1">
-                          {formatSimpleTime(viagem.saidaPrevista)}
-                        </span>
-                      </div>
-                      <div className="flex items-center col-span-2">
-                        <Clock size={16} className="mr-2 text-gray-500" />
-                        Chegada:
-                        <span className="font-semibold ml-1">
-                          {viagem.ativo
-                            ? "Em Trânsito"
-                            : formatSimpleTime(viagem.chegadaPrevista)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      <div className="flex flex-col gap-2 text-sm">
+        <div className="flex items-center">
+          <Users size={16} className="mr-2 text-gray-500" />
+          Passageiros:
+          <span className="font-semibold ml-1">{viagem.passengerCount}</span>
+        </div>
+        <div className="flex items-center">
+          <Clock size={16} className="mr-2 text-gray-500" />
+          Saída:
+          <span className="font-semibold ml-1">
+            {formatSimpleTime(viagem.saidaPrevista)}
+          </span>
+        </div>
+        <div className="flex items-center">
+          <Clock size={16} className="mr-2 text-gray-500" />
+          Chegada:
+          <span className="font-semibold ml-1">
+            {viagem.ativo
+              ? "Em Trânsito"
+              : formatSimpleTime(viagem.chegadaPrevista)}
+          </span>
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
 
-              {/* Lista de Embarques */}
+
+              {/* === LISTA DE EMBARQUES === */}
               <div className="mt-10">
                 {selectedTrip ? (
                   <>
@@ -246,7 +245,7 @@ const RegistroViagem = () => {
                         Carregando embarques...
                       </div>
                     ) : embarques.length > 0 ? (
-                      <div className="space-y-3">
+                      <div className="flex flex-col gap-3">
                         {embarques.map((e) => (
                           <div
                             key={e.idEmbarque}
