@@ -1,14 +1,14 @@
 // src/pages/Colaboradores.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { Search } from "lucide-react";
-import { toast } from "react-toastify"; // 👈 Importamos o toast
+import { toast } from "react-toastify";
 import { getColaboradores } from "../api/colaboradorService";
-import Loading from "../components/Loading"; // 👈 importa seu loader
+import Loading from "../components/Loading";
 
 export default function Colaboradores() {
   const [colaboradores, setColaboradores] = useState([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true); // já começa carregando
+  const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -21,8 +21,8 @@ export default function Colaboradores() {
       } catch (err) {
         console.error("Erro ao buscar colaboradores:", err);
         const errorMsg = "Não foi possível carregar os colaboradores.";
-        setError(errorMsg); // Mantém o erro no estado para a UI
-        toast.error(errorMsg); // 👈 Dispara o toast de erro
+        toast.error(errorMsg); 
+        toast.error(errorMsg);
       } finally {
         setLoading(false);
       }

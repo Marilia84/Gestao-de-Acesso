@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
-import { Send, Copy, Check, User, Bot } from "lucide-react"; // 👈 Importando Lucide
+import { Send, Copy, Check, User, Bot } from "lucide-react"; 
 import api from "../api/axios";
 import botIcon from "../assets/bot.jpg";
 
@@ -17,7 +17,7 @@ const AiAvatar = () => (
 );
 
 export default function Home() {
-  // Estado para guardar as mensagens do chat
+ 
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -25,17 +25,17 @@ export default function Home() {
       text: "Olá! 👋 Em que posso ajudar hoje com a gestão de transportes ou acesso?",
     },
   ]);
-  // Estado para o input do usuário
+  
   const [inputText, setInputText] = useState("");
-  // Estado para indicar se a IA está "pensando"
+  
   const [isAiThinking, setIsAiThinking] = useState(false);
-  // Estado para feedback de "Copiado!"
+ 
   const [copiedMessageId, setCopiedMessageId] = useState(null);
 
-  // Referência para o final do chat
+  
   const chatEndRef = useRef(null);
 
-  // Efeito para rolar para a última mensagem
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isAiThinking]);
@@ -51,12 +51,12 @@ export default function Home() {
       text: trimmedInput,
     };
 
-    // Adiciona a mensagem do usuário e limpa o input
+   
     setMessages((prevMessages) => [...prevMessages, newUserMessage]);
     setInputText("");
     setIsAiThinking(true);
 
-    // --- INÍCIO DA CHAMADA REAL À API ---
+   
     try {
       const response = await api.get("/chat", {
         params: {
@@ -73,7 +73,7 @@ export default function Home() {
       }
 
       const aiResponse = {
-        id: Date.now() + 1, // Garante ID único
+        id: Date.now() + 1, 
         sender: "ai",
         text: aiText,
       };
@@ -87,16 +87,16 @@ export default function Home() {
       };
       setMessages((prevMessages) => [...prevMessages, errorResponse]);
 
-      // 👈 Dispara o toast de erro
+     
       toast.error("Desculpe, não consegui processar sua solicitação. 😥");
     } finally {
-      setIsAiThinking(false); // IA terminou de processar
+      setIsAiThinking(false); 
     }
-    // --- FIM DA LÓGICA DA API ---
+   
   };
 
   const handleCopy = (text, messageId) => {
-    // Usamos 'document.execCommand' para melhor compatibilidade em iframes
+  
     const textArea = document.createElement("textarea");
     textArea.value = text;
     document.body.appendChild(textArea);
@@ -104,16 +104,16 @@ export default function Home() {
     textArea.select();
     try {
       document.execCommand("copy");
-      setCopiedMessageId(messageId); // Define qual mensagem foi copiada
+      setCopiedMessageId(messageId); 
       setTimeout(() => {
-        setCopiedMessageId(null); // Limpa o feedback após 2 segundos
+        setCopiedMessageId(null);
       }, 2000);
 
-      // 👈 Dispara o toast de sucesso
+      
       toast.success("Texto copiado!");
     } catch (err) {
       console.error("Falha ao copiar texto:", err);
-      // 👈 Dispara o toast de erro
+      
       toast.error("Falha ao copiar o texto.");
     }
     document.body.removeChild(textArea);
@@ -135,8 +135,8 @@ export default function Home() {
               <div
                 className={`max-w-xl lg:max-w-2xl p-4 rounded-xl shadow-md ${
                   msg.sender === "user"
-                    ? "bg-[#038C4C] text-white ml-auto rounded-br-none" // Estilo User
-                    : "bg-white text-gray-800 rounded-bl-none" // Estilo AI
+                    ? "bg-[#038C4C] text-white ml-auto rounded-br-none" 
+                    : "bg-white text-gray-800 rounded-bl-none" 
                 }`}
               >
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -148,7 +148,7 @@ export default function Home() {
                       onClick={() => handleCopy(msg.text, msg.id)}
                       className="flex items-center gap-1 hover:text-gray-800 transition-colors"
                       title="Copiar texto"
-                      disabled={copiedMessageId === msg.id} // Desabilita o botão brevemente
+                      disabled={copiedMessageId === msg.id} 
                     >
                       {copiedMessageId === msg.id ? (
                         <>
@@ -195,7 +195,7 @@ export default function Home() {
                   handleSendMessage(e);
                 }
               }}
-              disabled={isAiThinking} // Desabilita input enquanto a IA pensa
+              disabled={isAiThinking} 
             />
             <button
               type="submit"
