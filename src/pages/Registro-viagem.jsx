@@ -241,12 +241,10 @@ const RegistroViagem = () => {
     }
   };
 
- return (
-  <main className="flex-1 p-4 md:p-10 ml-16 overflow-x-hidden">
-    <div className="w-full max-w-6xl mx-auto">
-      {/* Cabeçalho */}
-      <header className="mb-8 text-center md:text-left">
-        <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-[#3B7258] leading-tight">
+  return (
+    <main className="flex-1 px-3 sm:px-5 md:px-10 py-8 mt-20 md:ml-12 overflow-x-hidden">
+      <header className="mb-8">
+        <h1 className="text-2xl sm:text-4xl font-bold text-[#3B7258]">
           REGISTRO DE VIAGEM
         </h1>
         <p className="text-gray-600 mt-1">
@@ -307,92 +305,9 @@ const RegistroViagem = () => {
               </button>
             </div>
 
-                    <div className="flex flex-col gap-2 text-sm">
-                      <div className="flex items-center">
-                        <Users size={16} className="mr-2 text-gray-500" />
-                        Passageiros:
-                        <span className="font-semibold ml-1">
-                          {viagem.passengerCount}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <Clock size={16} className="mr-2 text-gray-500" />
-                        Saída:
-                        <span className="font-semibold ml-1">
-                          {formatSimpleTime(viagem.saidaPrevista)}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <Clock size={16} className="mr-2 text-gray-500" />
-                        Chegada:
-                        <span className="font-semibold ml-1">
-                          {viagem.ativo
-                            ? "Em Trânsito"
-                            : formatSimpleTime(viagem.chegadaPrevista)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* === LISTA DE EMBARQUES === */}
-              <div className="mt-10">
-                {selectedTrip ? (
-                  <>
-                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-3 text-center md:text-left">
-                      Embarques - Veículo {selectedTrip.idVeiculo}
-                    </h2>
-                    <p className="text-sm text-gray-500 mb-6 text-center md:text-left">
-                      Visualize os embarques da viagem selecionada.
-                    </p>
-
-                    {loadingEmbarques ? (
-                      <div className="flex items-center justify-center text-gray-500 p-4">
-                        <Loader2 className="animate-spin w-5 h-5 mr-2" />
-                        Carregando embarques...
-                      </div>
-                    ) : embarques.length > 0 ? (
-                      <div className="flex flex-col gap-3">
-                        {embarques.map((e) => (
-                          <div
-                            key={e.idEmbarque}
-                            className="bg-white rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between shadow-sm"
-                          >
-                            <div className="flex items-center mb-3 sm:mb-0">
-                              <div className="bg-[#36A293] text-white w-10 h-10 rounded-full flex items-center justify-center font-bold mr-4">
-                                {getInitials(e.nomeColaborador)}
-                              </div>
-                              <div>
-                                <p className="font-semibold text-gray-800 truncate">
-                                  {e.nomeColaborador}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  {e.cargoColaborador || "Cargo não informado"}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center text-gray-600 font-medium text-sm">
-                              <Clock
-                                size={16}
-                                className="mr-1.5 text-gray-500"
-                              />
-                              <span>{formatTimestamp(e.dataEmbarque)}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-center bg-white p-4 rounded-xl text-gray-500">
-                        Nenhum embarque registrado.
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-center text-gray-500 mt-10">
-                    Selecione uma viagem para ver os detalhes.
-                  </p>
-                )}
+            {loadingViagens ? (
+              <div className="flex justify-center py-4">
+                <Loading size={60} />
               </div>
             ) : viagens.length > 0 ? (
               <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
@@ -580,10 +495,200 @@ const RegistroViagem = () => {
           )}
         </section>
       </div>
-    </div>
-  </main>
-);
 
+      {/* === MODAL: CRIAR NOVA VIAGEM === */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+              <h3 className="font-bold text-lg text-[#3B7258]">
+                Criar Nova Viagem
+              </h3>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleCreateTrip} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                    <User size={14} /> Motorista
+                  </label>
+                  <select
+                    name="idMotorista"
+                    required
+                    value={newTripData.idMotorista}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none bg-white"
+                  >
+                    <option value="">Selecione um Motorista...</option>
+                    {motoristas.map((m) => (
+                      <option
+                        key={m.id || m.idMotorista}
+                        value={m.id || m.idMotorista}
+                      >
+                        {m.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                    <Truck size={14} /> Veículo
+                  </label>
+                  <select
+                    name="idVeiculo"
+                    required
+                    value={newTripData.idVeiculo}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none bg-white"
+                  >
+                    <option value="">Selecione um Veículo...</option>
+                    {veiculos.map((v) => (
+                      <option
+                        key={v.id || v.idVeiculo}
+                        value={v.id || v.idVeiculo}
+                      >
+                        {v.modelo} - {v.placa}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Data de Criação
+                </label>
+                <input
+                  type="date"
+                  name="data"
+                  value={newTripData.data}
+                  required
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Saída Prevista
+                  </label>
+                  <input
+                    type="time"
+                    name="saidaPrevista"
+                    required
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Chegada Prevista
+                  </label>
+                  <input
+                    type="time"
+                    name="chegadaPrevista"
+                    required
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Tipo
+                </label>
+                <select
+                  name="tipoViagem"
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none bg-white"
+                >
+                  <option value="ida">Ida</option>
+                  <option value="volta">Volta</option>
+                </select>
+              </div>
+              <div className="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreating}
+                  className="px-4 py-2 text-sm bg-[#038C4C] text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors font-medium shadow-sm disabled:opacity-70"
+                >
+                  {isCreating ? <Loading size={16} /> : <Save size={16} />}{" "}
+                  Salvar Viagem
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* === MODAL: CONFIRMAR ALTERAÇÃO DE STATUS === */}
+      {isConfirmModalOpen && tripToToggle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 p-6 text-center">
+            <div
+              className={`mx-auto w-12 h-12 flex items-center justify-center rounded-full mb-4 ${
+                tripToToggle.ativo ? "bg-red-100" : "bg-green-100"
+              }`}
+            >
+              <AlertTriangle
+                className={
+                  tripToToggle.ativo ? "text-red-600" : "text-green-600"
+                }
+                size={24}
+              />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              {tripToToggle.ativo ? "Encerrar Viagem?" : "Ativar Viagem?"}
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              {tripToToggle.ativo
+                ? "Você tem certeza que deseja encerrar esta viagem? Ela ficará marcada como finalizada."
+                : "Você deseja reativar esta viagem? Ela ficará disponível para novos registros."}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setIsConfirmModalOpen(false);
+                  setTripToToggle(null);
+                }}
+                className="flex-1 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmToggle}
+                disabled={isToggling}
+                className={`flex-1 py-2.5 text-sm font-semibold text-white rounded-xl transition-colors flex items-center justify-center gap-2 ${
+                  tripToToggle.ativo
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-green-600 hover:bg-green-700"
+                }`}
+              >
+                {isToggling ? (
+                  <Loading size={16} />
+                ) : (
+                  <>{tripToToggle.ativo ? "Sim, Encerrar" : "Sim, Ativar"}</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
 };
 
 export default RegistroViagem;
