@@ -9,6 +9,7 @@ import {
   ClipboardList,
   FileText,
   LogOut,
+  Flag,
 } from "lucide-react";
 
 const menuItems = [
@@ -18,7 +19,7 @@ const menuItems = [
   { icon: Building, label: "Portaria", path: "/portaria" },
   { icon: UserCheck, label: "Visitantes", path: "/visitantes" },
   { icon: ClipboardList, label: "Registro", path: "/registro-viagem" },
-  { icon: FileText, label: "Relatório", path: "/relatorio" },
+  { icon: Flag, label: "Impedimentos", path: "/impedimentos" },
 ];
 
 export default function Navbar() {
@@ -73,7 +74,11 @@ export default function Navbar() {
               className={`
                 flex items-center gap-3 rounded-lg px-3 py-2.5 mb-1
                 transition-colors
-                ${isActive ? "bg-[#038C4C] text-white" : "text-gray-700 hover:bg-gray-100"}
+                ${
+                  isActive
+                    ? "bg-[#038C4C] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                }
               `}
             >
               <Icon

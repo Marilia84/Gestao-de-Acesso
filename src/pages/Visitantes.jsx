@@ -1,5 +1,6 @@
 // src/pages/Visitantes.jsx
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify"; // 👈 Importamos o toast
 import { getColaboradores } from "../api/colaboradorService";
 import { getVisitantes, createVisitante } from "../api/visitanteService";
 import { maskCPF, maskRG, maskPhone } from "../utils/masks";
@@ -63,7 +64,9 @@ const Visitantes = () => {
       setCollaborators(collaboratorsData);
     } catch (error) {
       console.error("Erro ao buscar dados:", error);
-      setFetchError("Falha ao carregar dados. Tente recarregar a página.");
+      const errorMsg = "Falha ao carregar dados. Tente recarregar a página.";
+      setFetchError(errorMsg);
+      toast.error(errorMsg); // 👈 Toast de erro
     } finally {
       setLoading(false);
     }
@@ -76,7 +79,11 @@ const Visitantes = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "tipoDocumento") {
-      setNewVisitor((prev) => ({ ...prev, tipoDocumento: value, numeroDocumento: "" }));
+      setNewVisitor((prev) => ({
+        ...prev,
+        tipoDocumento: value,
+        numeroDocumento: "",
+      }));
     } else if (name === "numeroDocumento") {
       let maskedValue = value;
       switch (newVisitor.tipoDocumento) {
@@ -103,7 +110,7 @@ const Visitantes = () => {
     try {
       await createVisitante(newVisitor);
       await fetchData();
-      alert("Visitante cadastrado com sucesso!");
+      toast.success("Visitante cadastrado com sucesso!"); // 👈 Toast de sucesso
       setNewVisitor({
         nomeCompleto: "",
         tipoDocumento: "CPF",
@@ -117,10 +124,10 @@ const Visitantes = () => {
       });
     } catch (error) {
       console.error("Erro ao cadastrar visitante:", error);
-      alert(
+      const errorMsg =
         error.response?.data?.message ||
-          "Falha ao cadastrar. Verifique os dados e tente novamente."
-      );
+        "Falha ao cadastrar. Verifique os dados e tente novamente.";
+      toast.error(errorMsg); // 👈 Toast de erro
     } finally {
       setIsSubmitting(false);
     }
@@ -327,7 +334,9 @@ const Visitantes = () => {
           </div>
 
           {fetchError && (
-            <p className="text-red-600 text-center py-4 text-sm">{fetchError}</p>
+            <p className="text-red-600 text-center py-4 text-sm">
+              {fetchError}
+            </p>
           )}
 
           <div className="overflow-x-auto max-h-[400px]">
@@ -383,7 +392,7 @@ const Visitantes = () => {
                           className={`px-3 py-1 text-xs font-semibold rounded-full ${
                             v.ativo
                               ? "bg-[#53A67F] text-white"
-                              : "bg-red-600 text-white"
+                              : "bg-red-600 text-white" // 👈 CORREÇÃO AQUI
                           }`}
                         >
                           {v.ativo ? "Ativo" : "Inativo"}

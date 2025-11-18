@@ -1,5 +1,6 @@
 // src/pages/Portaria.jsx
 import React, { useState, useEffect, useMemo } from "react";
+import { toast } from "react-toastify"; // 👈 Importamos o toast
 import { getColaboradores } from "../api/colaboradorService";
 import { getVisitantes } from "../api/visitanteService";
 import {
@@ -8,7 +9,7 @@ import {
   registrarSaida,
 } from "../api/acessoService";
 import { formatDateTime } from "../utils/formatters";
-import Loading from "../components/Loading"; 
+import Loading from "../components/Loading";
 
 // Lista fixa de portarias
 const portariasDisponiveis = [
@@ -54,11 +55,12 @@ const Portaria = () => {
         setVisitantes(visitData);
       } catch (error) {
         console.error(error);
-        setFetchError(
+        const errorMsg =
           error.response?.status === 403
             ? "Acesso não autorizado (403). Verifique suas permissões ou token."
-            : "Falha ao carregar dados iniciais. Verifique a conexão com a API."
-        );
+            : "Falha ao carregar dados iniciais. Verifique a conexão com a API.";
+        setFetchError(errorMsg);
+        toast.error(errorMsg); // 👈 Toast de erro
         setColaboradores([]);
         setVisitantes([]);
       } finally {
@@ -77,13 +79,18 @@ const Portaria = () => {
         setHistoricoBase(data);
       } catch (error) {
         console.error(error);
+        toast.error("Falha ao carregar histórico de acessos."); // 👈 Toast de erro
         setHistoricoBase([]);
       } finally {
         setLoadingHistorico(false);
       }
     };
 
-    if (filtroDataDe && filtroDataAte && new Date(filtroDataDe) <= new Date(filtroDataAte)) {
+    if (
+      filtroDataDe &&
+      filtroDataAte &&
+      new Date(filtroDataDe) <= new Date(filtroDataAte)
+    ) {
       fetchHistorico();
     } else {
       setHistoricoBase([]);
@@ -93,7 +100,11 @@ const Portaria = () => {
   // Disponíveis para ocupantes
   const ocupantesDisponiveis = useMemo(() => {
     return (colaboradores || [])
-      .map((c) => ({ id: c.idColaborador, nome: c.nome, identificador: c.matricula }))
+      .map((c) => ({
+        id: c.idColaborador,
+        nome: c.nome,
+        identificador: c.matricula,
+      }))
       .sort((a, b) => a.nome.localeCompare(b.nome));
   }, [colaboradores]);
 
@@ -101,8 +112,10 @@ const Portaria = () => {
   const historicoFiltrado = useMemo(() => {
     return historicoBase.filter((acesso) => {
       if (!acesso) return false;
-      const matchTipo = filtroTipo === "TODOS" || acesso.tipoPessoa === filtroTipo;
-      const matchPortaria = !filtroPortaria || String(acesso.codPortaria) === filtroPortaria;
+      const matchTipo =
+        filtroTipo === "TODOS" || acesso.tipoPessoa === filtroTipo;
+      const matchPortaria =
+        !filtroPortaria || String(acesso.codPortaria) === filtroPortaria;
       return matchTipo && matchPortaria;
     });
   }, [historicoBase, filtroTipo, filtroPortaria]);
@@ -110,13 +123,25 @@ const Portaria = () => {
   // Handlers
   const handleAddOcupante = () => {
     if (!currentOcupanteSelection) return;
-    if (selectedOcupantes.length >= 10) return alert("Limite de 10 ocupantes atingido.");
-    if (selectedOcupantes.some((o) => o.id === currentOcupanteSelection))
-      return alert("Este ocupante já foi adicionado.");
-    if (tipoPessoa === "COLABORADOR" && currentOcupanteSelection === selectedPessoaId)
-      return alert("A pessoa principal não pode ser adicionada como ocupante.");
+    if (selectedOcupantes.length >= 10) {
+      toast.warn("Limite de 10 ocupantes atingido."); // 👈 Toast de aviso
+      return;
+    }
+    if (selectedOcupantes.some((o) => o.id === currentOcupanteSelection)) {
+      toast.warn("Este ocupante já foi adicionado."); // 👈 Toast de aviso
+      return;
+    }
+    if (
+      tipoPessoa === "COLABORADOR" &&
+      currentOcupanteSelection === selectedPessoaId
+    ) {
+      toast.warn("A pessoa principal não pode ser adicionada como ocupante."); // 👈 Toast de aviso
+      return;
+    }
 
-    const ocupanteToAdd = ocupantesDisponiveis.find((p) => p.id === currentOcupanteSelection);
+    const ocupanteToAdd = ocupantesDisponiveis.find(
+      (p) => p.id === currentOcupanteSelection
+    );
     if (ocupanteToAdd) {
       setSelectedOcupantes((prev) => [...prev, ocupanteToAdd]);
       setCurrentOcupanteSelection("");
@@ -133,7 +158,9 @@ const Portaria = () => {
     setIsSubmitting(true);
 
     if (!selectedPessoaId || !selectedPortariaId) {
-      setFormError("Selecione a pessoa principal e a portaria.");
+      const errorMsg = "Selecione a pessoa principal e a portaria.";
+      setFormError(errorMsg);
+      toast.error(errorMsg); // 👈 Toast de erro
       setIsSubmitting(false);
       return;
     }
@@ -143,18 +170,26 @@ const Portaria = () => {
 
     try {
       if (tipoPrincipal === "COLABORADOR") {
-        identificadorPrincipal = colaboradores.find((c) => c.idColaborador === selectedPessoaId)?.matricula;
+        identificadorPrincipal = colaboradores.find(
+          (c) => c.idColaborador === selectedPessoaId
+        )?.matricula;
       } else {
-        identificadorPrincipal = visitantes.find((v) => v.id === selectedPessoaId)?.numeroDocumento;
+        identificadorPrincipal = visitantes.find(
+          (v) => v.id === selectedPessoaId
+        )?.numeroDocumento;
       }
     } catch (error) {
-      setFormError("Erro ao processar seleção principal.");
+      const errorMsg = "Erro ao processar seleção principal.";
+      setFormError(errorMsg);
+      toast.error(errorMsg); // 👈 Toast de erro
       setIsSubmitting(false);
       return;
     }
 
     if (!identificadorPrincipal) {
-      setFormError("Identificador principal não encontrado.");
+      const errorMsg = "Identificador principal não encontrado.";
+      setFormError(errorMsg);
+      toast.error(errorMsg); // 👈 Toast de erro
       setIsSubmitting(false);
       return;
     }
@@ -168,7 +203,7 @@ const Portaria = () => {
 
     try {
       await registrarEntrada(payload);
-      alert("Entrada(s) registrada(s) com sucesso!");
+      toast.success("Entrada(s) registrada(s) com sucesso!"); // 👈 Toast de sucesso
       setSelectedPessoaId("");
       setSelectedOcupantes([]);
       setCurrentOcupanteSelection("");
@@ -177,11 +212,12 @@ const Portaria = () => {
       setHistoricoBase(histRes);
     } catch (error) {
       console.error(error);
-      setFormError(
+      const errorMsg =
         error.response?.data?.message ||
         error.response?.data?.detail ||
-        "Falha ao registrar entrada(s)."
-      );
+        "Falha ao registrar entrada(s).";
+      setFormError(errorMsg);
+      toast.error(errorMsg); // 👈 Toast de erro
     } finally {
       setIsSubmitting(false);
     }
@@ -191,12 +227,12 @@ const Portaria = () => {
     if (!idAcesso) return;
     try {
       await registrarSaida(idAcesso);
-      alert("Saída registrada com sucesso!");
+      toast.success("Saída registrada com sucesso!"); // 👈 Toast de sucesso
       const histRes = await getAcessosHistorico(filtroDataDe, filtroDataAte);
       setHistoricoBase(histRes);
     } catch (error) {
       console.error(error);
-      alert("Falha ao registrar saída.");
+      toast.error("Falha ao registrar saída."); // 👈 Toast de erro
     }
   };
 
@@ -209,7 +245,10 @@ const Portaria = () => {
       </header>
 
       {fetchError && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
+          role="alert"
+        >
           <strong className="font-bold">Erro: </strong>
           <span>{fetchError}</span>
         </div>
@@ -223,13 +262,17 @@ const Portaria = () => {
           </div>
         )}
 
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Registrar Entrada</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          Registrar Entrada
+        </h2>
 
         {!loadingInitial && (
           <form onSubmit={handleRegisterEntry} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Tipo (Principal)</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Tipo (Principal)
+                </label>
                 <select
                   value={tipoPessoa}
                   onChange={(e) => {
@@ -246,18 +289,29 @@ const Portaria = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Pessoa Principal</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Pessoa Principal
+                </label>
                 <select
                   value={selectedPessoaId}
                   onChange={(e) => setSelectedPessoaId(e.target.value)}
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
                   required
-                  disabled={tipoPessoa === "COLABORADOR" ? colaboradores.length === 0 : visitantes.length === 0}
+                  disabled={
+                    tipoPessoa === "COLABORADOR"
+                      ? colaboradores.length === 0
+                      : visitantes.length === 0
+                  }
                 >
                   <option value="">
-                    {tipoPessoa === "COLABORADOR" && colaboradores.length === 0 && "Nenhum colaborador"}
-                    {tipoPessoa === "VISITANTE" && visitantes.length === 0 && "Nenhum visitante"}
-                    {(tipoPessoa === "COLABORADOR" && colaboradores.length > 0) ||
+                    {tipoPessoa === "COLABORADOR" &&
+                      colaboradores.length === 0 &&
+                      "Nenhum colaborador"}
+                    {tipoPessoa === "VISITANTE" &&
+                      visitantes.length === 0 &&
+                      "Nenhum visitante"}
+                    {(tipoPessoa === "COLABORADOR" &&
+                      colaboradores.length > 0) ||
                     (tipoPessoa === "VISITANTE" && visitantes.length > 0)
                       ? "Selecione..."
                       : ""}
@@ -277,7 +331,9 @@ const Portaria = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Portaria</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Portaria
+                </label>
                 <select
                   value={selectedPortariaId}
                   onChange={(e) => setSelectedPortariaId(e.target.value)}
@@ -296,18 +352,30 @@ const Portaria = () => {
             {/* Linha Ocupantes */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <div className="md:col-span-3">
-                <label className="block text-sm font-medium text-gray-700">Adicionar Ocupante (máx 10)</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Adicionar Ocupante (máx 10)
+                </label>
                 <select
                   value={currentOcupanteSelection}
                   onChange={(e) => setCurrentOcupanteSelection(e.target.value)}
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-                  disabled={selectedOcupantes.length >= 10 || !selectedPessoaId || colaboradores.length === 0}
+                  disabled={
+                    selectedOcupantes.length >= 10 ||
+                    !selectedPessoaId ||
+                    colaboradores.length === 0
+                  }
                 >
                   <option value="">
-                    {colaboradores.length === 0 ? "Nenhum colaborador carregado" : "Selecione um colaborador..."}
+                    {colaboradores.length === 0
+                      ? "Nenhum colaborador carregado"
+                      : "Selecione um colaborador..."}
                   </option>
                   {ocupantesDisponiveis
-                    .filter((p) => p.id !== selectedPessoaId && !selectedOcupantes.some((o) => o.id === p.id))
+                    .filter(
+                      (p) =>
+                        p.id !== selectedPessoaId &&
+                        !selectedOcupantes.some((o) => o.id === p.id)
+                    )
                     .map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.nome} ({p.identificador})
@@ -319,7 +387,9 @@ const Portaria = () => {
                 <button
                   type="button"
                   onClick={handleAddOcupante}
-                  disabled={!currentOcupanteSelection || selectedOcupantes.length >= 10}
+                  disabled={
+                    !currentOcupanteSelection || selectedOcupantes.length >= 10
+                  }
                   className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Adicionar
@@ -335,7 +405,10 @@ const Portaria = () => {
                 </h3>
                 <ul className="space-y-2">
                   {selectedOcupantes.map((o) => (
-                    <li key={o.id} className="flex justify-between items-center text-sm bg-white p-2 rounded shadow-sm">
+                    <li
+                      key={o.id}
+                      className="flex justify-between items-center text-sm bg-white p-2 rounded shadow-sm"
+                    >
                       <span>
                         {o.nome} ({o.identificador})
                       </span>
@@ -376,12 +449,16 @@ const Portaria = () => {
           </div>
         )}
 
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Histórico de Acessos</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          Histórico de Acessos
+        </h2>
 
         {/* Filtros */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-end">
           <div>
-            <label className="block text-sm font-medium text-gray-700">De:</label>
+            <label className="block text-sm font-medium text-gray-700">
+              De:
+            </label>
             <input
               type="date"
               value={filtroDataDe}
@@ -390,7 +467,9 @@ const Portaria = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Até:</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Até:
+            </label>
             <input
               type="date"
               value={filtroDataAte}
@@ -399,7 +478,9 @@ const Portaria = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Tipo Pessoa</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Tipo Pessoa
+            </label>
             <select
               value={filtroTipo}
               onChange={(e) => setFiltroTipo(e.target.value)}
@@ -411,7 +492,9 @@ const Portaria = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Portaria</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Portaria
+            </label>
             <select
               value={filtroPortaria}
               onChange={(e) => setFiltroPortaria(e.target.value)}
@@ -433,29 +516,60 @@ const Portaria = () => {
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-50 sticky top-0 z-20">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Nome (Condutor)</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Portaria</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Entrada</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Saída</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Ocupantes</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Ação</th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                    Nome (Condutor)
+                  </th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                    Tipo
+                  </th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                    Portaria
+                  </th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                    Entrada
+                  </th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                    Saída
+                  </th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                    Ocupantes
+                  </th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                    Ação
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {historicoFiltrado.map((acesso) => (
                   <tr key={acesso.id}>
-                    <td className="px-4 py-2 whitespace-nowrap">{acesso.condutor?.nome || "N/A"}</td>
-                    <td className="px-4 py-2 whitespace-nowrap">{acesso.tipoPessoa || "N/A"}</td>
                     <td className="px-4 py-2 whitespace-nowrap">
-                      {portariasDisponiveis.find((p) => p.id === acesso.codPortaria)?.nome || "N/A"}
+                      {acesso.condutor?.nome || "N/A"}
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap">{formatDateTime(acesso.entrada)}</td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      {acesso.tipoPessoa || "N/A"}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      {portariasDisponiveis.find(
+                        (p) => p.id === acesso.codPortaria
+                      )?.nome || "N/A"}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      {formatDateTime(acesso.entrada)}
+                    </td>
                     <td className="px-4 py-2 whitespace-nowrap font-medium">
-                      {acesso.saida ? formatDateTime(acesso.saida) : <span className="text-orange-600">Pendente</span>}
+                      {acesso.saida ? (
+                        formatDateTime(acesso.saida)
+                      ) : (
+                        <span className="text-orange-600">Pendente</span>
+                      )}
                     </td>
-                    <td className="px-4 py-2 text-xs text-gray-600 max-w-xs truncate" title={acesso.ocupantes?.map((o) => o.nome).join(", ")}>
-                      {acesso.ocupantes?.length > 0 ? acesso.ocupantes.map((o) => o.nome).join(", ") : "-"}
+                    <td
+                      className="px-4 py-2 text-xs text-gray-600 max-w-xs truncate"
+                      title={acesso.ocupantes?.map((o) => o.nome).join(", ")}
+                    >
+                      {acesso.ocupantes?.length > 0
+                        ? acesso.ocupantes.map((o) => o.nome).join(", ")
+                        : "-"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
                       {!acesso.saida && (
@@ -473,7 +587,11 @@ const Portaria = () => {
             </table>
           </div>
         ) : (
-          !loadingHistorico && <p className="text-center text-gray-500 py-4">Nenhum registro encontrado.</p>
+          !loadingHistorico && (
+            <p className="text-center text-gray-500 py-4">
+              Nenhum registro encontrado.
+            </p>
+          )
         )}
       </section>
     </main>

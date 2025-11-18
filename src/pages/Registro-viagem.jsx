@@ -135,7 +135,7 @@ const RegistroViagem = () => {
                     onClick={() => setSelectedRotaId(rota.idRota)}
                     className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
                       selectedRotaId === rota.idRota
-                        ? "bg-[#36A293] text-white shadow-md"
+                        ? "bg-[#038C4C] text-white shadow-md"
                         : "hover:bg-gray-100 text-gray-700"
                     }`}
                   >
@@ -167,38 +167,38 @@ const RegistroViagem = () => {
             </div>
           ) : viagens.length > 0 ? (
             <>
-              
-              {/* === LISTA DE VIAGENS === */}
-<div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 sm:gap-6">
-  {viagens.map((viagem) => (
-    <div
-      key={viagem.idViagem}
-      onClick={() => setSelectedTripId(viagem.idViagem)}
-      className={`bg-white rounded-2xl p-5 shadow-md cursor-pointer transition-all ${
-        selectedTripId === viagem.idViagem
-          ? "border-2 border-[#36A293] shadow-lg"
-          : "border-2 border-transparent hover:shadow-lg"
-      }`}
-    >
-      <div className="flex justify-between items-start mb-4">
-        <div className="w-full">
-          <h3 className="font-bold text-lg text-gray-800 truncate">
-            Veículo: {viagem.idVeiculo}
-          </h3>
-          <p className="text-sm text-gray-500">
-            Data: {new Date(viagem.data).toLocaleDateString("pt-BR")}
-          </p>
-        </div>
-        <span
-          className={`px-3 py-1 text-xs font-semibold rounded-full shrink-0 ${
-            viagem.ativo
-              ? "bg-blue-100 text-blue-800"
-              : "bg-gray-100 text-gray-700"
-          }`}
-        >
-          {viagem.ativo ? "Ativa" : "Finalizada"}
-        </span>
-      </div>
+              {/* Lista de Viagens */}
+              <div className="flex flex-wrap lg:flex-nowrap gap-4 overflow-x-auto pb-4">
+                {viagens.map((viagem) => (
+                  <div
+                    key={viagem.idViagem}
+                    onClick={() => setSelectedTripId(viagem.idViagem)}
+                    className={`bg-white rounded-2xl p-5 shadow-md w-full sm:w-[280px] md:w-[320px] cursor-pointer transition-all ${
+                      selectedTripId === viagem.idViagem
+                        ? "border-2 border-[#038C4C] shadow-lg"
+                        : "border-2 border-transparent hover:shadow-lg"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="w-full">
+                        <h3 className="font-bold text-lg text-gray-800 truncate">
+                          Veículo: {viagem.idVeiculo}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          Data:{" "}
+                          {new Date(viagem.data).toLocaleDateString("pt-BR")}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-3 py-1 text-xs font-semibold rounded-full shrink-0 ${
+                          viagem.ativo
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {viagem.ativo ? "Ativa" : "Finalizada"}
+                      </span>
+                    </div>
 
       <div className="flex flex-col gap-2 text-sm">
         <div className="flex items-center">
