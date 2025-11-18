@@ -1,6 +1,6 @@
 // src/pages/Portaria.jsx
 import React, { useState, useEffect, useMemo } from "react";
-import { toast } from "react-toastify"; // 👈 Importamos o toast
+import { toast } from "react-toastify"; 
 import { getColaboradores } from "../api/colaboradorService";
 import { getVisitantes } from "../api/visitanteService";
 import {
@@ -41,7 +41,7 @@ const Portaria = () => {
   const [formError, setFormError] = useState("");
   const [fetchError, setFetchError] = useState("");
 
-  // Carregar colaboradores + visitantes
+  
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoadingInitial(true);
@@ -60,7 +60,7 @@ const Portaria = () => {
             ? "Acesso não autorizado (403). Verifique suas permissões ou token."
             : "Falha ao carregar dados iniciais. Verifique a conexão com a API.";
         setFetchError(errorMsg);
-        toast.error(errorMsg); // 👈 Toast de erro
+        toast.error(errorMsg); 
         setColaboradores([]);
         setVisitantes([]);
       } finally {
@@ -70,7 +70,7 @@ const Portaria = () => {
     fetchInitialData();
   }, []);
 
-  // Carregar histórico
+ 
   useEffect(() => {
     const fetchHistorico = async () => {
       setLoadingHistorico(true);
@@ -79,7 +79,7 @@ const Portaria = () => {
         setHistoricoBase(data);
       } catch (error) {
         console.error(error);
-        toast.error("Falha ao carregar histórico de acessos."); // 👈 Toast de erro
+        toast.error("Falha ao carregar histórico de acessos."); 
         setHistoricoBase([]);
       } finally {
         setLoadingHistorico(false);
@@ -97,7 +97,7 @@ const Portaria = () => {
     }
   }, [filtroDataDe, filtroDataAte]);
 
-  // Disponíveis para ocupantes
+
   const ocupantesDisponiveis = useMemo(() => {
     return (colaboradores || [])
       .map((c) => ({
@@ -108,7 +108,7 @@ const Portaria = () => {
       .sort((a, b) => a.nome.localeCompare(b.nome));
   }, [colaboradores]);
 
-  // Histórico filtrado
+
   const historicoFiltrado = useMemo(() => {
     return historicoBase.filter((acesso) => {
       if (!acesso) return false;
@@ -124,18 +124,18 @@ const Portaria = () => {
   const handleAddOcupante = () => {
     if (!currentOcupanteSelection) return;
     if (selectedOcupantes.length >= 10) {
-      toast.warn("Limite de 10 ocupantes atingido."); // 👈 Toast de aviso
+      toast.warn("Limite de 10 ocupantes atingido."); 
       return;
     }
     if (selectedOcupantes.some((o) => o.id === currentOcupanteSelection)) {
-      toast.warn("Este ocupante já foi adicionado."); // 👈 Toast de aviso
+      toast.warn("Este ocupante já foi adicionado."); 
       return;
     }
     if (
       tipoPessoa === "COLABORADOR" &&
       currentOcupanteSelection === selectedPessoaId
     ) {
-      toast.warn("A pessoa principal não pode ser adicionada como ocupante."); // 👈 Toast de aviso
+      toast.warn("A pessoa principal não pode ser adicionada como ocupante."); 
       return;
     }
 
@@ -160,7 +160,7 @@ const Portaria = () => {
     if (!selectedPessoaId || !selectedPortariaId) {
       const errorMsg = "Selecione a pessoa principal e a portaria.";
       setFormError(errorMsg);
-      toast.error(errorMsg); // 👈 Toast de erro
+      toast.error(errorMsg); 
       setIsSubmitting(false);
       return;
     }
@@ -181,7 +181,7 @@ const Portaria = () => {
     } catch (error) {
       const errorMsg = "Erro ao processar seleção principal.";
       setFormError(errorMsg);
-      toast.error(errorMsg); // 👈 Toast de erro
+      toast.error(errorMsg); 
       setIsSubmitting(false);
       return;
     }
@@ -189,7 +189,7 @@ const Portaria = () => {
     if (!identificadorPrincipal) {
       const errorMsg = "Identificador principal não encontrado.";
       setFormError(errorMsg);
-      toast.error(errorMsg); // 👈 Toast de erro
+      toast.error(errorMsg); 
       setIsSubmitting(false);
       return;
     }
@@ -203,7 +203,7 @@ const Portaria = () => {
 
     try {
       await registrarEntrada(payload);
-      toast.success("Entrada(s) registrada(s) com sucesso!"); // 👈 Toast de sucesso
+      toast.success("Entrada(s) registrada(s) com sucesso!"); 
       setSelectedPessoaId("");
       setSelectedOcupantes([]);
       setCurrentOcupanteSelection("");
@@ -217,7 +217,7 @@ const Portaria = () => {
         error.response?.data?.detail ||
         "Falha ao registrar entrada(s).";
       setFormError(errorMsg);
-      toast.error(errorMsg); // 👈 Toast de erro
+      toast.error(errorMsg); 
     } finally {
       setIsSubmitting(false);
     }
@@ -227,12 +227,12 @@ const Portaria = () => {
     if (!idAcesso) return;
     try {
       await registrarSaida(idAcesso);
-      toast.success("Saída registrada com sucesso!"); // 👈 Toast de sucesso
+      toast.success("Saída registrada com sucesso!");
       const histRes = await getAcessosHistorico(filtroDataDe, filtroDataAte);
       setHistoricoBase(histRes);
     } catch (error) {
       console.error(error);
-      toast.error("Falha ao registrar saída."); // 👈 Toast de erro
+      toast.error("Falha ao registrar saída."); 
     }
   };
 
