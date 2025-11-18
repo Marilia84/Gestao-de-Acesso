@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Search, AlertTriangle } from "lucide-react";
+import { toast } from "react-toastify"; // 👈 Importamos o toast
 
 // 1. Importa o seu serviço de impedimentos e o loader real
 import { getImpedimentos } from "../api/impedimentosService";
@@ -77,7 +78,9 @@ export default function Impedimentos() {
         setImpedimentos(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Erro ao buscar impedimentos:", err);
-        setError("Não foi possível carregar os impedimentos.");
+        const errorMsg = "Não foi possível carregar os impedimentos.";
+        setError(errorMsg);
+        toast.error(errorMsg); // 👈 Dispara o toast de erro
       } finally {
         setLoading(false);
       }
@@ -203,8 +206,8 @@ export default function Impedimentos() {
                             <span
                               className={`px-2 sm:px-3 py-1 inline-flex text-xs sm:text-sm leading-5 font-semibold rounded-full ${
                                 imp.ativo
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-green-100 text-green-800"
                               }`}
                             >
                               {imp.ativo ? "Ativo" : "Finalizado"}

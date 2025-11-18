@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-
+import { toast } from "react-toastify"; // 👈 Importamos o toast
 import api from "../api/axios";
 
 const UserAvatar = () => (
@@ -126,6 +126,9 @@ export default function Home() {
         text: "Desculpe, não consegui processar sua solicitação no momento. 😥 Tente novamente mais tarde.",
       };
       setMessages((prevMessages) => [...prevMessages, errorResponse]);
+
+      // 👈 Dispara o toast de erro
+      toast.error("Desculpe, não consegui processar sua solicitação. 😥");
     } finally {
       setIsAiThinking(false); // IA terminou de processar
     }
@@ -145,8 +148,14 @@ export default function Home() {
       setTimeout(() => {
         setCopiedMessageId(null); // Limpa o feedback após 2 segundos
       }, 2000);
+
+      // 👈 Dispara o toast de sucesso (OPCIONAL, mas adicionado)
+      // Se preferir não ter, apenas remova a linha abaixo.
+      toast.success("Texto copiado!");
     } catch (err) {
       console.error("Falha ao copiar texto:", err);
+      // 👈 Dispara o toast de erro
+      toast.error("Falha ao copiar o texto.");
     }
     document.body.removeChild(textArea);
   };
@@ -206,11 +215,10 @@ export default function Home() {
               </div>
             </div>
           )}
-       
+
           <div ref={chatEndRef} />
         </div>
 
-      
         <div className="p-4 border-t border-gray-200 bg-gray-50">
           <form
             onSubmit={handleSendMessage}
