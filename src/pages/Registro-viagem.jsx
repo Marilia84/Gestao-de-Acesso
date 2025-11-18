@@ -1,8 +1,35 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { toast } from "react-toastify";
+// Importações de serviços
 import { getRotas } from "../api/rotaService";
-import { getViagensPorRota, getEmbarquesDaViagem } from "../api/viagemService";
+import {
+  getViagensPorRota,
+  getEmbarquesDaViagem,
+  createViagem,
+  updateViagem,
+} from "../api/viagemService";
 import { getColaboradorById } from "../api/colaboradorService";
-import { Users, Clock, Route, Loader2 } from "lucide-react";
+import { getMotoristas } from "../api/motoristaService";
+import { getVeiculos } from "../api/veiculoService";
+
+// Importação do seu Loader personalizado
+import Loading from "../components/Loading";
+
+import {
+  Users,
+  Clock,
+  Route,
+  Calendar,
+  Plus,
+  X,
+  Save,
+  Search,
+  Truck,
+  User,
+  Power,
+  AlertTriangle,
+} from "lucide-react";
+
 import {
   formatSimpleTime,
   formatTimestamp,
@@ -10,80 +37,113 @@ import {
 } from "../utils/formatters";
 
 const RegistroViagem = () => {
+  // === ESTADOS ===
   const [rotas, setRotas] = useState([]);
+  const [motoristas, setMotoristas] = useState([]);
+  const [veiculos, setVeiculos] = useState([]);
+
   const [selectedRotaId, setSelectedRotaId] = useState(null);
   const [viagens, setViagens] = useState([]);
   const [selectedTripId, setSelectedTripId] = useState(null);
   const [embarques, setEmbarques] = useState([]);
 
-  const [loadingRotas, setLoadingRotas] = useState(true);
+  // Estado do Filtro de Embarques (Data)
+  const [embarqueDateFilter, setEmbarqueDateFilter] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+
+  const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingViagens, setLoadingViagens] = useState(false);
   const [loadingEmbarques, setLoadingEmbarques] = useState(false);
-  const [errorRotas, setErrorRotas] = useState(null);
-  const [errorViagens, setErrorViagens] = useState(null);
 
-  // === BUSCAR ROTAS ===
+  // Estados do Modal de Criação
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Estados do Modal de Confirmação (Status)
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [tripToToggle, setTripToToggle] = useState(null);
+  const [isToggling, setIsToggling] = useState(false); // Loading da ação de toggle
+
+  const [newTripData, setNewTripData] = useState({
+    idMotorista: "",
+    idVeiculo: "",
+    data: new Date().toISOString().split("T")[0],
+    saidaPrevista: "",
+    chegadaPrevista: "",
+    tipoViagem: "ida",
+  });
+
+  // === 1. BUSCAR DADOS INICIAIS ===
   useEffect(() => {
-    const fetchRotas = async () => {
+    const fetchInitialData = async () => {
       try {
-        setLoadingRotas(true);
-        const data = await getRotas();
-        setRotas(data);
-        if (data.length > 0) setSelectedRotaId(data[0].idRota);
-      } catch {
-        setErrorRotas("Falha ao carregar rotas.");
+        setLoadingInitial(true);
+        const [rotasData, motoristasData, veiculosData] = await Promise.all([
+          getRotas(),
+          getMotoristas(),
+          getVeiculos(),
+        ]);
+
+        setRotas(rotasData);
+        setMotoristas(motoristasData);
+        setVeiculos(veiculosData);
+
+        if (rotasData.length > 0) setSelectedRotaId(rotasData[0].idRota);
+      } catch (error) {
+        console.error(error);
+        toast.error("Erro ao carregar dados iniciais.");
       } finally {
-        setLoadingRotas(false);
+        setLoadingInitial(false);
       }
     };
-    fetchRotas();
+    fetchInitialData();
   }, []);
 
-  // === BUSCAR VIAGENS ===
-  useEffect(() => {
+  // === 2. BUSCAR VIAGENS ===
+  const fetchViagens = async () => {
     if (!selectedRotaId) return;
-    const fetchViagens = async () => {
-      try {
-        setLoadingViagens(true);
-        setErrorViagens(null);
-        const viagensData = await getViagensPorRota(selectedRotaId);
-        if (viagensData.length === 0) return setViagens([]);
+    try {
+      setLoadingViagens(true);
+      const viagensData = await getViagensPorRota(selectedRotaId);
+      setViagens(viagensData);
 
-        const embarquesPorViagem = await Promise.all(
-          viagensData.map((v) => getEmbarquesDaViagem(v.idViagem))
-        );
-
-        const viagensComContagem = viagensData.map((v, i) => ({
-          ...v,
-          passengerCount: embarquesPorViagem[i].length,
-        }));
-
-        setViagens(viagensComContagem);
-        setSelectedTripId(viagensComContagem[0]?.idViagem || null);
-      } catch {
-        setErrorViagens("Falha ao carregar viagens.");
-      } finally {
-        setLoadingViagens(false);
+      const currentTripExists = viagensData.find(
+        (v) => v.idViagem === selectedTripId
+      );
+      if (viagensData.length > 0 && !currentTripExists) {
+        setSelectedTripId(viagensData[0].idViagem);
+      } else if (viagensData.length === 0) {
+        setSelectedTripId(null);
       }
-    };
+    } catch {
+      toast.error("Falha ao carregar viagens.");
+    } finally {
+      setLoadingViagens(false);
+    }
+  };
+
+  useEffect(() => {
     fetchViagens();
   }, [selectedRotaId]);
 
-  // === BUSCAR EMBARQUES ===
+  // === 3. BUSCAR EMBARQUES ===
   useEffect(() => {
     if (!selectedTripId) return setEmbarques([]);
+
     const fetchEmbarques = async () => {
       try {
         setLoadingEmbarques(true);
         const embarquesData = await getEmbarquesDaViagem(selectedTripId);
+
         const colaboradores = await Promise.all(
           embarquesData.map((e) => getColaboradorById(e.idColaborador))
         );
 
         const embarquesComNomes = embarquesData.map((e, i) => ({
           ...e,
-          nomeColaborador: colaboradores[i].nome,
-          cargoColaborador: colaboradores[i].role,
+          nomeColaborador: colaboradores[i]?.nome || "Desconhecido",
+          cargoColaborador: colaboradores[i]?.role || "N/A",
         }));
 
         setEmbarques(embarquesComNomes);
@@ -96,7 +156,90 @@ const RegistroViagem = () => {
     fetchEmbarques();
   }, [selectedTripId]);
 
+  // === 4. FILTRAR EMBARQUES ===
+  const filteredEmbarques = useMemo(() => {
+    if (!embarqueDateFilter) return embarques;
+    return embarques.filter(
+      (e) => e.dataEmbarque && e.dataEmbarque.startsWith(embarqueDateFilter)
+    );
+  }, [embarques, embarqueDateFilter]);
+
   const selectedTrip = viagens.find((v) => v.idViagem === selectedTripId);
+  const selectedVeiculoDetails = veiculos.find(
+    (v) =>
+      v.id === selectedTrip?.idVeiculo ||
+      v.idVeiculo === selectedTrip?.idVeiculo
+  );
+
+  // === HANDLERS ===
+  const handleInputChange = (e) => {
+    setNewTripData({ ...newTripData, [e.target.name]: e.target.value });
+  };
+
+  const handleCreateTrip = async (e) => {
+    e.preventDefault();
+    if (!newTripData.idMotorista || !newTripData.idVeiculo) {
+      toast.warn("Selecione um motorista e um veículo.");
+      return;
+    }
+    setIsCreating(true);
+    try {
+      const payload = {
+        idRota: selectedRotaId,
+        idMotorista: Number(newTripData.idMotorista),
+        idVeiculo: Number(newTripData.idVeiculo),
+        data: newTripData.data,
+        saidaPrevista: newTripData.saidaPrevista,
+        chegadaPrevista: newTripData.chegadaPrevista,
+        tipoViagem: newTripData.tipoViagem,
+        ativo: true,
+      };
+      await createViagem(payload);
+      toast.success("Viagem criada com sucesso!");
+      setIsModalOpen(false);
+      fetchViagens();
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao criar viagem.");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // --- HANDLERS DE ATIVAR/INATIVAR ---
+  const openToggleModal = (viagem, e) => {
+    e.stopPropagation();
+    setTripToToggle(viagem);
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleConfirmToggle = async () => {
+    if (!tripToToggle) return;
+
+    setIsToggling(true);
+    const novoStatus = !tripToToggle.ativo;
+    const acaoTexto = novoStatus ? "ativada" : "encerrada";
+
+    try {
+      const payload = { ...tripToToggle, ativo: novoStatus };
+      await updateViagem(tripToToggle.idViagem, payload);
+
+      toast.success(`Viagem ${acaoTexto} com sucesso.`);
+
+      setViagens((prev) =>
+        prev.map((v) =>
+          v.idViagem === tripToToggle.idViagem ? { ...v, ativo: novoStatus } : v
+        )
+      );
+      setIsConfirmModalOpen(false);
+      setTripToToggle(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao alterar status da viagem.");
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
  return (
   <main className="flex-1 p-4 md:p-10 ml-16 overflow-x-hidden">
@@ -106,100 +249,63 @@ const RegistroViagem = () => {
         <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-[#3B7258] leading-tight">
           REGISTRO DE VIAGEM
         </h1>
-        <p className="text-gray-600 text-sm sm:text-base mt-2">
-          Visualize as rotas, viagens e embarques registrados no sistema.
+        <p className="text-gray-600 mt-1">
+          Gerencie suas viagens e visualize os embarques diários.
         </p>
       </header>
 
-      {/* === CONTEÚDO PRINCIPAL === */}
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-        {/* === PAINEL DE ROTAS === */}
-        <aside className="w-full lg:w-1/3 xl:w-1/4">
-          <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6 h-fit">
-            <h2 className="text-lg sm:text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <Route size={22} className="text-gray-600" />
-              Rotas Disponíveis
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* === ESQUERDA: LISTA DE ROTAS === */}
+        <aside className="w-full lg:w-1/4">
+          <div className="bg-white rounded-2xl shadow-md p-4 h-fit">
+            <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <Route size={20} className="text-gray-600" />
+              Rotas
             </h2>
-
-            {loadingRotas ? (
-              <div className="flex items-center justify-center text-gray-500 py-6">
-                <Loader2 className="animate-spin w-5 h-5 mr-2" />
-                Carregando rotas...
+            {loadingInitial ? (
+              <div className="flex justify-center py-4">
+                <Loading size={60} />
               </div>
-            ) : errorRotas ? (
-              <p className="text-red-500">{errorRotas}</p>
-            ) : rotas.length > 0 ? (
-              <div className="space-y-2 overflow-y-auto max-h-[60vh] pr-1 scrollbar-thin scrollbar-thumb-gray-300">
+            ) : (
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto scrollbar-thin">
                 {rotas.map((rota) => (
                   <button
                     key={rota.idRota}
                     onClick={() => setSelectedRotaId(rota.idRota)}
-                    className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
+                    className={`w-full text-left p-3 rounded-lg transition-all ${
                       selectedRotaId === rota.idRota
-                        ? "bg-[#038C4C] text-white shadow-md"
+                        ? "bg-[#038C4C] text-white shadow"
                         : "hover:bg-gray-100 text-gray-700"
                     }`}
                   >
                     <p className="font-bold truncate">{rota.nome}</p>
-                    <p className="text-sm opacity-90 truncate">
+                    <p className="text-xs opacity-90">
                       {rota.cidadeNome} - {rota.periodo}
                     </p>
                   </button>
                 ))}
               </div>
-            ) : (
-              <p className="text-gray-500 text-sm">
-                Nenhuma rota encontrada.
-              </p>
             )}
           </div>
         </aside>
 
-        {/* === PAINEL DE VIAGENS E EMBARQUES === */}
-        <section className="flex-1">
-          {loadingViagens ? (
-            <div className="flex flex-col items-center justify-center py-10 text-gray-600 text-lg">
-              <Loader2 className="animate-spin w-6 h-6 mb-2" />
-              Buscando viagens...
+        {/* === DIREITA: VIAGENS E EMBARQUES === */}
+        <section className="flex-1 space-y-6">
+          {/* 1. SELEÇÃO DA VIAGEM (Card Horizontal) */}
+          <div className="bg-white p-4 rounded-xl shadow-sm">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-gray-800">
+                Selecione a Viagem
+              </h2>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                disabled={!selectedRotaId || loadingInitial}
+                className="flex items-center gap-2 text-sm text-[#038C4C] hover:bg-green-50 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <Plus size={16} />
+                Nova Viagem
+              </button>
             </div>
-          ) : errorViagens ? (
-            <div className="text-center py-10 text-lg text-red-500">
-              {errorViagens}
-            </div>
-          ) : viagens.length > 0 ? (
-            <>
-              {/* Lista de Viagens */}
-              <div className="flex flex-wrap lg:flex-nowrap gap-4 overflow-x-auto pb-4">
-                {viagens.map((viagem) => (
-                  <div
-                    key={viagem.idViagem}
-                    onClick={() => setSelectedTripId(viagem.idViagem)}
-                    className={`bg-white rounded-2xl p-5 shadow-md w-full sm:w-[280px] md:w-[320px] cursor-pointer transition-all ${
-                      selectedTripId === viagem.idViagem
-                        ? "border-2 border-[#038C4C] shadow-lg"
-                        : "border-2 border-transparent hover:shadow-lg"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="w-full">
-                        <h3 className="font-bold text-lg text-gray-800 truncate">
-                          Veículo: {viagem.idVeiculo}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          Data:{" "}
-                          {new Date(viagem.data).toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-3 py-1 text-xs font-semibold rounded-full shrink-0 ${
-                          viagem.ativo
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {viagem.ativo ? "Ativa" : "Finalizada"}
-                      </span>
-                    </div>
 
                     <div className="flex flex-col gap-2 text-sm">
                       <div className="flex items-center">
@@ -288,12 +394,188 @@ const RegistroViagem = () => {
                   </p>
                 )}
               </div>
-            </>
-          ) : (
-            <div className="text-center bg-white p-6 rounded-xl shadow">
-              <p className="text-lg text-gray-600">
-                Nenhuma viagem encontrada para esta rota.
+            ) : viagens.length > 0 ? (
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
+                {viagens.map((v) => {
+                  const vDetails = veiculos.find(
+                    (vec) =>
+                      vec.id === v.idVeiculo || vec.idVeiculo === v.idVeiculo
+                  );
+                  const isProcessing = isToggling === v.idViagem;
+
+                  return (
+                    <div
+                      key={v.idViagem}
+                      onClick={() => setSelectedTripId(v.idViagem)}
+                      className={`min-w-[230px] p-3 rounded-lg border-2 cursor-pointer transition-all relative group ${
+                        selectedTripId === v.idViagem
+                          ? "border-[#038C4C] bg-green-50"
+                          : "border-gray-100 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-bold text-gray-800 text-sm flex items-center gap-1">
+                            <Truck size={14} />
+                            {vDetails
+                              ? vDetails.placa
+                              : `Viagem ${v.idVeiculo}`}
+                          </h3>
+                        </div>
+
+                        {/* Botão de Ativar/Inativar */}
+                        <button
+                          onClick={(e) => openToggleModal(v, e)}
+                          disabled={isProcessing}
+                          title={
+                            v.ativo ? "Encerrar Viagem" : "Reativar Viagem"
+                          }
+                          className={`p-1.5 rounded-full transition-colors shadow-sm z-10 ${
+                            v.ativo
+                              ? "bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600"
+                              : "bg-gray-200 text-gray-500 hover:bg-green-100 hover:text-green-700"
+                          }`}
+                        >
+                          {isProcessing ? (
+                            <Loading size={14} />
+                          ) : (
+                            <Power size={14} />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Badge de Status Texto */}
+                      <div className="mt-2">
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                            v.ativo
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-200 text-gray-600"
+                          }`}
+                        >
+                          {v.ativo ? "Ativa" : "Encerrada"}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 pt-2 border-t border-gray-200/50 text-xs text-gray-500 flex justify-between">
+                        <span>{formatSimpleTime(v.saidaPrevista)}</span>
+                        <span className="font-mono">➔</span>
+                        <span>{formatSimpleTime(v.chegadaPrevista)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">
+                Nenhuma viagem nesta rota.
               </p>
+            )}
+          </div>
+
+          {/* 2. LISTA DE EMBARQUES (Com Filtro de Data) */}
+          {selectedTrip && (
+            <div className="bg-white p-6 rounded-xl shadow-md min-h-[400px]">
+              <div className="flex flex-col sm:flex-row justify-between items-end sm:items-center mb-6 border-b pb-4 border-gray-100 gap-4">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                      <Users className="text-[#038C4C]" size={24} />
+                      Embarques
+                    </h2>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-md font-bold border ${
+                        selectedTrip.ativo
+                          ? "bg-green-50 text-green-700 border-green-200"
+                          : "bg-red-50 text-red-700 border-red-200"
+                      }`}
+                    >
+                      {selectedTrip.ativo ? "VIAGEM ATIVA" : "VIAGEM ENCERRADA"}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {selectedVeiculoDetails
+                      ? `${selectedVeiculoDetails.modelo} - ${selectedVeiculoDetails.placa}`
+                      : `Veículo ID: ${selectedTrip.idVeiculo}`}
+                  </p>
+                </div>
+
+                <div className="flex flex-col w-full sm:w-auto">
+                  <label className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">
+                    Filtrar Dia
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="date"
+                      value={embarqueDateFilter}
+                      onChange={(e) => setEmbarqueDateFilter(e.target.value)}
+                      className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#038C4C] outline-none w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {loadingEmbarques ? (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                  <Loading size={80} />
+                  <p className="mt-4">Carregando passageiros...</p>
+                </div>
+              ) : filteredEmbarques.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-xs font-semibold text-gray-400 px-4 mb-2">
+                    <span>COLABORADOR</span>
+                    <span>HORÁRIO</span>
+                  </div>
+                  {filteredEmbarques.map((e) => (
+                    <div
+                      key={e.idEmbarque}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-[#36A293] flex items-center justify-center text-white font-bold text-sm">
+                          {getInitials(e.nomeColaborador)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-800">
+                            {e.nomeColaborador}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {e.cargoColaborador}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">
+                        <Clock size={14} className="text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700">
+                          {formatTimestamp(e.dataEmbarque).split(" ")[1] ||
+                            formatTimestamp(e.dataEmbarque)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="mt-4 text-center text-xs text-gray-400">
+                    Total: {filteredEmbarques.length} passageiros em{" "}
+                    {new Date(
+                      embarqueDateFilter + "T00:00:00"
+                    ).toLocaleDateString()}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                  <Search size={40} className="mb-3 opacity-50" />
+                  <p className="text-lg font-medium text-gray-500">
+                    Nenhum embarque encontrado
+                  </p>
+                  <p className="text-sm">
+                    Não há registros para a data{" "}
+                    {new Date(
+                      embarqueDateFilter + "T00:00:00"
+                    ).toLocaleDateString()}
+                    .
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </section>

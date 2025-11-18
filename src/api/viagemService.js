@@ -1,9 +1,7 @@
-import api from './axios'; // Importa a sua instância configurada do Axios
+import api from "./axios";
 
 /**
  * Busca viagens filtradas por um ID de rota.
- * @param {string|number} rotaId - O ID da rota para filtrar as viagens.
- * @returns {Promise<Array>} Uma promessa que resolve para o array de viagens.
  */
 export const getViagensPorRota = async (rotaId) => {
   if (!rotaId) {
@@ -20,8 +18,6 @@ export const getViagensPorRota = async (rotaId) => {
 
 /**
  * Busca os detalhes dos embarques de uma viagem específica.
- * @param {string} viagemId - O ID da viagem.
- * @returns {Promise<Array>} Uma promessa que resolve para o array de embarques.
  */
 export const getEmbarquesDaViagem = async (viagemId) => {
   if (!viagemId) {
@@ -32,6 +28,34 @@ export const getEmbarquesDaViagem = async (viagemId) => {
     return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error(`Erro ao buscar embarques para a viagem ${viagemId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Cria uma nova viagem no sistema.
+ */
+export const createViagem = async (tripData) => {
+  try {
+    const response = await api.post("/viagens", tripData);
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao criar nova viagem:", error);
+    throw error;
+  }
+};
+
+/**
+ * Atualiza os dados de uma viagem existente (usado para ativar/inativar).
+ * Endpoint: PUT /viagens/{id}
+ */
+export const updateViagem = async (id, tripData) => {
+  try {
+    // O PUT geralmente espera o objeto completo atualizado
+    const response = await api.put(`/viagens/${id}`, tripData);
+    return response.data;
+  } catch (error) {
+    console.error(`Erro ao atualizar a viagem ${id}:`, error);
     throw error;
   }
 };

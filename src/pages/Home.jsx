@@ -1,60 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
-import { toast } from "react-toastify"; // 👈 Importamos o toast
+import { toast } from "react-toastify";
+import { Send, Copy, Check, User, Bot } from "lucide-react"; // 👈 Importando Lucide
 import api from "../api/axios";
+import botIcon from "../assets/bot.jpg";
 
 const UserAvatar = () => (
-  <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
-    U {/* Ou use uma imagem/ícone */}
+  <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 shrink-0">
+    <User size={20} />
   </div>
 );
 
 const AiAvatar = () => (
-  <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-700 font-bold text-sm shrink-0">
-    AI {/* Ou use o logo da sua IA */}
+  <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-700 shrink-0">
+    <img src={botIcon} alt="AI Bot" className="w-8 h-8 rounded-full" />
   </div>
 );
-
-const SendIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-5 w-5"
-    viewBox="0 0 20 20"
-    fill="currentColor"
-  >
-    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-  </svg>
-);
-
-const CopyIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-4 w-4"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-    />
-  </svg>
-);
-
-const CheckIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-4 w-4"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-  </svg>
-);
-// --- Fim dos Ícones ---
 
 export default function Home() {
   // Estado para guardar as mensagens do chat
@@ -149,8 +109,7 @@ export default function Home() {
         setCopiedMessageId(null); // Limpa o feedback após 2 segundos
       }, 2000);
 
-      // 👈 Dispara o toast de sucesso (OPCIONAL, mas adicionado)
-      // Se preferir não ter, apenas remova a linha abaixo.
+      // 👈 Dispara o toast de sucesso
       toast.success("Texto copiado!");
     } catch (err) {
       console.error("Falha ao copiar texto:", err);
@@ -193,11 +152,11 @@ export default function Home() {
                     >
                       {copiedMessageId === msg.id ? (
                         <>
-                          <CheckIcon /> Copiado!
+                          <Check size={16} /> Copiado!
                         </>
                       ) : (
                         <>
-                          <CopyIcon /> Copiar
+                          <Copy size={16} /> Copiar
                         </>
                       )}
                     </button>
@@ -244,7 +203,7 @@ export default function Home() {
               disabled={!inputText.trim() || isAiThinking}
               title="Enviar mensagem"
             >
-              <SendIcon />
+              <Send size={20} />
             </button>
           </form>
         </div>
