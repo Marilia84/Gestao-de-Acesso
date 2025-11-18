@@ -242,7 +242,9 @@ const RegistroViagem = () => {
   };
 
   return (
-    <main className="flex-1 px-3 sm:px-5 md:px-10 py-8 mt-20 md:ml-12 overflow-x-hidden">
+  <main className="flex-1 p-4 md:p-10 ml-16 overflow-x-hidden">
+    <div className="w-full max-w-6xl mx-auto">
+      {/* CABEÇALHO */}
       <header className="mb-8">
         <h1 className="text-2xl sm:text-4xl font-bold text-[#3B7258]">
           REGISTRO DE VIAGEM
@@ -252,6 +254,7 @@ const RegistroViagem = () => {
         </p>
       </header>
 
+      {/* CONTEÚDO PRINCIPAL */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* === ESQUERDA: LISTA DE ROTAS === */}
         <aside className="w-full lg:w-1/4">
@@ -405,7 +408,9 @@ const RegistroViagem = () => {
                           : "bg-red-50 text-red-700 border-red-200"
                       }`}
                     >
-                      {selectedTrip.ativo ? "VIAGEM ATIVA" : "VIAGEM ENCERRADA"}
+                      {selectedTrip.ativo
+                        ? "VIAGEM ATIVA"
+                        : "VIAGEM ENCERRADA"}
                     </span>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
@@ -495,200 +500,202 @@ const RegistroViagem = () => {
           )}
         </section>
       </div>
+    </div>
 
-      {/* === MODAL: CRIAR NOVA VIAGEM === */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
-              <h3 className="font-bold text-lg text-[#3B7258]">
-                Criar Nova Viagem
-              </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleCreateTrip} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
-                    <User size={14} /> Motorista
-                  </label>
-                  <select
-                    name="idMotorista"
-                    required
-                    value={newTripData.idMotorista}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none bg-white"
-                  >
-                    <option value="">Selecione um Motorista...</option>
-                    {motoristas.map((m) => (
-                      <option
-                        key={m.id || m.idMotorista}
-                        value={m.id || m.idMotorista}
-                      >
-                        {m.nome}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
-                    <Truck size={14} /> Veículo
-                  </label>
-                  <select
-                    name="idVeiculo"
-                    required
-                    value={newTripData.idVeiculo}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none bg-white"
-                  >
-                    <option value="">Selecione um Veículo...</option>
-                    {veiculos.map((v) => (
-                      <option
-                        key={v.id || v.idVeiculo}
-                        value={v.id || v.idVeiculo}
-                      >
-                        {v.modelo} - {v.placa}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+    {/* === MODAL: CRIAR NOVA VIAGEM === */}
+    {isModalOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+            <h3 className="font-bold text-lg text-[#3B7258]">
+              Criar Nova Viagem
+            </h3>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <form onSubmit={handleCreateTrip} className="p-6 space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <User size={14} /> Motorista
+                </label>
+                <select
+                  name="idMotorista"
+                  required
+                  value={newTripData.idMotorista}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none bg-white"
+                >
+                  <option value="">Selecione um Motorista...</option>
+                  {motoristas.map((m) => (
+                    <option
+                      key={m.id || m.idMotorista}
+                      value={m.id || m.idMotorista}
+                    >
+                      {m.nome}
+                    </option>
+                  ))}
+                </select>
               </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <Truck size={14} /> Veículo
+                </label>
+                <select
+                  name="idVeiculo"
+                  required
+                  value={newTripData.idVeiculo}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none bg-white"
+                >
+                  <option value="">Selecione um Veículo...</option>
+                  {veiculos.map((v) => (
+                    <option
+                      key={v.id || v.idVeiculo}
+                      value={v.id || v.idVeiculo}
+                    >
+                      {v.modelo} - {v.placa}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Data de Criação
+              </label>
+              <input
+                type="date"
+                name="data"
+                value={newTripData.data}
+                required
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Data de Criação
+                  Saída Prevista
                 </label>
                 <input
-                  type="date"
-                  name="data"
-                  value={newTripData.data}
+                  type="time"
+                  name="saidaPrevista"
                   required
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none"
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Saída Prevista
-                  </label>
-                  <input
-                    type="time"
-                    name="saidaPrevista"
-                    required
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Chegada Prevista
-                  </label>
-                  <input
-                    type="time"
-                    name="chegadaPrevista"
-                    required
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none"
-                  />
-                </div>
-              </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Tipo
+                  Chegada Prevista
                 </label>
-                <select
-                  name="tipoViagem"
+                <input
+                  type="time"
+                  name="chegadaPrevista"
+                  required
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none bg-white"
-                >
-                  <option value="ida">Ida</option>
-                  <option value="volta">Volta</option>
-                </select>
+                  className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none"
+                />
               </div>
-              <div className="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCreating}
-                  className="px-4 py-2 text-sm bg-[#038C4C] text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors font-medium shadow-sm disabled:opacity-70"
-                >
-                  {isCreating ? <Loading size={16} /> : <Save size={16} />}{" "}
-                  Salvar Viagem
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* === MODAL: CONFIRMAR ALTERAÇÃO DE STATUS === */}
-      {isConfirmModalOpen && tripToToggle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 p-6 text-center">
-            <div
-              className={`mx-auto w-12 h-12 flex items-center justify-center rounded-full mb-4 ${
-                tripToToggle.ativo ? "bg-red-100" : "bg-green-100"
-              }`}
-            >
-              <AlertTriangle
-                className={
-                  tripToToggle.ativo ? "text-red-600" : "text-green-600"
-                }
-                size={24}
-              />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
-              {tripToToggle.ativo ? "Encerrar Viagem?" : "Ativar Viagem?"}
-            </h3>
-            <p className="text-sm text-gray-500 mb-6">
-              {tripToToggle.ativo
-                ? "Você tem certeza que deseja encerrar esta viagem? Ela ficará marcada como finalizada."
-                : "Você deseja reativar esta viagem? Ela ficará disponível para novos registros."}
-            </p>
-            <div className="flex gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Tipo
+              </label>
+              <select
+                name="tipoViagem"
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none bg-white"
+              >
+                <option value="ida">Ida</option>
+                <option value="volta">Volta</option>
+              </select>
+            </div>
+            <div className="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-2">
               <button
-                onClick={() => {
-                  setIsConfirmModalOpen(false);
-                  setTripToToggle(null);
-                }}
-                className="flex-1 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 Cancelar
               </button>
               <button
-                onClick={handleConfirmToggle}
-                disabled={isToggling}
-                className={`flex-1 py-2.5 text-sm font-semibold text-white rounded-xl transition-colors flex items-center justify-center gap-2 ${
-                  tripToToggle.ativo
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "bg-green-600 hover:bg-green-700"
-                }`}
+                type="submit"
+                disabled={isCreating}
+                className="px-4 py-2 text-sm bg-[#038C4C] text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors font-medium shadow-sm disabled:opacity-70"
               >
-                {isToggling ? (
-                  <Loading size={16} />
-                ) : (
-                  <>{tripToToggle.ativo ? "Sim, Encerrar" : "Sim, Ativar"}</>
-                )}
+                {isCreating ? <Loading size={16} /> : <Save size={16} />}{" "}
+                Salvar Viagem
               </button>
             </div>
+          </form>
+        </div>
+      </div>
+    )}
+
+    {/* === MODAL: CONFIRMAR ALTERAÇÃO DE STATUS === */}
+    {isConfirmModalOpen && tripToToggle && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 p-6 text-center">
+          <div
+            className={`mx-auto w-12 h-12 flex items-center justify-center rounded-full mb-4 ${
+              tripToToggle.ativo ? "bg-red-100" : "bg-green-100"
+            }`}
+          >
+            <AlertTriangle
+              className={
+                tripToToggle.ativo ? "text-red-600" : "text-green-600"
+              }
+              size={24}
+            />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">
+            {tripToToggle.ativo ? "Encerrar Viagem?" : "Ativar Viagem?"}
+          </h3>
+          <p className="text-sm text-gray-500 mb-6">
+            {tripToToggle.ativo
+              ? "Você tem certeza que deseja encerrar esta viagem? Ela ficará marcada como finalizada."
+              : "Você deseja reativar esta viagem? Ela ficará disponível para novos registros."}
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                setIsConfirmModalOpen(false);
+                setTripToToggle(null);
+              }}
+              className="flex-1 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleConfirmToggle}
+              disabled={isToggling}
+              className={`flex-1 py-2.5 text-sm font-semibold text-white rounded-xl transition-colors flex items-center justify-center gap-2 ${
+                tripToToggle.ativo
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
+            >
+              {isToggling ? (
+                <Loading size={16} />
+              ) : (
+                <>{tripToToggle.ativo ? "Sim, Encerrar" : "Sim, Ativar"}</>
+              )}
+            </button>
           </div>
         </div>
-      )}
-    </main>
-  );
+      </div>
+    )}
+  </main>
+);
+
 };
 
 export default RegistroViagem;
