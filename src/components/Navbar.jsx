@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import logoV from "../assets/logoV.png";
+import logoK from "../assets/logoK.png";
 import {
   LayoutDashboard,
   Bus,
@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Home", path: "/home" },
+  { icon: LayoutDashboard, label: "Chat-Bot", path: "/home" },
   { icon: Bus, label: "Gerenciar Linhas", path: "/gerenciarLinhas" },
   { icon: Users, label: "Colaboradores", path: "/colaboradores" },
   { icon: Building, label: "Portaria", path: "/portaria" },
@@ -45,7 +45,7 @@ export default function Navbar() {
       {/* LOGO */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-gray-100">
         <img
-          src={logoV}
+          src={logoK}
           alt="logo"
           className="h-12 w-12 rounded-full object-contain"
         />
@@ -72,19 +72,22 @@ export default function Navbar() {
               key={item.path}
               to={item.path}
               className={`
-                flex items-center gap-3 rounded-lg px-3 py-2.5 mb-1
+                flex items-center gap-3 rounded-2xl px-3 py-2.5 mb-1
                 transition-colors
                 ${
                   isActive
-                    ? "bg-[#038C4C] text-white"
+                    ? "bg-[#e3ffec] text-green-700"
                     : "text-gray-700 hover:bg-gray-100"
                 }
               `}
             >
               <Icon
-                className="w-5 h-5 shrink-0"
-                strokeWidth={isActive ? 2.5 : 2}
-              />
+  className={`w-5 h-5 shrink-0 ${
+    isActive ? "text-green-600" : "text-emerald-600"
+  }`}
+  strokeWidth={isActive ? 2.5 : 2}
+/>
+
               <span
                 className="
                   text-sm font-medium
