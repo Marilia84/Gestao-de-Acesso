@@ -1,6 +1,6 @@
 // src/pages/Portaria.jsx
 import React, { useState, useEffect, useMemo } from "react";
-import { toast } from "react-toastify"; // 👈 Importamos o toast
+import { toast } from "react-toastify";
 import { getColaboradores } from "../api/colaboradorService";
 import { getVisitantes } from "../api/visitanteService";
 import {
@@ -21,20 +21,25 @@ const Portaria = () => {
   const [colaboradores, setColaboradores] = useState([]);
   const [visitantes, setVisitantes] = useState([]);
   const [historicoBase, setHistoricoBase] = useState([]);
+
+  // Estados do Formulário
   const [tipoPessoa, setTipoPessoa] = useState("COLABORADOR");
   const [selectedPessoaId, setSelectedPessoaId] = useState("");
   const [selectedPortariaId, setSelectedPortariaId] = useState(
     portariasDisponiveis[0]?.id || ""
   );
+  const [observacao, setObservacao] = useState(""); // 👈 Novo estado para Observação
   const [currentOcupanteSelection, setCurrentOcupanteSelection] = useState("");
   const [selectedOcupantes, setSelectedOcupantes] = useState([]);
 
+  // Filtros
   const today = new Date().toISOString().slice(0, 10);
   const [filtroDataDe, setFiltroDataDe] = useState(today);
   const [filtroDataAte, setFiltroDataAte] = useState(today);
   const [filtroTipo, setFiltroTipo] = useState("TODOS");
   const [filtroPortaria, setFiltroPortaria] = useState("");
 
+  // Loading e Erros
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,7 +65,7 @@ const Portaria = () => {
             ? "Acesso não autorizado (403). Verifique suas permissões ou token."
             : "Falha ao carregar dados iniciais. Verifique a conexão com a API.";
         setFetchError(errorMsg);
-        toast.error(errorMsg); // 👈 Toast de erro
+        toast.error(errorMsg);
         setColaboradores([]);
         setVisitantes([]);
       } finally {
@@ -79,7 +84,7 @@ const Portaria = () => {
         setHistoricoBase(data);
       } catch (error) {
         console.error(error);
-        toast.error("Falha ao carregar histórico de acessos."); // 👈 Toast de erro
+        toast.error("Falha ao carregar histórico de acessos.");
         setHistoricoBase([]);
       } finally {
         setLoadingHistorico(false);
@@ -124,18 +129,18 @@ const Portaria = () => {
   const handleAddOcupante = () => {
     if (!currentOcupanteSelection) return;
     if (selectedOcupantes.length >= 10) {
-      toast.warn("Limite de 10 ocupantes atingido."); // 👈 Toast de aviso
+      toast.warn("Limite de 10 ocupantes atingido.");
       return;
     }
     if (selectedOcupantes.some((o) => o.id === currentOcupanteSelection)) {
-      toast.warn("Este ocupante já foi adicionado."); // 👈 Toast de aviso
+      toast.warn("Este ocupante já foi adicionado.");
       return;
     }
     if (
       tipoPessoa === "COLABORADOR" &&
       currentOcupanteSelection === selectedPessoaId
     ) {
-      toast.warn("A pessoa principal não pode ser adicionada como ocupante."); // 👈 Toast de aviso
+      toast.warn("A pessoa principal não pode ser adicionada como ocupante.");
       return;
     }
 
@@ -160,7 +165,7 @@ const Portaria = () => {
     if (!selectedPessoaId || !selectedPortariaId) {
       const errorMsg = "Selecione a pessoa principal e a portaria.";
       setFormError(errorMsg);
-      toast.error(errorMsg); // 👈 Toast de erro
+      toast.error(errorMsg);
       setIsSubmitting(false);
       return;
     }
@@ -174,40 +179,49 @@ const Portaria = () => {
           (c) => c.idColaborador === selectedPessoaId
         )?.matricula;
       } else {
-        identificadorPrincipal = visitantes.find(
+        // Busca o documento do visitante
+        const visitanteSelecionado = visitantes.find(
           (v) => v.id === selectedPessoaId
-        )?.numeroDocumento;
+        );
+        identificadorPrincipal = visitanteSelecionado?.numeroDocumento;
       }
     } catch (error) {
       const errorMsg = "Erro ao processar seleção principal.";
       setFormError(errorMsg);
-      toast.error(errorMsg); // 👈 Toast de erro
+      toast.error(errorMsg);
       setIsSubmitting(false);
       return;
     }
 
     if (!identificadorPrincipal) {
-      const errorMsg = "Identificador principal não encontrado.";
+      const errorMsg =
+        "Identificador principal (Matrícula ou Documento) não encontrado para a pessoa selecionada.";
       setFormError(errorMsg);
-      toast.error(errorMsg); // 👈 Toast de erro
+      toast.error(errorMsg);
       setIsSubmitting(false);
       return;
     }
 
+    // 👈 Payload corrigido com o campo "observacao"
     const payload = {
       tipoPessoa: tipoPrincipal,
       matriculaOuDocumento: identificadorPrincipal,
       codPortaria: parseInt(selectedPortariaId),
+      observacao: observacao || "", // Envia string vazia se null
       ocupanteMatriculas: selectedOcupantes.map((o) => o.identificador) || [],
     };
 
     try {
       await registrarEntrada(payload);
-      toast.success("Entrada(s) registrada(s) com sucesso!"); // 👈 Toast de sucesso
+      toast.success("Entrada registrada com sucesso!");
+
+      // Resetar formulário
       setSelectedPessoaId("");
       setSelectedOcupantes([]);
       setCurrentOcupanteSelection("");
-      // recarrega histórico
+      setObservacao(""); // Limpa observação
+
+      // Recarrega histórico
       const histRes = await getAcessosHistorico(filtroDataDe, filtroDataAte);
       setHistoricoBase(histRes);
     } catch (error) {
@@ -215,9 +229,9 @@ const Portaria = () => {
       const errorMsg =
         error.response?.data?.message ||
         error.response?.data?.detail ||
-        "Falha ao registrar entrada(s).";
+        "Falha ao registrar entrada(s). Verifique os dados.";
       setFormError(errorMsg);
-      toast.error(errorMsg); // 👈 Toast de erro
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -227,378 +241,393 @@ const Portaria = () => {
     if (!idAcesso) return;
     try {
       await registrarSaida(idAcesso);
-      toast.success("Saída registrada com sucesso!"); // 👈 Toast de sucesso
+      toast.success("Saída registrada com sucesso!");
       const histRes = await getAcessosHistorico(filtroDataDe, filtroDataAte);
       setHistoricoBase(histRes);
     } catch (error) {
       console.error(error);
-      toast.error("Falha ao registrar saída."); // 👈 Toast de erro
+      toast.error("Falha ao registrar saída.");
     }
   };
 
   return (
-  <main className="flex-1 p-4 md:p-10 ml-16">
-    <div className="relative z-10 w-full max-w-6xl mx-auto space-y-8">
-      <header>
-        <h1 className="text-3xl sm:text-4xl font-bold text-[#3B7258]">
-          Controle de Portaria
-        </h1>
-      </header>
+    <main className="flex-1 p-4 md:p-10 ml-16">
+      <div className="relative z-10 w-full max-w-6xl mx-auto space-y-8">
+        <header>
+          <h1 className="text-3xl sm:text-4xl font-bold text-[#3B7258]">
+            Controle de Portaria
+          </h1>
+        </header>
 
-      {fetchError && (
-        <div
-          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
-          role="alert"
-        >
-          <strong className="font-bold">Erro: </strong>
-          <span>{fetchError}</span>
-        </div>
-      )}
-
-      {/* CARD: Registrar entrada */}
-      <section className="bg-white p-6 rounded-xl shadow-lg relative px-4 md:px-12">
-        {loadingInitial && (
-          <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-xl z-10">
-            <Loading size={140} message="" />
+        {fetchError && (
+          <div
+            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
+            role="alert"
+          >
+            <strong className="font-bold">Erro: </strong>
+            <span>{fetchError}</span>
           </div>
         )}
 
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">
-          Registrar Entrada
-        </h2>
-
-        {!loadingInitial && (
-          <form onSubmit={handleRegisterEntry} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Tipo (Principal)
-                </label>
-                <select
-                  value={tipoPessoa}
-                  onChange={(e) => {
-                    setTipoPessoa(e.target.value);
-                    setSelectedPessoaId("");
-                    setSelectedOcupantes([]);
-                    setCurrentOcupanteSelection("");
-                  }}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-                >
-                  <option value="COLABORADOR">Colaborador</option>
-                  <option value="VISITANTE">Visitante</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Pessoa Principal
-                </label>
-                <select
-                  value={selectedPessoaId}
-                  onChange={(e) => setSelectedPessoaId(e.target.value)}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-                  required
-                  disabled={
-                    tipoPessoa === "COLABORADOR"
-                      ? colaboradores.length === 0
-                      : visitantes.length === 0
-                  }
-                >
-                  <option value="">
-                    {tipoPessoa === "COLABORADOR" &&
-                      colaboradores.length === 0 &&
-                      "Nenhum colaborador"}
-                    {tipoPessoa === "VISITANTE" &&
-                      visitantes.length === 0 &&
-                      "Nenhum visitante"}
-                    {(tipoPessoa === "COLABORADOR" &&
-                      colaboradores.length > 0) ||
-                    (tipoPessoa === "VISITANTE" && visitantes.length > 0)
-                      ? "Selecione..."
-                      : ""}
-                  </option>
-                  {tipoPessoa === "COLABORADOR"
-                    ? colaboradores.map((c) => (
-                        <option key={c.idColaborador} value={c.idColaborador}>
-                          {c.nome} ({c.matricula})
-                        </option>
-                      ))
-                    : visitantes.map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.nomeCompleto} ({v.numeroDocumento})
-                        </option>
-                      ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Portaria
-                </label>
-                <select
-                  value={selectedPortariaId}
-                  onChange={(e) => setSelectedPortariaId(e.target.value)}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-                  required
-                >
-                  {portariasDisponiveis.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
+        {/* CARD: Registrar entrada */}
+        <section className="bg-white p-6 rounded-xl shadow-lg relative px-4 md:px-12">
+          {loadingInitial && (
+            <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-xl z-10">
+              <Loading size={140} message="" />
             </div>
+          )}
 
-            {/* Linha Ocupantes */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-              <div className="md:col-span-3">
-                <label className="block text-sm font-medium text-gray-700">
-                  Adicionar Ocupante (máx 10)
-                </label>
-                <select
-                  value={currentOcupanteSelection}
-                  onChange={(e) => setCurrentOcupanteSelection(e.target.value)}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-                  disabled={
-                    selectedOcupantes.length >= 10 ||
-                    !selectedPessoaId ||
-                    colaboradores.length === 0
-                  }
-                >
-                  <option value="">
-                    {colaboradores.length === 0
-                      ? "Nenhum colaborador carregado"
-                      : "Selecione um colaborador..."}
-                  </option>
-                  {ocupantesDisponiveis
-                    .filter(
-                      (p) =>
-                        p.id !== selectedPessoaId &&
-                        !selectedOcupantes.some((o) => o.id === p.id)
-                    )
-                    .map((p) => (
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            Registrar Entrada
+          </h2>
+
+          {!loadingInitial && (
+            <form onSubmit={handleRegisterEntry} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tipo (Principal)
+                  </label>
+                  <select
+                    value={tipoPessoa}
+                    onChange={(e) => {
+                      setTipoPessoa(e.target.value);
+                      setSelectedPessoaId("");
+                      setSelectedOcupantes([]);
+                      setCurrentOcupanteSelection("");
+                    }}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
+                  >
+                    <option value="COLABORADOR">Colaborador</option>
+                    <option value="VISITANTE">Visitante</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Pessoa Principal
+                  </label>
+                  <select
+                    value={selectedPessoaId}
+                    onChange={(e) => setSelectedPessoaId(e.target.value)}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
+                    required
+                    disabled={
+                      tipoPessoa === "COLABORADOR"
+                        ? colaboradores.length === 0
+                        : visitantes.length === 0
+                    }
+                  >
+                    <option value="">
+                      {tipoPessoa === "COLABORADOR" &&
+                        colaboradores.length === 0 &&
+                        "Nenhum colaborador"}
+                      {tipoPessoa === "VISITANTE" &&
+                        visitantes.length === 0 &&
+                        "Nenhum visitante"}
+                      {(tipoPessoa === "COLABORADOR" &&
+                        colaboradores.length > 0) ||
+                      (tipoPessoa === "VISITANTE" && visitantes.length > 0)
+                        ? "Selecione..."
+                        : ""}
+                    </option>
+                    {tipoPessoa === "COLABORADOR"
+                      ? colaboradores.map((c) => (
+                          <option key={c.idColaborador} value={c.idColaborador}>
+                            {c.nome} ({c.matricula})
+                          </option>
+                        ))
+                      : visitantes.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.nomeCompleto} ({v.numeroDocumento})
+                          </option>
+                        ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Portaria
+                  </label>
+                  <select
+                    value={selectedPortariaId}
+                    onChange={(e) => setSelectedPortariaId(e.target.value)}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
+                    required
+                  >
+                    {portariasDisponiveis.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.nome} ({p.identificador})
+                        {p.nome}
                       </option>
                     ))}
-                </select>
+                  </select>
+                </div>
               </div>
+
+              {/* Linha Ocupantes */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div className="md:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Adicionar Ocupante (máx 10)
+                  </label>
+                  <select
+                    value={currentOcupanteSelection}
+                    onChange={(e) =>
+                      setCurrentOcupanteSelection(e.target.value)
+                    }
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
+                    disabled={
+                      selectedOcupantes.length >= 10 ||
+                      !selectedPessoaId ||
+                      colaboradores.length === 0
+                    }
+                  >
+                    <option value="">
+                      {colaboradores.length === 0
+                        ? "Nenhum colaborador carregado"
+                        : "Selecione um colaborador..."}
+                    </option>
+                    {ocupantesDisponiveis
+                      .filter(
+                        (p) =>
+                          p.id !== selectedPessoaId &&
+                          !selectedOcupantes.some((o) => o.id === p.id)
+                      )
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.nome} ({p.identificador})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={handleAddOcupante}
+                    disabled={
+                      !currentOcupanteSelection ||
+                      selectedOcupantes.length >= 10
+                    }
+                    className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+
+              {/* 👈 Novo Campo de Observação */}
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Observação (Opcional)
+                </label>
+                <textarea
+                  rows="2"
+                  value={observacao}
+                  onChange={(e) => setObservacao(e.target.value)}
+                  placeholder="Ex: Acompanhado de estagiário, Entrega de material..."
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
+                />
+              </div>
+
+              {/* Ocupantes adicionados */}
+              {selectedOcupantes.length > 0 && (
+                <div className="border rounded-md p-4 bg-gray-50 max-h-40 overflow-y-auto">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    Ocupantes Adicionados ({selectedOcupantes.length}):
+                  </h3>
+                  <ul className="space-y-2">
+                    {selectedOcupantes.map((o) => (
+                      <li
+                        key={o.id}
+                        className="flex justify-between items-center text-sm bg-white p-2 rounded shadow-sm"
+                      >
+                        <span>
+                          {o.nome} ({o.identificador})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveOcupante(o.id)}
+                          className="text-red-500 hover:text-red-700 text-xs font-semibold"
+                        >
+                          Remover
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {formError && <p className="text-red-600 text-sm">{formError}</p>}
+
+              <div className="text-right">
                 <button
-                  type="button"
-                  onClick={handleAddOcupante}
-                  disabled={
-                    !currentOcupanteSelection || selectedOcupantes.length >= 10
-                  }
-                  className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#038C3E] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#026d32] transition disabled:opacity-50"
                 >
-                  Adicionar
+                  {isSubmitting ? "Registrando..." : "Registrar Entrada"}
                 </button>
               </div>
+            </form>
+          )}
+        </section>
+
+        {/* CARD: Histórico */}
+        <section className="bg-white p-6 rounded-xl shadow-lg relative px-4 md:px-12">
+          {loadingHistorico && (
+            <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-xl z-10">
+              <Loading size={130} message="" />
             </div>
+          )}
 
-            {/* Ocupantes adicionados */}
-            {selectedOcupantes.length > 0 && (
-              <div className="border rounded-md p-4 bg-gray-50 max-h-40 overflow-y-auto">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Ocupantes Adicionados ({selectedOcupantes.length}):
-                </h3>
-                <ul className="space-y-2">
-                  {selectedOcupantes.map((o) => (
-                    <li
-                      key={o.id}
-                      className="flex justify-between items-center text-sm bg-white p-2 rounded shadow-sm"
-                    >
-                      <span>
-                        {o.nome} ({o.identificador})
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveOcupante(o.id)}
-                        className="text-red-500 hover:text-red-700 text-xs font-semibold"
-                      >
-                        Remover
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            Histórico de Acessos
+          </h2>
 
-            {formError && <p className="text-red-600 text-sm">{formError}</p>}
-
-            <div className="text-right">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="bg-[#038C4C] text-white py-2 px-6 rounded-md font-semibold hover:bg-[#036f4c] disabled:opacity-50 flex items-center gap-2"
+          {/* Filtros */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-end">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                De:
+              </label>
+              <input
+                type="date"
+                value={filtroDataDe}
+                onChange={(e) => setFiltroDataDe(e.target.value)}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Até:
+              </label>
+              <input
+                type="date"
+                value={filtroDataAte}
+                onChange={(e) => setFiltroDataAte(e.target.value)}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Tipo Pessoa
+              </label>
+              <select
+                value={filtroTipo}
+                onChange={(e) => setFiltroTipo(e.target.value)}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
               >
-                {isSubmitting && <Loading size={30} message="" />}
-                {isSubmitting ? "Registrando..." : "Registrar Entrada(s)"}
-              </button>
+                <option value="TODOS">Todos</option>
+                <option value="COLABORADOR">Colaborador</option>
+                <option value="VISITANTE">Visitante</option>
+              </select>
             </div>
-          </form>
-        )}
-      </section>
-
-      {/* CARD: Histórico */}
-      <section className="bg-white p-6 rounded-xl shadow-lg relative px-4 md:px-12">
-        {loadingHistorico && (
-          <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-xl z-10">
-            <Loading size={130} message="" />
-          </div>
-        )}
-
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">
-          Histórico de Acessos
-        </h2>
-
-        {/* Filtros */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-end">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              De:
-            </label>
-            <input
-              type="date"
-              value={filtroDataDe}
-              onChange={(e) => setFiltroDataDe(e.target.value)}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Até:
-            </label>
-            <input
-              type="date"
-              value={filtroDataAte}
-              onChange={(e) => setFiltroDataAte(e.target.value)}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Tipo Pessoa
-            </label>
-            <select
-              value={filtroTipo}
-              onChange={(e) => setFiltroTipo(e.target.value)}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-            >
-              <option value="TODOS">Todos</option>
-              <option value="COLABORADOR">Colaborador</option>
-              <option value="VISITANTE">Visitante</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Portaria
-            </label>
-            <select
-              value={filtroPortaria}
-              onChange={(e) => setFiltroPortaria(e.target.value)}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-            >
-              <option value="">Todas</option>
-              {portariasDisponiveis.map((p) => (
-                <option key={p.id} value={String(p.id)}>
-                  {p.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Tabela */}
-        {!loadingHistorico && historicoFiltrado.length > 0 ? (
-          <div className="overflow-x-auto max-h-96">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50 sticky top-0 z-20">
-                <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                    Nome (Condutor)
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                    Portaria
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                    Entrada
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                    Saída
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                    Ocupantes
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                    Ação
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {historicoFiltrado.map((acesso) => (
-                  <tr key={acesso.id}>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      {acesso.condutor?.nome || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      {acesso.tipoPessoa || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      {portariasDisponiveis.find(
-                        (p) => p.id === acesso.codPortaria
-                      )?.nome || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      {formatDateTime(acesso.entrada)}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap font-medium">
-                      {acesso.saida ? (
-                        formatDateTime(acesso.saida)
-                      ) : (
-                        <span className="text-orange-600">Pendente</span>
-                      )}
-                    </td>
-                    <td
-                      className="px-4 py-2 text-xs text-gray-600 max-w-xs truncate"
-                      title={acesso.ocupantes?.map((o) => o.nome).join(", ")}
-                    >
-                      {acesso.ocupantes?.length > 0
-                        ? acesso.ocupantes.map((o) => o.nome).join(", ")
-                        : "-"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      {!acesso.saida && (
-                        <button
-                          onClick={() => handleRegisterExit(acesso.id)}
-                          className="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded border border-red-300 hover:bg-red-50"
-                        >
-                          Registrar Saída
-                        </button>
-                      )}
-                    </td>
-                  </tr>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Portaria
+              </label>
+              <select
+                value={filtroPortaria}
+                onChange={(e) => setFiltroPortaria(e.target.value)}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
+              >
+                <option value="">Todas</option>
+                {portariasDisponiveis.map((p) => (
+                  <option key={p.id} value={String(p.id)}>
+                    {p.nome}
+                  </option>
                 ))}
-              </tbody>
-            </table>
+              </select>
+            </div>
           </div>
-        ) : (
-          !loadingHistorico && (
-            <p className="text-center text-gray-500 py-4">
-              Nenhum registro encontrado.
-            </p>
-          )
-        )}
-      </section>
-    </div>
-  </main>
-);
 
+          {/* Tabela */}
+          {!loadingHistorico && historicoFiltrado.length > 0 ? (
+            <div className="overflow-x-auto max-h-96">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50 sticky top-0 z-20">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                      Nome (Condutor)
+                    </th>
+                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                      Tipo
+                    </th>
+                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                      Portaria
+                    </th>
+                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                      Entrada
+                    </th>
+                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                      Saída
+                    </th>
+                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                      Ocupantes
+                    </th>
+                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                      Ação
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {historicoFiltrado.map((acesso) => (
+                    <tr key={acesso.id}>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {acesso.condutor?.nome || "N/A"}
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {acesso.tipoPessoa || "N/A"}
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {portariasDisponiveis.find(
+                          (p) => p.id === acesso.codPortaria
+                        )?.nome || "N/A"}
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {formatDateTime(acesso.entrada)}
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap font-medium">
+                        {acesso.saida ? (
+                          formatDateTime(acesso.saida)
+                        ) : (
+                          <span className="text-orange-600">Pendente</span>
+                        )}
+                      </td>
+                      <td
+                        className="px-4 py-2 text-xs text-gray-600 max-w-xs truncate"
+                        title={acesso.ocupantes?.map((o) => o.nome).join(", ")}
+                      >
+                        {acesso.ocupantes?.length > 0
+                          ? acesso.ocupantes.map((o) => o.nome).join(", ")
+                          : "-"}
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {!acesso.saida && (
+                          <button
+                            onClick={() => handleRegisterExit(acesso.id)}
+                            className="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded border border-red-300 hover:bg-red-50"
+                          >
+                            Registrar Saída
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            !loadingHistorico && (
+              <p className="text-center text-gray-500 py-4">
+                Nenhum registro encontrado.
+              </p>
+            )
+          )}
+        </section>
+      </div>
+    </main>
+  );
 };
 
 export default Portaria;
