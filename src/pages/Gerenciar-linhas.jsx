@@ -333,19 +333,18 @@ export default function GerenciarLinhas() {
     ? pontos.filter((p) => String(p.idCidade) === String(cidadeSelecionada))
     : [];
 
-  return (
-    <div className=" flex-1 p-4 sm:p-6 md:p-10 space-y-2 ml-0 md:ml-24">
-      <Navbar />
-      <div className="flex flex-1 flex-col justify-center items-center w-full">
-        <h1 className="text-3xl font-bold mb-6 text-[#3B7258] mt-4 text-center">
+ return (
+  <main className="flex-1 p-4 md:p-10 ml-16">
+    <div className="w-full max-w-6xl mx-auto">
+      <div className="flex flex-1 flex-col w-full">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-[#3B7258] mt-2 text-center">
           Gerenciar Linhas
         </h1>
 
         {/* CADASTRO DE PONTOS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 w-full ">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 w-full">
           {/* CARD 1 - adicionar cidade / cadastrar ponto */}
-          <div className="relative bg-white shadow-md rounded-lg p-6 md:p-10  h-full  min-h-[500px]">
-            {/* overlay de loading do card 1 */}
+          <div className="relative bg-white shadow-md rounded-lg p-6 md:p-10 h-full min-h-[500px]">
             {(loadingAdicionarCidade || loadingCadastrarPonto) && (
               <div className="absolute inset-0 bg-white/70  flex items-center justify-center rounded-lg z-10">
                 <Loading size={80} message="" />
@@ -355,11 +354,11 @@ export default function GerenciarLinhas() {
             <h1 className="text-2xl font-semibold text-[#3B7258] mb-2">
               Cadastrar ponto
             </h1>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-500 mb-4">
               Adicione novos pontos de parada com geolocalização automática
             </p>
 
-            <div className="flex flex-col md:flex-row md:items-center gap-2 mb-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-2 mb-6">
               <input
                 type="text"
                 placeholder="Nova cidade"
@@ -438,7 +437,7 @@ export default function GerenciarLinhas() {
                     Número
                   </label>
                   <input
-                    className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg p-2 w-full text-sm"
+                    className="border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg p-2 w-full text-sm mb-4"
                     placeholder="Número"
                     value={numero}
                     onChange={(e) => setNumero(e.target.value)}
@@ -447,17 +446,19 @@ export default function GerenciarLinhas() {
               </div>
             </div>
 
-            <button
-              className="bg-[#038C3E] text-white w-full py-2 text-lg rounded-lg flex items-center justify-center gap-3 hover:bg-[#027a36] transition"
-              onClick={handleCadastrarPonto}
-              disabled={loadingCadastrarPonto}
-            >
-              {loadingCadastrarPonto ? "Cadastrando..." : "Cadastrar Ponto"}
-            </button>
+            <div className="w-full flex justify-end">
+  <button
+    className="bg-[#038C3E] text-white px-6 py-2 text-lg rounded-lg hover:bg-[#027a36] transition"
+    onClick={handleCadastrarPonto}
+    disabled={loadingCadastrarPonto}
+  >
+    {loadingCadastrarPonto ? "Cadastrando..." : "Cadastrar Ponto"}
+  </button>
+</div>
           </div>
 
           {/* CARD 2 - lista de pontos */}
-          <div className="relative bg-white shadow-md rounded-lg p-6 md:p-10  h-full  min-h-[500px]">
+          <div className="relative bg-white shadow-md rounded-lg p-6 md:p-10 h-full min-h-[500px]">
             {loadingListaPontos && (
               <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
                 <Loading size={70} message="Carregando pontos..." />
@@ -477,6 +478,9 @@ export default function GerenciarLinhas() {
                   className="flex items-center justify-between bg-white border-2 border-[#038C3E]/50 px-4 py-2 rounded-lg"
                 >
                   {ponto.nome}
+                  <span className="text-gray-500 text-sm">
+                  {ponto.endereco}
+                  </span>
                 </div>
               ))}
               {!pontos.length && !loadingListaPontos && (
@@ -489,7 +493,7 @@ export default function GerenciarLinhas() {
         </div>
 
         {/* CARD 3 - CADASTRAR ROTA */}
-        <div className="mb-6 w-full flex justify-center px-2 sm:px-4">
+        <div className="mb-6 w-full flex justify-center px-0">
           <div className="relative bg-white shadow-md rounded-lg p-4 sm:p-6 md:p-10 w-full">
             {loadingCadastrarRota && (
               <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
@@ -637,7 +641,7 @@ export default function GerenciarLinhas() {
         </div>
 
         {/* ROTAS CADASTRADAS */}
-        <div className="mb-6 w-full flex justify-center px-2 sm:px-4">
+        <div className="mb-6 w-full">
           <div className="relative bg-white shadow-md rounded-lg p-6 lg:p-10 w-full max-h-[770px] overflow-y-auto">
             {loadingRotasCadastradas && (
               <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg z-10">
@@ -650,7 +654,7 @@ export default function GerenciarLinhas() {
                 Rotas cadastradas
               </h1>
               <p className="text-sm text-gray-500">
-                visualize todas as rotas e suas configurações
+                Visualize todas as rotas e suas configurações
               </p>
             </div>
 
@@ -662,10 +666,10 @@ export default function GerenciarLinhas() {
                     key={rota.idRota}
                     className="bg-white rounded-2xl shadow-md p-5 flex flex-col md:flex-row gap-6 relative"
                   >
-                    {/* ===== ESQUERDA ===== */}
+                    {/* ESQUERDA */}
                     <div className="flex-1 flex flex-col">
                       <div className="mb-2">
-                        <h3 className="text-lg font-semibold text-gray-800">
+                        <h3 className="text-md font-semibold text-gray-800">
                           {rota.nome}{" "}
                           {rota.cidade?.nome ? `- ${rota.cidade.nome}` : ""}
                         </h3>
@@ -712,14 +716,18 @@ export default function GerenciarLinhas() {
                               className="flex items-center gap-2"
                             >
                               <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center">
-                                <svg width="14" height="14" viewBox="0 0 24 24">
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                >
                                   <path
                                     fill="currentColor"
                                     d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7m0 11a4 4 0 1 1 0-8a4 4 0 0 1 0 8"
                                   />
                                 </svg>
                               </div>
-                              <div className="flex items-center gap-2 rounded-lg px-3 py-2 flex-1">
+                              <div className="flex items-center gap-2 rounded-lg px- py-2 flex-1">
                                 <span className="w-8 h-8 rounded-md bg-white text-gray-700 text-xs font-semibold grid place-items-center border border-gray-300 shadow-sm">
                                   {(p.ordem ?? i + 1)
                                     .toString()
@@ -745,8 +753,8 @@ export default function GerenciarLinhas() {
                       </button>
                     </div>
 
-                    {/* ===== DIREITA: mini-mapa ===== */}
-                    <div className="w-full md:w-64 shrink-0 relative mt-4 md:mt-0">
+                    {/* DIREITA: mini-mapa */}
+                    <div className="w-full md:w-64 shrink-0 relative mt-4  md:mt-0 truncate">
                       {trajetosByRota[rota.idRota] &&
                       Array.isArray(trajetosByRota[rota.idRota]) ? (
                         <GoogleMapaRota
@@ -782,5 +790,7 @@ export default function GerenciarLinhas() {
         )}
       </div>
     </div>
-  );
+  </main>
+);
+
 }
