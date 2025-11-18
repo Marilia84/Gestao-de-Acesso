@@ -154,10 +154,11 @@ const Visitantes = () => {
   };
   const docInputProps = getDocInputProps();
 
-  return (
-    <div className="relative flex-1 px-4 sm:px-6 md:px-10 py-8 space-y-8 mt-20 md:ml-12 overflow-x-hidden">
+ return (
+  <main className="flex-1 p-4 md:p-10 ml-16">
+    <div className="relative z-10 w-full max-w-6xl mx-auto space-y-8 overflow-x-hidden">
       {/* FUNDO DECORATIVO: cor igual ao fundo principal */}
-      <div className="absolute top-0 right-0 w-1/3 h-1/3 sm:w-1/4 sm:h-1/2 bg-[#F9FAFB] rounded-bl-full -z-10"></div>
+      <div className="absolute top-0 right-0 w-1/3 h-1/3 sm:w-1/4 sm:h-1/2 bg-[#F9FAFB] rounded-bl-full -z-10" />
 
       <header className="mb-6 sm:mb-10">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#3B7258]">
@@ -165,7 +166,7 @@ const Visitantes = () => {
         </h1>
       </header>
 
-      <main className="space-y-8">
+      <div className="space-y-8">
         {/* CARD DE CADASTRO */}
         <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-lg">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">
@@ -392,7 +393,7 @@ const Visitantes = () => {
                           className={`px-3 py-1 text-xs font-semibold rounded-full ${
                             v.ativo
                               ? "bg-[#53A67F] text-white"
-                              : "bg-red-600 text-white" // 👈 CORREÇÃO AQUI
+                              : "bg-red-600 text-white"
                           }`}
                         >
                           {v.ativo ? "Ativo" : "Inativo"}
@@ -416,9 +417,11 @@ const Visitantes = () => {
             </table>
           </div>
         </div>
-      </main>
+      </div>
     </div>
-  );
+  </main>
+);
+
 };
 
 export default Visitantes;

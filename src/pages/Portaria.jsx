@@ -237,7 +237,8 @@ const Portaria = () => {
   };
 
   return (
-    <main className="flex-1 p-4 sm:p-6 md:p-10 space-y-8 ml-0 md:ml-24">
+  <main className="flex-1 p-4 md:p-10 ml-16">
+    <div className="relative z-10 w-full max-w-6xl mx-auto space-y-8">
       <header>
         <h1 className="text-3xl sm:text-4xl font-bold text-[#3B7258]">
           Controle de Portaria
@@ -594,8 +595,10 @@ const Portaria = () => {
           )
         )}
       </section>
-    </main>
-  );
+    </div>
+  </main>
+);
+
 };
 
 export default Portaria;

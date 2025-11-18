@@ -98,8 +98,9 @@ const RegistroViagem = () => {
 
   const selectedTrip = viagens.find((v) => v.idViagem === selectedTripId);
 
-  return (
-    <main className="flex-1 px-3 sm:px-5 md:px-10 py-8 mt-20 md:ml-12 overflow-x-hidden">
+ return (
+  <main className="flex-1 p-4 md:p-10 ml-16 overflow-x-hidden">
+    <div className="w-full max-w-6xl mx-auto">
       {/* Cabeçalho */}
       <header className="mb-8 text-center md:text-left">
         <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-[#3B7258] leading-tight">
@@ -200,33 +201,34 @@ const RegistroViagem = () => {
                       </span>
                     </div>
 
-      <div className="flex flex-col gap-2 text-sm">
-        <div className="flex items-center">
-          <Users size={16} className="mr-2 text-gray-500" />
-          Passageiros:
-          <span className="font-semibold ml-1">{viagem.passengerCount}</span>
-        </div>
-        <div className="flex items-center">
-          <Clock size={16} className="mr-2 text-gray-500" />
-          Saída:
-          <span className="font-semibold ml-1">
-            {formatSimpleTime(viagem.saidaPrevista)}
-          </span>
-        </div>
-        <div className="flex items-center">
-          <Clock size={16} className="mr-2 text-gray-500" />
-          Chegada:
-          <span className="font-semibold ml-1">
-            {viagem.ativo
-              ? "Em Trânsito"
-              : formatSimpleTime(viagem.chegadaPrevista)}
-          </span>
-        </div>
-      </div>
-    </div>
-  ))}
-</div>
-
+                    <div className="flex flex-col gap-2 text-sm">
+                      <div className="flex items-center">
+                        <Users size={16} className="mr-2 text-gray-500" />
+                        Passageiros:
+                        <span className="font-semibold ml-1">
+                          {viagem.passengerCount}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <Clock size={16} className="mr-2 text-gray-500" />
+                        Saída:
+                        <span className="font-semibold ml-1">
+                          {formatSimpleTime(viagem.saidaPrevista)}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <Clock size={16} className="mr-2 text-gray-500" />
+                        Chegada:
+                        <span className="font-semibold ml-1">
+                          {viagem.ativo
+                            ? "Em Trânsito"
+                            : formatSimpleTime(viagem.chegadaPrevista)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
               {/* === LISTA DE EMBARQUES === */}
               <div className="mt-10">
@@ -265,7 +267,10 @@ const RegistroViagem = () => {
                               </div>
                             </div>
                             <div className="flex items-center text-gray-600 font-medium text-sm">
-                              <Clock size={16} className="mr-1.5 text-gray-500" />
+                              <Clock
+                                size={16}
+                                className="mr-1.5 text-gray-500"
+                              />
                               <span>{formatTimestamp(e.dataEmbarque)}</span>
                             </div>
                           </div>
@@ -293,8 +298,10 @@ const RegistroViagem = () => {
           )}
         </section>
       </div>
-    </main>
-  );
+    </div>
+  </main>
+);
+
 };
 
 export default RegistroViagem;
