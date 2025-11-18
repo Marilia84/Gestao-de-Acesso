@@ -1,6 +1,6 @@
 // src/pages/Visitantes.jsx
 import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify"; // 👈 Importamos o toast
+import { toast } from "react-toastify"; 
 import { getColaboradores } from "../api/colaboradorService";
 import { getVisitantes, createVisitante } from "../api/visitanteService";
 import { maskCPF, maskRG, maskPhone } from "../utils/masks";
@@ -66,7 +66,7 @@ const Visitantes = () => {
       console.error("Erro ao buscar dados:", error);
       const errorMsg = "Falha ao carregar dados. Tente recarregar a página.";
       setFetchError(errorMsg);
-      toast.error(errorMsg); // 👈 Toast de erro
+      toast.error(errorMsg); 
     } finally {
       setLoading(false);
     }
@@ -110,7 +110,7 @@ const Visitantes = () => {
     try {
       await createVisitante(newVisitor);
       await fetchData();
-      toast.success("Visitante cadastrado com sucesso!"); // 👈 Toast de sucesso
+      toast.success("Visitante cadastrado com sucesso!"); 
       setNewVisitor({
         nomeCompleto: "",
         tipoDocumento: "CPF",
@@ -127,7 +127,7 @@ const Visitantes = () => {
       const errorMsg =
         error.response?.data?.message ||
         "Falha ao cadastrar. Verifique os dados e tente novamente.";
-      toast.error(errorMsg); // 👈 Toast de erro
+      toast.error(errorMsg); 
     } finally {
       setIsSubmitting(false);
     }
@@ -157,7 +157,7 @@ const Visitantes = () => {
  return (
   <main className="flex-1 p-4 md:p-10 ml-16">
     <div className="relative z-10 w-full max-w-6xl mx-auto space-y-8 overflow-x-hidden">
-      {/* FUNDO DECORATIVO: cor igual ao fundo principal */}
+     
       <div className="absolute top-0 right-0 w-1/3 h-1/3 sm:w-1/4 sm:h-1/2 bg-[#F9FAFB] rounded-bl-full -z-10" />
 
       <header className="mb-6 sm:mb-10">
