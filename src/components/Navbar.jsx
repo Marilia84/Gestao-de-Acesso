@@ -76,17 +76,17 @@ export default function Navbar() {
                 transition-colors
                 ${
                   isActive
-                    ? "bg-[#e3ffec] text-green-700"
+                    ? "bg-[#CEECE4] text-green-700"
                     : "text-gray-700 hover:bg-gray-100"
                 }
               `}
             >
               <Icon
-  className={`w-5 h-5 shrink-0 ${
-    isActive ? "text-green-600" : "text-emerald-600"
-  }`}
-  strokeWidth={isActive ? 2.5 : 2}
-/>
+              className={`w-6 h-6 shrink-0 ${
+                isActive ? "text-green-700" : "text-emerald-500"
+              }`}
+              strokeWidth={isActive ? 2.5 : 2}
+            />
 
               <span
                 className="

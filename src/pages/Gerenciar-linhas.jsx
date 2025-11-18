@@ -9,7 +9,6 @@ import { toast } from "react-toastify";
 import Loading from "../components/Loading";
 import PinIcon from "../assets/icon.png";
 
-
 export default function GerenciarLinhas() {
   const [tokenOk, setTokenOk] = useState(false);
 
@@ -48,7 +47,7 @@ export default function GerenciarLinhas() {
   const [loadingRotasCadastradas, setLoadingRotasCadastradas] =
     useState(true);
 
-  const [activeTab, setActiveTab] = useState("PONTOS"); 
+  const [activeTab, setActiveTab] = useState("PONTOS");
   const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
@@ -332,8 +331,22 @@ export default function GerenciarLinhas() {
     : [];
 
   return (
-    <main className="flex-1 min-h-screen bg-slate-50 p-4 md:p-10 ml-16">
-      <div className="w-full max-w-6xl mx-auto space-y-6">
+    <main
+      className="
+        flex-1 min-h-screen bg-slate-50
+        px-3 sm:px-4 lg:px-6   /* menos padding lateral que o p-10 */
+        py-4
+        ml-16
+      "
+    >
+      <div
+        className="
+          w-full
+          max-w-7xl          
+          mx-auto
+          space-y-6
+        "
+      >
         {/* Cabeçalho da página */}
         <header className="flex flex-col gap-2">
           <h1 className="text-2xl sm:text-3xl font-semibold  text-emerald-600">
@@ -345,7 +358,7 @@ export default function GerenciarLinhas() {
           </p>
         </header>
 
-        {/* NAV DE ABAS + BOTÃO OUTRAS FUNÇÕES */}
+        {/* NAV DE ABAS */}
         <nav className="flex items-center justify-between border-b border-slate-200 pb-2">
           <div className="flex gap-2">
             <button
@@ -371,7 +384,6 @@ export default function GerenciarLinhas() {
               Rotas
             </button>
           </div>
-
         </nav>
 
         {/* ABA PONTOS */}
@@ -528,48 +540,46 @@ export default function GerenciarLinhas() {
               </div>
 
               <div className="flex flex-col gap-2 max-h-[380px] overflow-y-auto pr-1">
-  {pontos.map((ponto) => (
-    <div
-      key={ponto.idPonto}
-      className="
-        group
-        border border-slate-400
-        px-3.5 py-2.5 
-        rounded-xl
-        cursor-pointer
-        transition-colors duration-150
-        hover:bg-[#f8f7f7]
-      "
-    >
-      <div className="flex items-start gap-3">
-        {/* ÍCONE À ESQUERDA */}
-        <img
-          src={PinIcon}
-          alt="Ícone de ponto"
-          className="w-20 h-15 flex-shrink-0"
-        />
+                {pontos.map((ponto) => (
+                  <div
+                    key={ponto.idPonto}
+                    className="
+                      group
+                      border border-slate-400
+                      px-3.5 py-2.5 
+                      rounded-xl
+                      cursor-pointer
+                      transition-colors duration-150
+                      hover:bg-[#f8f7f7]
+                    "
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* ÍCONE À ESQUERDA */}
+                      <img
+                        src={PinIcon}
+                        alt="Ícone de ponto"
+                        className="w-20 h-15 flex-shrink-0"
+                      />
 
-        {/* TEXTOS */}
-        <div className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-800 group-hover:text-emerald-800">
-            {ponto.nome}
-          </span>
-          <span className="text-xs text-slate-500 group-hover:text-slate-700">
-            {ponto.endereco}
-          </span>
-        </div>
-      </div>
-    </div>
-  ))}
+                      {/* TEXTOS */}
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-medium text-slate-800 group-hover:text-emerald-800">
+                          {ponto.nome}
+                        </span>
+                        <span className="text-xs text-slate-500 group-hover:text-slate-700">
+                          {ponto.endereco}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
 
-  {!pontos.length && !loadingListaPontos && (
-    <p className="text-sm text-slate-400">
-      Nenhum ponto cadastrado até o momento.
-    </p>
-  )}
-</div>
-
-
+                {!pontos.length && !loadingListaPontos && (
+                  <p className="text-sm text-slate-400">
+                    Nenhum ponto cadastrado até o momento.
+                  </p>
+                )}
+              </div>
             </div>
           </section>
         )}
