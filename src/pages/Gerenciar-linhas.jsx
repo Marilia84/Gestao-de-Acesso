@@ -1,7 +1,8 @@
+// src/pages/Gerenciar-linhas.jsx
+
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
-import GoogleMapaRota from "../components/GoogleMapaRota";
 import ModalColaboradores from "../components/ModalColaboradores";
 import { toast } from "react-toastify";
 import Loading from "../components/Loading";
@@ -27,7 +28,6 @@ export default function GerenciarLinhas() {
   const [horaChegada, setHoraChegada] = useState("");
   const [periodo, setPeriodo] = useState("");
 
-  const [pontoSelecionado, setPontoSelecionado] = useState("");
   const [pontosRota, setPontosRota] = useState([]);
 
   const [rotas, setRotas] = useState([]);
@@ -38,13 +38,11 @@ export default function GerenciarLinhas() {
   const [openModalColabs, setOpenModalColabs] = useState(false);
   const [rotaSelecionada, setRotaSelecionada] = useState(null);
 
-  // loadings
   const [loadingAdicionarCidade, setLoadingAdicionarCidade] = useState(false);
   const [loadingCadastrarPonto, setLoadingCadastrarPonto] = useState(false);
   const [loadingListaPontos, setLoadingListaPontos] = useState(true);
   const [loadingCadastrarRota, setLoadingCadastrarRota] = useState(false);
-  const [loadingRotasCadastradas, setLoadingRotasCadastradas] =
-    useState(true);
+  const [loadingRotasCadastradas, setLoadingRotasCadastradas] = useState(true);
 
   const [activeTab, setActiveTab] = useState("PONTOS");
 
@@ -241,24 +239,18 @@ export default function GerenciarLinhas() {
     }
   };
 
-  const handleAdicionarPontoNaRota = () => {
-    if (!pontoSelecionado) {
-      toast.warn("Selecione um ponto.");
-      return;
-    }
-    const ponto = pontos.find(
-      (p) => String(p.idPonto) === String(pontoSelecionado)
-    );
-    if (!ponto) {
-      toast.warn("Ponto inválido.");
-      return;
-    }
-    if (pontosRota.some((p) => String(p.idPonto) === String(ponto.idPonto))) {
-      toast.warn("Este ponto já foi adicionado à rota.");
-      return;
-    }
-    setPontosRota((prev) => [...prev, ponto]);
-    setPontoSelecionado("");
+  const handleTogglePontoNaRota = (ponto) => {
+    setPontosRota((prev) => {
+      const jaExiste = prev.some(
+        (p) => String(p.idPonto) === String(ponto.idPonto)
+      );
+      if (jaExiste) {
+        return prev.filter(
+          (p) => String(p.idPonto) !== String(ponto.idPonto)
+        );
+      }
+      return [...prev, ponto];
+    });
   };
 
   const handleCadastrarRota = async () => {
@@ -309,10 +301,7 @@ export default function GerenciarLinhas() {
       await prefetchTrajetos(rotasLista);
     } catch (error) {
       const data = error.response?.data;
-      console.error(
-        "❌ Erro ao cadastrar rota:",
-        data || error.message || error
-      );
+      console.error(" Erro ao cadastrar rota:", data || error.message || error);
       toast.error(
         `Erro ao cadastrar rota.${
           data?.message ? `\nMensagem: ${data.message}` : ""
@@ -337,13 +326,9 @@ export default function GerenciarLinhas() {
         ml-16
       "
     >
-      <div
-        className="
-          w-full
-          space-y-6
-        "
-      >
-        {/* Cabeçalho da página */}
+      <Navbar />
+
+      <div className="w-full space-y-6">
         <header className="flex flex-col gap-2">
           <h1 className="text-2xl sm:text-3xl font-semibold  text-emerald-600">
             Gerenciar linhas e rotas
@@ -354,38 +339,66 @@ export default function GerenciarLinhas() {
           </p>
         </header>
 
-        {/* NAV DE ABAS */}
-        <nav className="flex items-center justify-between border-b border-slate-200 pb-2">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab("PONTOS")}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition ${
-                activeTab === "PONTOS"
-                  ? "bg-[#d5efe0] text-green-600"
-                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
-              }`}
-            >
-              Pontos
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("ROTAS")}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition ${
-                activeTab === "ROTAS"
-                  ? "bg-[#d5efe0] text-green-600"
-                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
-              }`}
-            >
-              Rotas
-            </button>
+        <nav className="border-b border-slate-200 pb-4">
+          <div className="flex justify-start">
+            <div className="relative inline-flex bg-slate-100 rounded-full p-1">
+              <span
+                className={`
+                  absolute inset-y-1 left-1
+                  w-24
+                  rounded-full bg-white shadow-sm
+                  transition-transform duration-300 ease-out
+                  ${
+                    activeTab === "PONTOS"
+                      ? "translate-x-0"
+                      : "translate-x-[6.5rem]"
+                  }
+                `}
+              />
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("PONTOS")}
+                className={`
+                  relative z-10
+                  w-24
+                  px-3 py-1.5
+                  text-xs sm:text-base font-semibold
+                  transition-colors
+                  ${
+                    activeTab === "PONTOS"
+                      ? "text-emerald-600"
+                      : "text-slate-500 hover:text-slate-700"
+                  }
+                `}
+              >
+                Pontos
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("ROTAS")}
+                className={`
+                  relative z-10
+                  w-24
+                  px-3 py-1.5
+                  text-xs sm:text-sm font-semibold
+                  transition-colors
+                  ${
+                    activeTab === "ROTAS"
+                      ? "text-emerald-700"
+                      : "text-slate-500 hover:text-slate-700"
+                  }
+                `}
+              >
+                Rotas
+              </button>
+            </div>
           </div>
         </nav>
 
-        {/* ABA PONTOS */}
         {activeTab === "PONTOS" && (
           <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Card: Cadastrar ponto */}
             <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl p-5 md:p-7 h-full min-h-[500px]">
               {(loadingAdicionarCidade || loadingCadastrarPonto) && (
                 <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
@@ -403,7 +416,6 @@ export default function GerenciarLinhas() {
                 </p>
               </div>
 
-              {/* Nova cidade */}
               <div className="flex flex-col md:flex-row md:items-end gap-3 mb-6">
                 <div className="flex-1 flex flex-col gap-1">
                   <label className="text-xs font-medium text-slate-700">
@@ -445,7 +457,6 @@ export default function GerenciarLinhas() {
                 </div>
               </div>
 
-              {/* Cidade / Nome ponto / Endereço */}
               <div className="space-y-4">
                 <div className="flex flex-col gap-1">
                   <label
@@ -518,7 +529,6 @@ export default function GerenciarLinhas() {
               </div>
             </div>
 
-            {/* Card: Pontos cadastrados */}
             <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl p-5 md:p-7 h-full min-h-[500px]">
               {loadingListaPontos && pontos.length === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-2xl z-10">
@@ -550,29 +560,25 @@ export default function GerenciarLinhas() {
                   <div
                     key={ponto.idPonto}
                     className="
-                      group
-                      border border-slate-400
+                      border border-slate-200
                       px-3.5 py-2.5 
                       rounded-xl
                       cursor-pointer
                       transition-colors duration-150
-                      hover:bg-[#f8f7f7]
+                      hover:bg-slate-50
                     "
                   >
                     <div className="flex items-start gap-3">
-                      {/* ÍCONE À ESQUERDA */}
                       <img
                         src={PinIcon}
                         alt="Ícone de ponto"
-                        className="w-20 h-15 flex-shrink-0"
+                        className="w-10 h-10 flex-shrink-0 mt-0.5"
                       />
-
-                      {/* TEXTOS */}
                       <div className="flex flex-col gap-1">
-                        <span className="text-sm font-medium text-slate-800 group-hover:text-emerald-800">
+                        <span className="text-sm font-medium text-slate-800">
                           {ponto.nome}
                         </span>
-                        <span className="text-xs text-slate-500 group-hover:text-slate-700">
+                        <span className="text-xs text-slate-500">
                           {ponto.endereco}
                         </span>
                       </div>
@@ -590,11 +596,9 @@ export default function GerenciarLinhas() {
           </section>
         )}
 
-        {/* ABA ROTAS */}
         {activeTab === "ROTAS" && (
-          <>
-            {/* Card: Cadastrar rota */}
-            <section className="w-full">
+          <section className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+            <div className="w-full">
               <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl p-5 sm:p-6 md:p-8">
                 {loadingCadastrarRota && (
                   <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
@@ -612,7 +616,6 @@ export default function GerenciarLinhas() {
                   </p>
                 </div>
 
-                {/* Linha 1: Nome, cidade, período */}
                 <div className="flex flex-col md:flex-row gap-4 mb-4 items-end">
                   <div className="flex flex-col flex-1 gap-1">
                     <label className="text-xs font-medium text-slate-700">
@@ -663,7 +666,6 @@ export default function GerenciarLinhas() {
                   </div>
                 </div>
 
-                {/* Linha 2: Capacidade e horários */}
                 <div className="flex flex-col md:flex-row gap-4 mb-4 items-end">
                   <div className="flex flex-col w-full md:w-32 gap-1">
                     <label className="text-xs font-medium text-slate-700">
@@ -704,37 +706,126 @@ export default function GerenciarLinhas() {
                   </div>
                 </div>
 
-                {/* Pontos da rota */}
                 <div className="flex flex-col mb-4">
                   <label className="text-xs font-medium text-slate-700 mb-1">
                     Pontos da rota
                   </label>
-                  <div className="flex flex-col sm:flex-row gap-3 mb-3">
-                    <select
-                      value={pontoSelecionado}
-                      onChange={(e) => setPontoSelecionado(e.target.value)}
-                      className="border border-slate-300 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/70 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 flex-1"
-                    >
-                      <option value="">Selecione um ponto</option>
-                      {pontosFiltrados.map((p) => (
-                        <option key={p.idPonto} value={p.idPonto}>
-                          {p.nome}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={handleAdicionarPontoNaRota}
-                      className="mt-6 md:mt-auto bg-[#21BE67] hover:bg-emerald-700 text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold w-full sm:w-auto transition"
-                    >
-                      Adicionar ponto
-                    </button>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 max-h-48 overflow-y-auto">
+                    {pontosFiltrados.length ? (
+                      pontosFiltrados.map((p) => {
+                        const isChecked = pontosRota.some(
+                          (pr) => String(pr.idPonto) === String(p.idPonto)
+                        );
+
+                        const indiceNaRota = pontosRota.findIndex(
+                          (pr) => String(pr.idPonto) === String(p.idPonto)
+                        );
+                        const ordem =
+                          indiceNaRota !== -1 ? indiceNaRota + 1 : null;
+
+                        return (
+                          <label
+                            key={p.idPonto}
+                            className="flex items-center gap-3 px-3.5 py-2 border-b last:border-b-0 border-slate-100 cursor-pointer hover:bg-white/70 transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleTogglePontoNaRota(p)}
+                              className="
+                                h-4 w-4 
+                                rounded 
+                                border-emerald-400
+                                text-emerald-600
+                                accent-emerald-600
+                                focus:ring-2 focus:ring-offset-1 focus:ring-emerald-500
+                              "
+                            />
+
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-slate-800">
+                                {p.nome}
+                              </span>
+
+                              {ordem && (
+                                <span
+                                  className="
+                                    text-[13px] 
+                                    px-3 py-0.5 
+                                    rounded-full 
+                                    bg-[#ffffff] 
+                                    text-green-800
+                                    border border-emerald-500
+                                    font-semibold
+                                  "
+                                >
+                                  #{ordem}
+                                </span>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })
+                    ) : (
+                      <div className="px-3.5 py-3">
+                        <p className="text-xs text-slate-500">
+                          Selecione uma cidade para listar os pontos
+                          disponíveis.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
-                  <ol className="list-decimal ml-5 text-xs sm:text-sm text-slate-700 space-y-1 max-h-40 overflow-y-auto pr-1">
-                    {pontosRota.map((p) => (
-                      <li key={p.idPonto}>{p.nome}</li>
-                    ))}
-                  </ol>
+                  <div className="mt-4">
+                    <p className="text-[11px] text-slate-500 mb-1">
+                      Ordem atual da rota
+                    </p>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 max-h-40 overflow-y-auto">
+                      {pontosRota.length ? (
+                        <ul className="space-y-2">
+                          {pontosRota.map((p, index) => (
+                            <li
+                              key={p.idPonto}
+                              className="flex items-start gap-3"
+                            >
+                              <div className="flex flex-col items-center">
+                                <span
+                                  className="
+                                  flex items-center justify-center
+                                  h-6 w-6
+                                  rounded-full
+                                  bg-emerald-500
+                                  text-[11px]
+                                  font-semibold
+                                  text-white
+                                  shadow-sm
+                                "
+                                >
+                                  {index + 1}
+                                </span>
+
+                                {index !== pontosRota.length - 1 && (
+                                  <span className="mt-1 h-5 w-px bg-emerald-200" />
+                                )}
+                              </div>
+
+                              <div className="flex-1">
+                                <p className="text-xs sm:text-sm font-medium text-slate-800">
+                                  {p.nome}
+                                </p>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-[11px] text-slate-400">
+                          Nenhum ponto selecionado para esta rota.
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <button
@@ -747,10 +838,9 @@ export default function GerenciarLinhas() {
                     : "Cadastrar rota"}
                 </button>
               </div>
-            </section>
+            </div>
 
-            {/* Rotas cadastradas */}
-            <section className="w-full">
+            <div className="w-full">
               <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl p-5 lg:p-8 w-full max-h-[770px] overflow-y-auto">
                 {loadingRotasCadastradas && (
                   <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
@@ -767,142 +857,217 @@ export default function GerenciarLinhas() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-3">
                   {rotas.map((rota) => {
-                    const pontosDaRota = trajetosByRota[rota.idRota] || [];
+                  const pontosDaRota = trajetosByRota[rota.idRota] || [];
+
+                  const isAtiva =
+                    rota.ativo === true ||
+                    rota.ativo === "ATIVO" ||
+                    rota.ativo === "ativo";
+
+                    const horarioPartida = rota.horaPartida || "--:--";
+                    const horarioChegada = rota.horaChegada || "--:--";
+
+                    const origem =
+                      pontosDaRota[0]?.nome || "Origem não definida";
+                    const destino =
+                      pontosDaRota[pontosDaRota.length - 1]?.nome ||
+                      "Destino não definido";
+
                     return (
                       <div
                         key={rota.idRota}
-                        className="bg-slate-50 rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col md:flex-row gap-5 relative"
+                        className="
+                          group
+                          flex flex-col md:flex-row items-stretch gap-4
+                          rounded-2xl
+                          border border-slate-200
+                          bg-white/95
+                          px-4 py-4
+                          shadow-sm
+                          hover:bg-slate-50
+                          transition-colors
+                          min-h-[170px]
+                        "
                       >
-                        {/* ESQUERDA */}
-                        <div className="flex-1 flex flex-col">
-                          <div className="mb-2">
-                            <h3 className="text-sm font-semibold text-slate-900">
-                              {rota.nome}{" "}
-                              {rota.cidade?.nome
-                                ? `• ${rota.cidade.nome}`
-                                : ""}
-                            </h3>
-                            <p className="text-[11px] text-slate-500">
-                              {pontosDaRota.length} ponto
-                              {pontosDaRota.length === 1 ? "" : "s"} cadastrados
-                            </p>
+                        <div
+                          className="
+                            md:w-60
+                            flex flex-col justify-between
+                            border-b md:border-b-0 md:border-r border-slate-100
+                            pr-4 md:pr-6
+                            pb-3 md:pb-0
+                          "
+                        >
+                          <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                            <span
+  className={`w-2 h-2 rounded-full ${
+    isAtiva ? "bg-emerald-500" : "bg-slate-400"
+  }`}
+/>
+<span>
+  {isAtiva ? "Disponível para trajeto" : "Rota inativa"}
+</span>
+
                           </div>
 
-                          <div className="flex items-center flex-wrap gap-2 mb-3">
-                            <span className="text-[11px] text-slate-600 font-medium">
-                              Período:
-                            </span>
-                            <span className="px-3 py-1 text-[11px] font-semibold rounded-full bg-emerald-50 text-emerald-700 uppercase tracking-wide">
-                              {rota.periodo}
-                            </span>
-                            {rota.periodoSecundario && (
-                              <span className="px-3 py-1 text-[11px] font-semibold rounded-full bg-indigo-50 text-indigo-700 uppercase tracking-wide">
-                                {rota.periodoSecundario}
-                              </span>
+                          <div className="mt-3">
+                            <h3 className="text-lg font-semibold text-slate-900 leading-tight">
+                              {rota.nome}
+                            </h3>
+                            {rota.cidade?.nome && (
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                {rota.cidade.nome} • {rota.cidade.uf}
+                              </p>
                             )}
                           </div>
 
-                          <div className="mb-3">
-                            <div className="flex items-center gap-2 text-xs font-semibold text-slate-800 mb-2">
-                              <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                className="text-emerald-600"
-                              >
-                                <path
-                                  fill="currentColor"
-                                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7m0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5"
-                                />
-                              </svg>
-                              Pontos da rota
+                          <div className="mt-4 space-y-1.5 text-[11px] text-slate-600">
+                            <p className="flex justify-between">
+                              <span className="text-slate-500">Período</span>
+                              <span className="font-medium text-slate-800">
+                                {rota.periodo || "—"}
+                              </span>
+                            </p>
+                            <p className="flex justify-between">
+                              <span className="text-slate-500">Pontos</span>
+                              <span className="font-medium text-slate-800">
+                                {pontosDaRota.length}
+                              </span>
+                            </p>
+                            {rota.capacidade && (
+                              <p className="flex justify-between">
+                                <span className="text-slate-500">
+                                  Capacidade
+                                </span>
+                                <span className="font-medium text-slate-800">
+                                  {rota.capacidade} colaboradores
+                                </span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex-1 flex flex-col md:flex-row items-center gap-4">
+                          <div className="flex-1 flex flex-col h-full justify-between">
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <p className="text-base font-semibold text-[#2fb868]">
+                                  {origem} — {destino}
+                                </p>
+                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                  Itinerário com {pontosDaRota.length} ponto
+                                  {pontosDaRota.length === 1 ? "" : "s"}{" "}
+                                  cadastrado
+                                </p>
+                              </div>
+
+                              <div className="text-right">
+                                <p className="text-[11px] text-slate-500">
+                                  Horário
+                                </p>
+                                <p className="text-xs font-semibold text-slate-800">
+                                  {horarioPartida} — {horarioChegada}
+                                </p>
+                              </div>
                             </div>
 
-                            <ul className="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1">
-                              {pontosDaRota.map((p, i) => (
-                                <li
-                                  key={p.idPonto ?? i}
-                                  className="flex items-center gap-2"
-                                >
-                                  <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center text-[11px]">
-                                    <svg
-                                      width="14"
-                                      height="14"
-                                      viewBox="0 0 24 24"
+                            <div className="mt-3 bg-slate-50/80 rounded-xl border border-slate-100 px-3 py-2 max-h-24 overflow-y-auto">
+                              {pontosDaRota.length ? (
+                                <ul className="text-[11px] text-slate-700 space-y-0.5">
+                                  {pontosDaRota.slice(0, 4).map((p, i) => (
+                                    <li
+                                      key={p.idPonto ?? i}
+                                      className="truncate"
                                     >
-                                      <path
-                                        fill="currentColor"
-                                        d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7m0 11a4 4 0 1 1 0-8a4 4 0 0 1 0 8"
-                                      />
-                                    </svg>
-                                  </div>
-                                  <div className="flex items-center gap-2 rounded-lg px-1 py-1 flex-1">
-                                    <span className="w-7 h-7 rounded-md bg-white text-slate-700 text-[11px] font-semibold grid place-items-center border border-slate-200 shadow-sm">
-                                      {(p.ordem ?? i + 1)
-                                        .toString()
-                                        .padStart(2, "0")}
-                                    </span>
-                                    <span className="text-xs text-slate-700 truncate">
-                                      {p.nome}
-                                    </span>
-                                  </div>
-                                </li>
-                              ))}
-                              {pontosDaRota.length === 0 && (
+                                      {i + 1}. {p.nome}
+                                    </li>
+                                  ))}
+                                  {pontosDaRota.length > 4 && (
+                                    <li className="text-[10px] text-slate-500">
+                                      + {pontosDaRota.length - 4} pontos
+                                    </li>
+                                  )}
+                                </ul>
+                              ) : (
                                 <span className="text-[11px] text-slate-400">
                                   Nenhum ponto encontrado para essa rota.
                                 </span>
                               )}
-                            </ul>
+                            </div>
+
+                            <button
+                              className="
+                                mt-3
+                                inline-flex items-center justify-center
+                                px-3.5 py-2
+                                rounded-full
+                                text-[14px] font-semibold
+                                bg-[#71CE97]
+                                text-[white]
+                                hover:bg-[#039155]
+                                transition-colors
+                                w-max
+                              "
+                              onClick={() => {
+                                setRotaSelecionada(rota);
+                                setOpenModalColabs(true);
+                              }}
+                            >
+                              Exibir colaboradores
+                            </button>
                           </div>
 
-                          <button
-                            className="mt-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold py-2.5 rounded-xl transition"
-                            onClick={() => {
-                              setRotaSelecionada(rota);
-                              setOpenModalColabs(true);
-                            }}
-                          >
-                            Exibir colaboradores
-                          </button>
-                        </div>
-
-                        {/* DIREITA: mini-mapa */}
-                        <div className="w-full md:w-64 shrink-0 relative mt-2 md:mt-0">
-                          {trajetosByRota[rota.idRota] &&
-                          Array.isArray(trajetosByRota[rota.idRota]) ? (
-                            <GoogleMapaRota
-                              pontos={trajetosByRota[rota.idRota]}
-                              height={220}
-                              followRoads={true}
-                            />
-                          ) : (
-                            <div className="h-[220px] w-full bg-white text-slate-400 text-xs grid place-items-center rounded-xl border border-dashed border-slate-200">
-                              Sem trajeto cadastrado
+                          {isAtiva && (
+                          <div className="w-28 sm:w-36 md:w-40 h-20 sm:h-24 md:h-28 flex items-center justify-center">
+                            <div className="w-full h-full bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center overflow-hidden">
+                              <DotLottieReact
+                                src="https://lottie.host/bde87682-f5b8-4ed1-896c-b023c08f1945/dA2yWnF6TS.lottie"
+                                loop
+                                autoplay
+                                style={{ width: "140%", height: "140%" }}
+                              />
                             </div>
-                          )}
+                          </div>
+                        )}
 
-                          {loadingTrajeto[rota.idRota] && (
-                            <div className="absolute inset-0 bg-white/60 grid place-items-center rounded-xl">
-                              <Loading size={55} message="" />
-                            </div>
-                          )}
+
                         </div>
                       </div>
                     );
                   })}
 
                   {!rotas.length && !loadingRotasCadastradas && (
-                    <p className="text-sm text-slate-400">
-                      Nenhuma rota cadastrada até o momento.
-                    </p>
+                    <div className="w-full">
+                      <div className="border border-dashed border-slate-300 rounded-2xl p-6 text-center bg-slate-50/40">
+                        <div className="mx-auto mb-3 w-10 h-10 rounded-full bg-white border border-slate-200 grid place-items-center">
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            className="text-slate-500"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M4 6h16v2H4zm2 4h12v2H6zm-2 4h16v2H4z"
+                            />
+                          </svg>
+                        </div>
+                        <p className="text-sm font-medium text-slate-700">
+                          Nenhuma rota cadastrada ainda.
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Crie uma nova rota ao lado para começar a visualizar o
+                          trajeto aqui.
+                        </p>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
-            </section>
-          </>
+            </div>
+          </section>
         )}
 
         {openModalColabs && rotaSelecionada && (
@@ -910,6 +1075,12 @@ export default function GerenciarLinhas() {
             open={openModalColabs}
             onClose={() => setOpenModalColabs(false)}
             rota={rotaSelecionada}
+            pontosMapa={
+              trajetosByRota[rotaSelecionada.idRota]
+                ? trajetosByRota[rotaSelecionada.idRota]
+                : []
+            }
+            loadingTrajeto={loadingTrajeto[rotaSelecionada.idRota] || false}
           />
         )}
       </div>

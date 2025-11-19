@@ -35,20 +35,12 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [senha, setSenha] = useState("");
 
-  // error = mensagem do erro interno (servidor/network)
   const [error, setError] = useState("");
   const [serverError, setServerError] = useState(false);
-
-  // authError = mensagem de erro de autenticação (403, credencial inválida, acesso não permitido)
   const [authError, setAuthError] = useState("");
-
   const [loading, setLoading] = useState(false);
-
-  // controle visual (quando o campo já foi "tocado")
   const [touchedEmail, setTouchedEmail] = useState(false);
   const [touchedSenha, setTouchedSenha] = useState(false);
-
-  // progresso do alerta (0 a 100)
   const [alertProgress, setAlertProgress] = useState(0);
 
   const Spinner = () => (
@@ -65,7 +57,7 @@ export default function Login() {
     touchedSenha && senha.length > 0 ? senhaSchema.safeParse(senha) : null;
 
   const emailMessage = () => {
-    if (!touchedEmail) return "Digite seu e-mail corporativo";
+   
     if (username.length === 0) return "Informe o e-mail.";
     if (!emailStatus) return "Digite seu e-mail corporativo";
 
@@ -90,7 +82,6 @@ export default function Login() {
   const handleSenhaChange = (e) => {
     setSenha(e.target.value);
     if (!touchedSenha) setTouchedSenha(true);
-    // Limpando erro de autenticação enquanto o usuário digita de novo
     if (authError) setAuthError("");
   };
 
@@ -106,7 +97,6 @@ export default function Login() {
     const result = loginSchema.safeParse({ username, senha });
 
     if (!result.success) {
-      // Apenas marca como tocados para os erros aparecerem nos inputs
       setTouchedEmail(true);
       setTouchedSenha(true);
       setLoading(false);
@@ -138,20 +128,19 @@ export default function Login() {
 
       const status = err.response?.status;
 
-      // 👉 Se o backend NÃO retornar (sem response = erro de rede, timeout, CORS, servidor offline etc.)
+  
       if (!err.response) {
         setServerError(true);
         setError(
           "Não foi possível se conectar ao servidor. Tente novamente em alguns instantes."
         );
       } else if (status && status >= 500) {
-        // Erros 5xx
         setServerError(true);
         setError(
           "Ocorreu um erro interno no servidor. Tente novamente em alguns instantes."
         );
       } else {
-        // Erros "normais" (401, 403, 404, etc.) -> erro de credencial
+
         setServerError(false);
         setAuthError("Email ou senha inválidos.");
       }
@@ -160,7 +149,6 @@ export default function Login() {
     }
   };
 
-  // Flags para bordas dos inputs (apenas Zod)
   const emailHasError =
     touchedEmail && username.length > 0 && emailStatus && !emailStatus.success;
   const emailIsValid =
@@ -174,7 +162,6 @@ export default function Login() {
   const baseInputClasses =
     "bg-white/15 w-full text-sm text-white placeholder-white/60 px-3 py-2.5 rounded-lg outline-none border border-white/10 focus:ring-2 transition-all";
 
-  // --- CONTROLE DO ALERT (auto-close + barra de progresso) ---
   useEffect(() => {
     const hasAlert = (serverError && error) || (!serverError && authError);
     if (!hasAlert) {
@@ -182,7 +169,7 @@ export default function Login() {
       return;
     }
 
-    const duration = 5000; // 5 segundos
+    const duration = 5000; 
     const stepMs = 100;
     const step = 100 / (duration / stepMs);
 
@@ -222,9 +209,8 @@ export default function Login() {
     }
   };
 
-  // Componente visual do alerta (continua NO CANTO SUPERIOR DIREITO)
   const renderAlert = (title, message) => (
-    <div className="fixed top-4 right-4 z-30 flex w-full max-w-sm overflow-hidden bg-white rounded-lg shadow-md border border-red-100">
+    <div className="fixed top-4 right-4 z-30 flex w-full max-w-sm overflow-hidden bg-white rounded-lg shadow-md">
       <div className="flex items-center justify-center w-12 bg-red-500">
         <svg
           className="w-6 h-6 text-white fill-current"
@@ -253,7 +239,7 @@ export default function Login() {
         </div>
 
         {/* Barra de progresso na base do alerta */}
-        <div className="mt-2 h-1 w-full bg-red-100 rounded-full overflow-hidden">
+        <div className="mt- h-2 w-full bg-red-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-red-500 transition-all"
             style={{ width: `${alertProgress}%` }}
@@ -271,10 +257,7 @@ export default function Login() {
       {/* overlay escuro */}
       <div className="absolute inset-0 bg-slate-950/70" />
 
-      {/* ALERTA DE ERRO INTERNO (CANTO SUPERIOR DIREITO) */}
       {serverError && error && renderAlert("Erro", error)}
-
-      {/* ALERTA DE ERRO DE CREDENCIAL (MESMO ESTILO, MESMA POSIÇÃO) */}
       {!serverError && authError && renderAlert("Credenciais", authError)}
 
       {/* CARD PRINCIPAL DE LOGIN */}
@@ -319,12 +302,12 @@ export default function Login() {
                 disabled={loading}
               />
               <span
-                className={`mt-1 text-[11px] ${
+                className={`mt-1 text-[13px] ${
                   !touchedEmail
                     ? "text-white/60"
                     : emailStatus?.success
                     ? "text-emerald-300"
-                    : "text-amber-200"
+                    : "text-red-400"
                 }`}
               >
                 {emailMessage()}
@@ -360,7 +343,7 @@ export default function Login() {
                     ? "text-white/60"
                     : senhaStatus?.success
                     ? "text-emerald-300"
-                    : "text-amber-200"
+                    : "text-red-400"
                 }`}
               >
                 {senhaMessage()}
