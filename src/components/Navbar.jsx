@@ -22,6 +22,8 @@ const menuItems = [
   { icon: Flag, label: "Impedimentos", path: "/impedimentos" },
 ];
 
+const ITEM_HEIGHT = 48; // altura em px (h-11 + gap de 4px)
+
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,6 +34,10 @@ export default function Navbar() {
     navigate("/");
   };
 
+  const activeIndex = menuItems.findIndex(
+    (item) => item.path === currentPath
+  );
+
   return (
     <div
       className={`
@@ -40,6 +46,7 @@ export default function Navbar() {
         flex flex-col
         w-[72px] hover:w-60
         transition-[width] duration-300
+        overflow-hidden
       `}
     >
       {/* LOGO */}
@@ -62,8 +69,26 @@ export default function Navbar() {
       </div>
 
       {/* MENU */}
-      <nav className="flex-1 flex flex-col gap-1 px-3 py-4 ">
-        {menuItems.map((item) => {
+      <nav className="relative flex-1 flex flex-col gap-1 px-3 py-4">
+        {/* PILULA DESLIZANDO ENTRE ITENS ATIVOS */}
+        {activeIndex !== -1 && (
+          <div
+            className="
+              absolute left-2 right-2
+              h-11
+              rounded-3xl
+              bg-[#eaf7f3]
+              transition-transform duration-250 ease-out
+              shadow-sm
+              pointer-events-none
+            "
+            style={{
+              transform: `translateY(${activeIndex * ITEM_HEIGHT}px)`,
+            }}
+          />
+        )}
+
+        {menuItems.map((item, index) => {
           const isActive = currentPath === item.path;
           const Icon = item.icon;
 
@@ -72,25 +97,35 @@ export default function Navbar() {
               key={item.path}
               to={item.path}
               className={`
-                flex items-center gap-3 rounded-2xl px-3 py-2.5 mb-1
-                transition-colors
+                relative
+                flex items-center gap-3
+                h-11
+                rounded-3xl px-3
+                z-10
+                text-sm font-medium
+                transition-colors duration-200
                 ${
                   isActive
-                    ? "bg-[#CEECE4] text-green-700"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "text-emerald-800"
+                    : "text-gray-700 hover:text-emerald-700"
                 }
               `}
             >
               <Icon
-              className={`w-6 h-6 shrink-0 ${
-                isActive ? "text-green-700" : "text-emerald-500"
-              }`}
-              strokeWidth={isActive ? 2.5 : 2}
-            />
+                className={`
+                  w-6 h-6 shrink-0
+                  ${
+                    isActive
+                      ? "text-emerald-700"
+                      : "text-emerald-500 group-hover:text-emerald-700"
+                  }
+                  transition-colors duration-200
+                `}
+                strokeWidth={isActive ? 2.5 : 2}
+              />
 
               <span
                 className="
-                  text-sm font-medium
                   opacity-0 -translate-x-2
                   group-hover:opacity-100 group-hover:translate-x-0
                   transition-all duration-150

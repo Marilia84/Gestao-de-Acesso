@@ -1,5 +1,3 @@
-// src/pages/Gerenciar-linhas.jsx
-
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
@@ -8,6 +6,7 @@ import ModalColaboradores from "../components/ModalColaboradores";
 import { toast } from "react-toastify";
 import Loading from "../components/Loading";
 import PinIcon from "../assets/icon.png";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 export default function GerenciarLinhas() {
   const [tokenOk, setTokenOk] = useState(false);
@@ -39,7 +38,7 @@ export default function GerenciarLinhas() {
   const [openModalColabs, setOpenModalColabs] = useState(false);
   const [rotaSelecionada, setRotaSelecionada] = useState(null);
 
-  // novos loadings por bloco
+  // loadings
   const [loadingAdicionarCidade, setLoadingAdicionarCidade] = useState(false);
   const [loadingCadastrarPonto, setLoadingCadastrarPonto] = useState(false);
   const [loadingListaPontos, setLoadingListaPontos] = useState(true);
@@ -48,7 +47,6 @@ export default function GerenciarLinhas() {
     useState(true);
 
   const [activeTab, setActiveTab] = useState("PONTOS");
-  const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
     try {
@@ -65,7 +63,6 @@ export default function GerenciarLinhas() {
     }
   }, []);
 
-  // Cargas iniciais
   useEffect(() => {
     if (!tokenOk) return;
 
@@ -277,6 +274,7 @@ export default function GerenciarLinhas() {
       toast.warn("Preencha todos os campos obrigatórios da rota.");
       return;
     }
+
     const payload = {
       nome: novaRota.trim(),
       idCidade: Number(cidadeSelecionada),
@@ -334,7 +332,7 @@ export default function GerenciarLinhas() {
     <main
       className="
         flex-1 min-h-screen bg-slate-50
-        px-3 sm:px-4 lg:px-6   /* menos padding lateral que o p-10 */
+        px-3 sm:px-4 lg:px-6
         py-4
         ml-16
       "
@@ -342,8 +340,6 @@ export default function GerenciarLinhas() {
       <div
         className="
           w-full
-          max-w-7xl          
-          mx-auto
           space-y-6
         "
       >
@@ -524,9 +520,19 @@ export default function GerenciarLinhas() {
 
             {/* Card: Pontos cadastrados */}
             <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl p-5 md:p-7 h-full min-h-[500px]">
-              {loadingListaPontos && (
-                <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
-                  <Loading size={70} message="Carregando pontos..." />
+              {loadingListaPontos && pontos.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-2xl z-10">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <DotLottieReact
+                      src="https://lottie.host/92a335e7-724d-44df-a65e-30c7025c8516/xC1YOtonin.lottie"
+                      loop
+                      autoplay
+                      style={{ width: 260, height: 260, borderRadius: "12px" }}
+                    />
+                    <span className="text-sm font-medium text-emerald-500">
+                      Carregando pontos...
+                    </span>
+                  </div>
                 </div>
               )}
 
@@ -718,7 +724,7 @@ export default function GerenciarLinhas() {
                     </select>
                     <button
                       onClick={handleAdicionarPontoNaRota}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold w-full sm:w-auto transition"
+                      className="mt-6 md:mt-auto bg-[#21BE67] hover:bg-emerald-700 text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold w-full sm:w-auto transition"
                     >
                       Adicionar ponto
                     </button>
