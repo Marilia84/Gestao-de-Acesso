@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import logoV from "../assets/logoV.png";
+import logoK from "../assets/logoK.png";
 import {
   LayoutDashboard,
   Bus,
@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Home", path: "/home" },
+  { icon: LayoutDashboard, label: "Chat-Bot", path: "/home" },
   { icon: Bus, label: "Gerenciar Linhas", path: "/gerenciarLinhas" },
   { icon: Users, label: "Colaboradores", path: "/colaboradores" },
   { icon: Building, label: "Portaria", path: "/portaria" },
@@ -21,6 +21,8 @@ const menuItems = [
   { icon: ClipboardList, label: "Registro", path: "/registro-viagem" },
   { icon: Flag, label: "Impedimentos", path: "/impedimentos" },
 ];
+
+const ITEM_HEIGHT = 48; // altura em px (h-11 + gap de 4px)
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -32,6 +34,10 @@ export default function Navbar() {
     navigate("/");
   };
 
+  const activeIndex = menuItems.findIndex(
+    (item) => item.path === currentPath
+  );
+
   return (
     <div
       className={`
@@ -40,12 +46,13 @@ export default function Navbar() {
         flex flex-col
         w-[72px] hover:w-60
         transition-[width] duration-300
+        overflow-hidden
       `}
     >
       {/* LOGO */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-gray-100">
         <img
-          src={logoV}
+          src={logoK}
           alt="logo"
           className="h-12 w-12 rounded-full object-contain"
         />
@@ -62,8 +69,26 @@ export default function Navbar() {
       </div>
 
       {/* MENU */}
-      <nav className="flex-1 flex flex-col gap-1 px-3 py-4 ">
-        {menuItems.map((item) => {
+      <nav className="relative flex-1 flex flex-col gap-1 px-3 py-4">
+        {/* PILULA DESLIZANDO ENTRE ITENS ATIVOS */}
+        {activeIndex !== -1 && (
+          <div
+            className="
+              absolute left-2 right-2
+              h-11
+              rounded-3xl
+              bg-[#eaf7f3]
+              transition-transform duration-250 ease-out
+              shadow-sm
+              pointer-events-none
+            "
+            style={{
+              transform: `translateY(${activeIndex * ITEM_HEIGHT}px)`,
+            }}
+          />
+        )}
+
+        {menuItems.map((item, index) => {
           const isActive = currentPath === item.path;
           const Icon = item.icon;
 
@@ -72,22 +97,35 @@ export default function Navbar() {
               key={item.path}
               to={item.path}
               className={`
-                flex items-center gap-3 rounded-lg px-3 py-2.5 mb-1
-                transition-colors
+                relative
+                flex items-center gap-3
+                h-11
+                rounded-3xl px-3
+                z-10
+                text-sm font-medium
+                transition-colors duration-200
                 ${
                   isActive
-                    ? "bg-[#038C4C] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "text-emerald-800"
+                    : "text-gray-700 hover:text-emerald-700"
                 }
               `}
             >
               <Icon
-                className="w-5 h-5 shrink-0"
+                className={`
+                  w-6 h-6 shrink-0
+                  ${
+                    isActive
+                      ? "text-emerald-700"
+                      : "text-emerald-500 group-hover:text-emerald-700"
+                  }
+                  transition-colors duration-200
+                `}
                 strokeWidth={isActive ? 2.5 : 2}
               />
+
               <span
                 className="
-                  text-sm font-medium
                   opacity-0 -translate-x-2
                   group-hover:opacity-100 group-hover:translate-x-0
                   transition-all duration-150
