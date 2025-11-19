@@ -10,7 +10,8 @@ import GerenciarLinhas from "./pages/Gerenciar-linhas";
 import Visitantes from "./pages/Visitantes";
 import RegistroViagem from "./pages/Registro-viagem";
 import Portaria from "./pages/Portaria";
-import Navbar from "./components/Navbar"; // Importe o Navbar aqui
+import Navbar from "./components/Navbar";
+import Impedimentos from "./pages/Impedimentos" 
 
 /**
  * Este é o nosso componente de Layout.
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="/visitantes" element={<Visitantes />} />
         <Route path="/registro-viagem" element={<RegistroViagem />} />
         <Route path="/portaria" element={<Portaria />} />
+        <Route path="/impedimentos" element={<Impedimentos />} />
         {/* Adicione suas outras rotas aqui (ex: /relatorio, /perfil) */}
       </Route>
     </Routes>

@@ -1,5 +1,6 @@
 // src/pages/Visitantes.jsx
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify"; 
 import { getColaboradores } from "../api/colaboradorService";
 import { getVisitantes, createVisitante } from "../api/visitanteService";
 import { maskCPF, maskRG, maskPhone } from "../utils/masks";
@@ -63,7 +64,9 @@ const Visitantes = () => {
       setCollaborators(collaboratorsData);
     } catch (error) {
       console.error("Erro ao buscar dados:", error);
-      setFetchError("Falha ao carregar dados. Tente recarregar a página.");
+      const errorMsg = "Falha ao carregar dados. Tente recarregar a página.";
+      setFetchError(errorMsg);
+      toast.error(errorMsg); 
     } finally {
       setLoading(false);
     }
@@ -76,7 +79,11 @@ const Visitantes = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "tipoDocumento") {
-      setNewVisitor((prev) => ({ ...prev, tipoDocumento: value, numeroDocumento: "" }));
+      setNewVisitor((prev) => ({
+        ...prev,
+        tipoDocumento: value,
+        numeroDocumento: "",
+      }));
     } else if (name === "numeroDocumento") {
       let maskedValue = value;
       switch (newVisitor.tipoDocumento) {
@@ -103,7 +110,7 @@ const Visitantes = () => {
     try {
       await createVisitante(newVisitor);
       await fetchData();
-      alert("Visitante cadastrado com sucesso!");
+      toast.success("Visitante cadastrado com sucesso!"); 
       setNewVisitor({
         nomeCompleto: "",
         tipoDocumento: "CPF",
@@ -117,10 +124,10 @@ const Visitantes = () => {
       });
     } catch (error) {
       console.error("Erro ao cadastrar visitante:", error);
-      alert(
+      const errorMsg =
         error.response?.data?.message ||
-          "Falha ao cadastrar. Verifique os dados e tente novamente."
-      );
+        "Falha ao cadastrar. Verifique os dados e tente novamente.";
+      toast.error(errorMsg); 
     } finally {
       setIsSubmitting(false);
     }
@@ -147,10 +154,11 @@ const Visitantes = () => {
   };
   const docInputProps = getDocInputProps();
 
-  return (
-    <div className="relative flex-1 px-4 sm:px-6 md:px-10 py-8 space-y-8 mt-20 md:ml-12 overflow-x-hidden">
-      {/* FUNDO DECORATIVO: cor igual ao fundo principal */}
-      <div className="absolute top-0 right-0 w-1/3 h-1/3 sm:w-1/4 sm:h-1/2 bg-[#F9FAFB] rounded-bl-full -z-10"></div>
+ return (
+  <main className="flex-1 p-4 md:p-10 ml-16">
+    <div className="relative z-10 w-full max-w-6xl mx-auto space-y-8 overflow-x-hidden">
+     
+      <div className="absolute top-0 right-0 w-1/3 h-1/3 sm:w-1/4 sm:h-1/2 bg-[#F9FAFB] rounded-bl-full -z-10" />
 
       <header className="mb-6 sm:mb-10">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#3B7258]">
@@ -158,7 +166,7 @@ const Visitantes = () => {
         </h1>
       </header>
 
-      <main className="space-y-8">
+      <div className="space-y-8">
         {/* CARD DE CADASTRO */}
         <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-lg">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">
@@ -327,7 +335,9 @@ const Visitantes = () => {
           </div>
 
           {fetchError && (
-            <p className="text-red-600 text-center py-4 text-sm">{fetchError}</p>
+            <p className="text-red-600 text-center py-4 text-sm">
+              {fetchError}
+            </p>
           )}
 
           <div className="overflow-x-auto max-h-[400px]">
@@ -407,9 +417,11 @@ const Visitantes = () => {
             </table>
           </div>
         </div>
-      </main>
+      </div>
     </div>
-  );
+  </main>
+);
+
 };
 
 export default Visitantes;

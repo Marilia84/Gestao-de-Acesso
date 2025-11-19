@@ -86,7 +86,7 @@ export default function Login() {
           }`}
           value={username}
           onChange={(e) => setEmail(e.target.value)}
-          disabled={loading} // ← desabilita durante o carregamento
+          disabled={loading} 
         />
 
         <input
@@ -97,7 +97,7 @@ export default function Login() {
           }`}
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
-          disabled={loading} // ← desabilita durante o carregamento
+          disabled={loading} 
         />
 
         <button

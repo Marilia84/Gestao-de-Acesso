@@ -1,63 +1,23 @@
 import React, { useState, useRef, useEffect } from "react";
-
+import { toast } from "react-toastify";
+import { Send, Copy, Check, User, Bot } from "lucide-react"; 
 import api from "../api/axios";
+import botIcon from "../assets/bot.jpg";
 
 const UserAvatar = () => (
-  <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
-    U {/* Ou use uma imagem/ícone */}
+  <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 shrink-0">
+    <User size={20} />
   </div>
 );
 
 const AiAvatar = () => (
-  <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-700 font-bold text-sm shrink-0">
-    AI {/* Ou use o logo da sua IA */}
+  <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-700 shrink-0">
+    <img src={botIcon} alt="AI Bot" className="w-8 h-8 rounded-full" />
   </div>
 );
 
-const SendIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-5 w-5"
-    viewBox="0 0 20 20"
-    fill="currentColor"
-  >
-    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-  </svg>
-);
-
-const CopyIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-4 w-4"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-    />
-  </svg>
-);
-
-const CheckIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-4 w-4"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-  </svg>
-);
-// --- Fim dos Ícones ---
-
 export default function Home() {
-  // Estado para guardar as mensagens do chat
+ 
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -65,17 +25,17 @@ export default function Home() {
       text: "Olá! 👋 Em que posso ajudar hoje com a gestão de transportes ou acesso?",
     },
   ]);
-  // Estado para o input do usuário
+  
   const [inputText, setInputText] = useState("");
-  // Estado para indicar se a IA está "pensando"
+  
   const [isAiThinking, setIsAiThinking] = useState(false);
-  // Estado para feedback de "Copiado!"
+ 
   const [copiedMessageId, setCopiedMessageId] = useState(null);
 
-  // Referência para o final do chat
+  
   const chatEndRef = useRef(null);
 
-  // Efeito para rolar para a última mensagem
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isAiThinking]);
@@ -91,12 +51,12 @@ export default function Home() {
       text: trimmedInput,
     };
 
-    // Adiciona a mensagem do usuário e limpa o input
+   
     setMessages((prevMessages) => [...prevMessages, newUserMessage]);
     setInputText("");
     setIsAiThinking(true);
 
-    // --- INÍCIO DA CHAMADA REAL À API ---
+   
     try {
       const response = await api.get("/chat", {
         params: {
@@ -113,7 +73,7 @@ export default function Home() {
       }
 
       const aiResponse = {
-        id: Date.now() + 1, // Garante ID único
+        id: Date.now() + 1, 
         sender: "ai",
         text: aiText,
       };
@@ -126,14 +86,17 @@ export default function Home() {
         text: "Desculpe, não consegui processar sua solicitação no momento. 😥 Tente novamente mais tarde.",
       };
       setMessages((prevMessages) => [...prevMessages, errorResponse]);
+
+     
+      toast.error("Desculpe, não consegui processar sua solicitação. 😥");
     } finally {
-      setIsAiThinking(false); // IA terminou de processar
+      setIsAiThinking(false); 
     }
-    // --- FIM DA LÓGICA DA API ---
+   
   };
 
   const handleCopy = (text, messageId) => {
-    // Usamos 'document.execCommand' para melhor compatibilidade em iframes
+  
     const textArea = document.createElement("textarea");
     textArea.value = text;
     document.body.appendChild(textArea);
@@ -141,24 +104,24 @@ export default function Home() {
     textArea.select();
     try {
       document.execCommand("copy");
-      setCopiedMessageId(messageId); // Define qual mensagem foi copiada
+      setCopiedMessageId(messageId); 
       setTimeout(() => {
-        setCopiedMessageId(null); // Limpa o feedback após 2 segundos
+        setCopiedMessageId(null);
       }, 2000);
+
+      
+      toast.success("Texto copiado!");
     } catch (err) {
       console.error("Falha ao copiar texto:", err);
+      
+      toast.error("Falha ao copiar o texto.");
     }
     document.body.removeChild(textArea);
   };
 
   return (
-    // Layout principal: Navbar à esquerda, Chat ocupa o restante
-    // O 'ml-20' assume que sua Navbar tem 20 unidades (ex: w-20 ou 5rem)
     <div className="flex bg-[#F4F7F6] min-h-screen ml-20">
-      {/* <Navbar /> */} {/* Seu componente Navbar fixo à esquerda */}
-      {/* Área do Chat (ocupa o espaço restante) */}
       <div className="flex-1 flex flex-col max-h-screen overflow-hidden">
-        {/* Histórico de Mensagens */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {messages.map((msg) => (
             <div
@@ -167,51 +130,42 @@ export default function Home() {
                 msg.sender === "user" ? "justify-end" : ""
               }`}
             >
-              {/* Avatar da IA (à esquerda) */}
               {msg.sender === "ai" && <AiAvatar />}
 
-              {/* Balão de Mensagem */}
               <div
                 className={`max-w-xl lg:max-w-2xl p-4 rounded-xl shadow-md ${
                   msg.sender === "user"
-                    ? "bg-[#038C4C] text-white ml-auto rounded-br-none" // Estilo User
-                    : "bg-white text-gray-800 rounded-bl-none" // Estilo AI
+                    ? "bg-[#038C4C] text-white ml-auto rounded-br-none" 
+                    : "bg-white text-gray-800 rounded-bl-none" 
                 }`}
               >
-                {/* O 'whitespace-pre-wrap' preserva quebras de linha e espaços da IA */}
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
                   {msg.text}
                 </p>
-
-                {/* Botões de Ação para IA */}
                 {msg.sender === "ai" && (
                   <div className="flex justify-end gap-3 mt-2 text-xs text-gray-500">
                     <button
                       onClick={() => handleCopy(msg.text, msg.id)}
                       className="flex items-center gap-1 hover:text-gray-800 transition-colors"
                       title="Copiar texto"
-                      disabled={copiedMessageId === msg.id} // Desabilita o botão brevemente
+                      disabled={copiedMessageId === msg.id} 
                     >
                       {copiedMessageId === msg.id ? (
                         <>
-                          <CheckIcon /> Copiado!
+                          <Check size={16} /> Copiado!
                         </>
                       ) : (
                         <>
-                          <CopyIcon /> Copiar
+                          <Copy size={16} /> Copiar
                         </>
                       )}
                     </button>
                   </div>
                 )}
               </div>
-
-              {/* Avatar do Usuário (à direita) */}
               {msg.sender === "user" && <UserAvatar />}
             </div>
           ))}
-
-          {/* Indicador de "pensando" */}
           {isAiThinking && (
             <div className="flex items-start gap-3.5">
               <AiAvatar />
@@ -220,11 +174,10 @@ export default function Home() {
               </div>
             </div>
           )}
-          {/* Elemento invisível para forçar o scroll para baixo */}
+
           <div ref={chatEndRef} />
         </div>
 
-        {/* Área de Input Fixa na Base */}
         <div className="p-4 border-t border-gray-200 bg-gray-50">
           <form
             onSubmit={handleSendMessage}
@@ -242,7 +195,7 @@ export default function Home() {
                   handleSendMessage(e);
                 }
               }}
-              disabled={isAiThinking} // Desabilita input enquanto a IA pensa
+              disabled={isAiThinking} 
             />
             <button
               type="submit"
@@ -250,7 +203,7 @@ export default function Home() {
               disabled={!inputText.trim() || isAiThinking}
               title="Enviar mensagem"
             >
-              <SendIcon />
+              <Send size={20} />
             </button>
           </form>
         </div>

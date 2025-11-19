@@ -10,7 +10,7 @@ const GOOGLE_LIBRARIES = ["places"];
 const containerStyle = { width: "100%", height: "100%" };
 
 const polylineOptions = {
-  strokeColor: "#038C3E",
+  strokeColor: "#9ebd8d",
   strokeOpacity: 0.9,
   strokeWeight: 5,
 };
@@ -62,6 +62,7 @@ export default function GoogleMapaRota({
       .filter(p => Number.isFinite(p?.lat) && Number.isFinite(p?.lng))
       .map(p => ({ lat: Number(p.lat), lng: Number(p.lng), nome: p.nome, ordem: p.ordem }));
   }, [pontos]);
+
 
   // Calcula rotas pelas vias (DirectionsService) só quando isLoaded e houver 2+ pontos
   useEffect(() => {
@@ -144,7 +145,20 @@ export default function GoogleMapaRota({
       </div>
     );
   }
-
+  const createMarkerIcon = (color = "#038C3E") => {
+    return {
+      url:
+        "data:image/svg+xml;charset=UTF-8," +
+        encodeURIComponent(`
+        <svg width="46" height="46" viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23 0C13 0 5 8 5 18c0 11 15 28 18 28s18-17 18-28C41 8 33 0 23 0z" 
+                fill="${color}"  stroke-width="3"/>
+        </svg>`),
+      scaledSize: new window.google.maps.Size(38, 38),
+      anchor: new window.google.maps.Point(19, 38),
+      labelOrigin: new window.google.maps.Point(19, 14),
+    };
+  };
   return (
     <div style={{ height }}>
       {!isLoaded ? (
@@ -167,27 +181,30 @@ export default function GoogleMapaRota({
             styles: [], // se quiser um tema aqui
           }}
         >
-          {/* Marcadores */}
           {markerPositions.map((pt, idx) => (
             <Marker
               key={`${pt.lat}-${pt.lng}-${idx}`}
               position={{ lat: pt.lat, lng: pt.lng }}
+              icon={createMarkerIcon("#038C3E")} // COR DO BALÃO AQUI
               label={{
+<<<<<<< HEAD
                 text: String((pt.ordem ?? idx + 1)),
                 className: "text-[10px] font-bold ",
+=======
+                text: String(pt.ordem ?? idx + 1),
+                color: "#ffffff",
+                fontSize: "12px",
+                fontWeight: "bold",
+>>>>>>> 8b8d7afef69f0b5aa9a1219092d22b530629466b
               }}
               title={pt.nome || `Ponto ${idx + 1}`}
             />
           ))}
-
           {/* Polyline direta (fallback) quando não usamos rotas pelas vias */}
           {!followRoads && markerPositions.length >= 2 && (
             <Polyline
               path={markerPositions.map(({ lat, lng }) => ({ lat, lng }))}
-              options={{
-                strokeOpacity: 0.9,
-                strokeWeight: 4,
-              }}
+              options={polylineOptions}
             />
           )}
 
@@ -195,11 +212,15 @@ export default function GoogleMapaRota({
           {followRoads && directions && directions.length > 1 && (
             <Polyline
               path={directions}
+<<<<<<< HEAD
               options={{
                 strokeOpacity: 1,
                 strokeColor: '#066adb',
                 strokeWeight: 5,
               }}
+=======
+              options={polylineOptions}
+>>>>>>> 8b8d7afef69f0b5aa9a1219092d22b530629466b
             />
           )}
         </GoogleMap>
