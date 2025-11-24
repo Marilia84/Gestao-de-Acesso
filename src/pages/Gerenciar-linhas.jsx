@@ -7,7 +7,7 @@ import ModalColaboradores from "../components/ModalColaboradores";
 import { toast } from "react-toastify";
 import Loading from "../components/Loading";
 import PinIcon from "../assets/icon.png";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+//import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 export default function GerenciarLinhas() {
   const [tokenOk, setTokenOk] = useState(false);

@@ -187,15 +187,10 @@ export default function GoogleMapaRota({
               position={{ lat: pt.lat, lng: pt.lng }}
               icon={createMarkerIcon("#038C3E")} // COR DO BALÃO AQUI
               label={{
-<<<<<<< HEAD
-                text: String((pt.ordem ?? idx + 1)),
-                className: "text-[10px] font-bold ",
-=======
                 text: String(pt.ordem ?? idx + 1),
                 color: "#ffffff",
                 fontSize: "12px",
                 fontWeight: "bold",
->>>>>>> 8b8d7afef69f0b5aa9a1219092d22b530629466b
               }}
               title={pt.nome || `Ponto ${idx + 1}`}
             />
@@ -212,15 +207,7 @@ export default function GoogleMapaRota({
           {followRoads && directions && directions.length > 1 && (
             <Polyline
               path={directions}
-<<<<<<< HEAD
-              options={{
-                strokeOpacity: 1,
-                strokeColor: '#066adb',
-                strokeWeight: 5,
-              }}
-=======
               options={polylineOptions}
->>>>>>> 8b8d7afef69f0b5aa9a1219092d22b530629466b
             />
           )}
         </GoogleMap>
