@@ -1,13 +1,13 @@
 // src/pages/Gerenciar-linhas.jsx
 
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/Navbar";
+
 import api from "../api/axios";
 import ModalColaboradores from "../components/ModalColaboradores";
 import { toast } from "react-toastify";
 import Loading from "../components/Loading";
 import PinIcon from "../assets/icon.png";
-//import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 export default function GerenciarLinhas() {
   const [tokenOk, setTokenOk] = useState(false);
@@ -326,7 +326,7 @@ export default function GerenciarLinhas() {
         ml-16
       "
     >
-      <Navbar />
+    
 
       <div className="w-full space-y-6">
         <header className="flex flex-col gap-2">
