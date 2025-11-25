@@ -62,30 +62,4 @@ body {
 
 /* --------- curvas externas (mesma lógica do CSS que você mandou) ---------- */
 /* --------- curvas externas MAIS DISCRETAS ---------- */
-.tp-nav-item:hover::before,
-.tp-nav-item.tp-nav-item--active::before {
-  content: "";
-  position: absolute;
-  right: 0;
-  top: -28px;          /* estava -50px */
-  width: 32px;         /* antes 50px */
-  height: 32px;        /* antes 52px */
-  background-color: transparent;
-  border-radius: 50%;
-  box-shadow: 16px 16px 0 0 #F8FAFC;  /* antes 35px 35px 0 10px */
-  pointer-events: none;
-}
 
-.tp-nav-item:hover::after,
-.tp-nav-item.tp-nav-item--active::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  bottom: -28px;       /* estava -30px (quase igual, só sobe um pouquinho) */
-  width: 32px;         /* antes 50px */
-  height: 32px;        /* antes 30px */
-  background-color: transparent;
-  border-radius: 50%;
-  box-shadow: 16px -16px 0 0 #F8FAFC; /* antes 20px -20px 0 0 */
-  pointer-events: none;
-}
