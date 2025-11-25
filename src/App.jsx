@@ -3,7 +3,7 @@ import { Routes, Route, Outlet } from "react-router-dom"; // Importe o <Outlet /
 
 // Importe suas páginas e componentes
 import Login from "./pages/Login";
-import Home from "./pages/Home";
+import ChatBot from "./pages/Chat-bot";
 import PrivateRoute from "./components/PrivateRoute";
 import Colaboradores from "./pages/Colaboradores";
 import GerenciarLinhas from "./pages/Gerenciar-linhas";
@@ -38,13 +38,7 @@ export default function App() {
       {/* Rota de Login (página inteira, sem layout) */}
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
-
-      {/* Agora agrupamos todas as rotas protegidas.
-        1. O <PrivateRoute> é checado primeiro.
-        2. Se passar, ele renderiza o <MainLayout /> (que tem o Navbar).
-        3. O <MainLayout /> então renderiza a rota filha (ex: <Home />)
-           no lugar do seu <Outlet />.
-      */}
+==
       <Route
         element={
           <PrivateRoute>
@@ -53,13 +47,13 @@ export default function App() {
         }
       >
         {/* Todas as suas páginas agora são "filhas" do MainLayout */}
-        <Route path="/home" element={<Home />} />
+        <Route path="/home" element={<Impedimentos />} />
         <Route path="/colaboradores" element={<Colaboradores />} />
         <Route path="/gerenciarLinhas" element={<GerenciarLinhas />} />
         <Route path="/visitantes" element={<Visitantes />} />
         <Route path="/registro-viagem" element={<RegistroViagem />} />
         <Route path="/portaria" element={<Portaria />} />
-        <Route path="/impedimentos" element={<Impedimentos />} />
+        <Route path="/chat-bot" element={<ChatBot />} />
         {/* Adicione suas outras rotas aqui (ex: /relatorio, /perfil) */}
       </Route>
     </Routes>

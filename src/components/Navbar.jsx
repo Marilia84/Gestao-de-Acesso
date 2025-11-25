@@ -14,13 +14,14 @@ import {
 } from "lucide-react";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Chat-Bot", path: "/home" },
+  { icon: Flag, label: "Impedimentos", path: "/home" },
+  { icon: LayoutDashboard, label: "Chat-Bot", path: "/chat-bot" },
   { icon: Bus, label: "Gerenciar Linhas", path: "/gerenciarLinhas" },
   { icon: Users, label: "Colaboradores", path: "/colaboradores" },
   { icon: Building, label: "Portaria", path: "/portaria" },
   { icon: UserCheck, label: "Visitantes", path: "/visitantes" },
   { icon: ClipboardList, label: "Registro", path: "/registro-viagem" },
-  { icon: Flag, label: "Impedimentos", path: "/impedimentos" },
+  
 ];
 
 export default function Navbar() {
