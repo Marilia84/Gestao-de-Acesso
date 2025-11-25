@@ -525,7 +525,7 @@ export default function GerenciarLinhas() {
                   relative bg-white border border-slate-200 shadow-sm rounded-2xl
                   p-5 sm:p-6 md:p-7
                   flex flex-col
-                  lg:h-[660px]
+                  lg:h-[690px]
                 "
               >
                 {loadingCadastrarRota && (
@@ -535,9 +535,7 @@ export default function GerenciarLinhas() {
                 )}
 
                 <div className="flex flex-col gap-1 mb-4 border-b border-slate-100 pb-3">
-                  <span className="text-[11px] font-semibold tracking-wide text-emerald-600 uppercase">
-                    Cadastro de rota
-                  </span>
+                 
                   <h2 className="text-lg sm:text-xl font-semibold text-slate-900">
                     Cadastrar rota
                   </h2>
@@ -672,13 +670,13 @@ export default function GerenciarLinhas() {
                   </div>
                 </div>
 
-                <div className="mt-4 flex-1 flex flex-col gap-4 overflow-hidden">
+                <div className="mt-4 flex-1 flex flex-col gap-1 overflow-hidden">
                   <div className="flex flex-col">
                     <label className="text-xs font-medium text-slate-700 mb-1">
                       Pontos da rota
                     </label>
 
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/70 max-h-32 overflow-y-auto">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/70 max-h-40 overflow-y-auto">
                       {pontosFiltrados.length ? (
                         pontosFiltrados.map((p) => {
                           const isChecked = pontosRota.some(
@@ -752,7 +750,7 @@ export default function GerenciarLinhas() {
 
                     <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 max-h-32 overflow-y-auto">
                       {pontosRota.length ? (
-                        <ul className="space-y-2">
+                        <ul className="space-y-1">
                           {pontosRota.map((p, index) => (
                             <li
                               key={p.idPonto}
@@ -775,7 +773,7 @@ export default function GerenciarLinhas() {
                                 </span>
 
                                 {index !== pontosRota.length - 1 && (
-                                  <span className="mt-1 h-5 w-px bg-emerald-200" />
+                                  <span className="mt-1 h-3 w-px bg-emerald-200" />
                                 )}
                               </div>
 
@@ -799,7 +797,7 @@ export default function GerenciarLinhas() {
                 <button
                   onClick={handleCadastrarRota}
                   className="
-                    mt-4
+                    mt-2
                     bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400
                     text-white w-full
                     py-2.5

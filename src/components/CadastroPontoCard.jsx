@@ -90,6 +90,8 @@ export default function CadastroPontoCard({
 
       <div className="w-full flex justify-end mt-6">
         <button
+         onClick={onSubmit}
+  disabled={loading}
           className="
             mt-0
             bg-[#19A873] hover:bg-emerald-700 disabled:bg-emerald-400
