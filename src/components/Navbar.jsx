@@ -1,3 +1,4 @@
+// src/components/Navbar.jsx
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import logoK from "../assets/logoK.png";
 import {
@@ -22,8 +23,6 @@ const menuItems = [
   { icon: Flag, label: "Impedimentos", path: "/impedimentos" },
 ];
 
-const ITEM_HEIGHT = 48; // altura em px (h-11 + gap de 4px)
-
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,136 +33,140 @@ export default function Navbar() {
     navigate("/");
   };
 
-  const activeIndex = menuItems.findIndex(
-    (item) => item.path === currentPath
-  );
+  const activeIndex = menuItems.findIndex((item) => item.path === currentPath);
 
   return (
     <div
-      className={`
-        group fixed top-0 left-0 h-screen z-40
-        bg-white shadow-lg
-        flex flex-col
-        w-[72px] hover:w-60
-        transition-[width] duration-300
-        overflow-hidden
-      `}
+      className="
+        fixed top-0 left-0
+        h-screen
+        z-40
+        flex
+      "
     >
-      {/* LOGO */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-gray-100">
-        <img
-          src={logoK}
-          alt="logo"
-          className="h-12 w-12 rounded-full object-contain"
-        />
-        <span
-          className="
-            text-sm font-semibold text-emerald-800
-            opacity-0 -translate-x-2
-            group-hover:opacity-100 group-hover:translate-x-0
-            transition-all duration-200 whitespace-nowrap
-          "
-        >
-          TrackPass
-        </span>
-      </div>
-
-      {/* MENU */}
-      <nav className="relative flex-1 flex flex-col gap-1 px-3 py-4">
-        {/* PILULA DESLIZANDO ENTRE ITENS ATIVOS */}
-        {activeIndex !== -1 && (
-          <div
-            className="
-              absolute left-2 right-2
-              h-11
-              rounded-3xl
-              bg-[#eaf7f3]
-              transition-transform duration-250 ease-out
-              shadow-sm
-              pointer-events-none
-            "
-            style={{
-              transform: `translateY(${activeIndex * ITEM_HEIGHT}px)`,
-            }}
+      {/* SIDEBAR VERDE */}
+      <aside
+        className="
+          group
+          bg-[#0D896F]
+          flex flex-col
+          w-[80px] hover:w-40
+          transition-[width] duration-300
+          rounded-r-3xl
+          overflow-visible
+          shadow-xl
+        "
+      >
+        {/* LOGO */}
+        <div className="flex items-center gap-3 px-4 py-5 border-b border-emerald-500/40">
+          <img
+            src={logoK}
+            alt="logo"
+            className="h-12 w-12 rounded-full object-contain bg-white shadow-md"
           />
-        )}
-
-        {menuItems.map((item, index) => {
-          const isActive = currentPath === item.path;
-          const Icon = item.icon;
-
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`
-                relative
-                flex items-center gap-3
-                h-11
-                rounded-3xl px-3
-                z-10
-                text-sm font-medium
-                transition-colors duration-200
-                ${
-                  isActive
-                    ? "text-emerald-800"
-                    : "text-gray-700 hover:text-emerald-700"
-                }
-              `}
-            >
-              <Icon
-                className={`
-                  w-6 h-6 shrink-0
-                  ${
-                    isActive
-                      ? "text-emerald-700"
-                      : "text-emerald-500 group-hover:text-emerald-700"
-                  }
-                  transition-colors duration-200
-                `}
-                strokeWidth={isActive ? 2.5 : 2}
-              />
-
-              <span
-                className="
-                  opacity-0 -translate-x-2
-                  group-hover:opacity-100 group-hover:translate-x-0
-                  transition-all duration-150
-                  whitespace-nowrap
-                "
-              >
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* BOTÃO SAIR */}
-      <div className="p-3 border-t border-gray-100">
-        <button
-          onClick={handleLogout}
-          className="
-            flex items-center gap-3 w-full
-            text-red-600 hover:bg-red-50
-            px-3 py-2 rounded-lg
-            transition-colors
-          "
-        >
-          <LogOut className="w-5 h-5 shrink-0" />
           <span
             className="
-              text-sm font-medium
-              opacity-0
-              group-hover:opacity-100
-              transition-opacity duration-150
-              whitespace-nowrap
+              text-sm font-semibold text-white
+              opacity-0 -translate-x-2
+              group-hover:opacity-100 group-hover:translate-x-0
+              transition-all duration-200 whitespace-nowrap
             "
           >
-            Sair
+            TrackPass
           </span>
-        </button>
-      </div>
+        </div>
+
+        {/* MENU */}
+        <nav className="flex-1 px-0 py-4">
+          <div
+            className="relative"
+            style={
+              activeIndex >= 0
+                ? { "--active-index": activeIndex }
+                : { "--active-index": 0 }
+            }
+          >
+            {activeIndex >= 0 && (
+              <span className="tp-nav-highlight" aria-hidden="true" />
+            )}
+
+            <ul className="tp-nav-list">
+              {menuItems.map((item) => {
+                const isActive = currentPath === item.path;
+                const Icon = item.icon;
+
+                return (
+                  <li
+                    key={item.path}
+                    className={`
+                      tp-nav-item
+                      ${isActive ? "tp-nav-item--active" : ""}
+                    `}
+                  >
+                    <Link
+                      to={item.path}
+                      className="
+                        tp-nav-link
+                        flex items-center gap-3
+                        px-4
+                        h-11
+                        text-sm font-medium
+                      "
+                    >
+                      <Icon
+                        className={`
+                          w-5 h-5 shrink-0
+                          transition-transform transition-colors duration-200
+                          ${isActive ? "scale-110" : "scale-100"}
+                        `}
+                        strokeWidth={isActive ? 2.4 : 2}
+                      />
+                      <span
+                        className="
+                          opacity-0 -translate-x-2
+                          group-hover:opacity-100 group-hover:translate-x-0
+                          transition-all duration-150
+                          whitespace-nowrap
+                        "
+                      >
+                        {item.label}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </nav>
+
+        {/* BOTÃO SAIR */}
+        <div className="px-4 pb-5 pt-3 border-t border-emerald-500/40">
+          <button
+            onClick={handleLogout}
+            className="
+              flex items-center gap-3 w-full
+              px-4 py-2.5
+              rounded-full
+              text-sm font-medium
+              text-red-50
+              hover:text-red-600 hover:bg-red-50/10
+              transition-colors
+            "
+          >
+            <LogOut className="w-5 h-5 shrink-0" />
+            <span
+              className="
+                opacity-0
+                group-hover:opacity-100
+                transition-opacity duration-150
+                whitespace-nowrap
+              "
+            >
+              Sair
+            </span>
+          </button>
+        </div>
+      </aside>
     </div>
   );
 }

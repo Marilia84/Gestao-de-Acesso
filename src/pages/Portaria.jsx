@@ -1,6 +1,6 @@
 // src/pages/Portaria.jsx
 import React, { useState, useEffect, useMemo } from "react";
-import { toast } from "react-toastify"; 
+import { toast } from "react-toastify";
 import { getColaboradores } from "../api/colaboradorService";
 import { getVisitantes } from "../api/visitanteService";
 import {
@@ -28,7 +28,7 @@ const Portaria = () => {
   const [selectedPortariaId, setSelectedPortariaId] = useState(
     portariasDisponiveis[0]?.id || ""
   );
-  const [observacao, setObservacao] = useState(""); // 👈 Novo estado para Observação
+  const [observacao, setObservacao] = useState("");
   const [currentOcupanteSelection, setCurrentOcupanteSelection] = useState("");
   const [selectedOcupantes, setSelectedOcupantes] = useState([]);
 
@@ -46,7 +46,6 @@ const Portaria = () => {
   const [formError, setFormError] = useState("");
   const [fetchError, setFetchError] = useState("");
 
-  
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoadingInitial(true);
@@ -65,7 +64,7 @@ const Portaria = () => {
             ? "Acesso não autorizado (403). Verifique suas permissões ou token."
             : "Falha ao carregar dados iniciais. Verifique a conexão com a API.";
         setFetchError(errorMsg);
-        toast.error(errorMsg); 
+        toast.error(errorMsg);
         setColaboradores([]);
         setVisitantes([]);
       } finally {
@@ -75,7 +74,6 @@ const Portaria = () => {
     fetchInitialData();
   }, []);
 
- 
   useEffect(() => {
     const fetchHistorico = async () => {
       setLoadingHistorico(true);
@@ -84,7 +82,7 @@ const Portaria = () => {
         setHistoricoBase(data);
       } catch (error) {
         console.error(error);
-        toast.error("Falha ao carregar histórico de acessos."); 
+        toast.error("Falha ao carregar histórico de acessos.");
         setHistoricoBase([]);
       } finally {
         setLoadingHistorico(false);
@@ -102,7 +100,6 @@ const Portaria = () => {
     }
   }, [filtroDataDe, filtroDataAte]);
 
-
   const ocupantesDisponiveis = useMemo(() => {
     return (colaboradores || [])
       .map((c) => ({
@@ -112,7 +109,6 @@ const Portaria = () => {
       }))
       .sort((a, b) => a.nome.localeCompare(b.nome));
   }, [colaboradores]);
-
 
   const historicoFiltrado = useMemo(() => {
     return historicoBase.filter((acesso) => {
@@ -129,18 +125,18 @@ const Portaria = () => {
   const handleAddOcupante = () => {
     if (!currentOcupanteSelection) return;
     if (selectedOcupantes.length >= 10) {
-      toast.warn("Limite de 10 ocupantes atingido."); 
+      toast.warn("Limite de 10 ocupantes atingido.");
       return;
     }
     if (selectedOcupantes.some((o) => o.id === currentOcupanteSelection)) {
-      toast.warn("Este ocupante já foi adicionado."); 
+      toast.warn("Este ocupante já foi adicionado.");
       return;
     }
     if (
       tipoPessoa === "COLABORADOR" &&
       currentOcupanteSelection === selectedPessoaId
     ) {
-      toast.warn("A pessoa principal não pode ser adicionada como ocupante."); 
+      toast.warn("A pessoa principal não pode ser adicionada como ocupante.");
       return;
     }
 
@@ -165,7 +161,7 @@ const Portaria = () => {
     if (!selectedPessoaId || !selectedPortariaId) {
       const errorMsg = "Selecione a pessoa principal e a portaria.";
       setFormError(errorMsg);
-      toast.error(errorMsg); 
+      toast.error(errorMsg);
       setIsSubmitting(false);
       return;
     }
@@ -179,7 +175,6 @@ const Portaria = () => {
           (c) => c.idColaborador === selectedPessoaId
         )?.matricula;
       } else {
-        // Busca o documento do visitante
         const visitanteSelecionado = visitantes.find(
           (v) => v.id === selectedPessoaId
         );
@@ -188,7 +183,7 @@ const Portaria = () => {
     } catch (error) {
       const errorMsg = "Erro ao processar seleção principal.";
       setFormError(errorMsg);
-      toast.error(errorMsg); 
+      toast.error(errorMsg);
       setIsSubmitting(false);
       return;
     }
@@ -197,17 +192,16 @@ const Portaria = () => {
       const errorMsg =
         "Identificador principal (Matrícula ou Documento) não encontrado para a pessoa selecionada.";
       setFormError(errorMsg);
-      toast.error(errorMsg); 
+      toast.error(errorMsg);
       setIsSubmitting(false);
       return;
     }
 
-    // 👈 Payload corrigido com o campo "observacao"
     const payload = {
       tipoPessoa: tipoPrincipal,
       matriculaOuDocumento: identificadorPrincipal,
       codPortaria: parseInt(selectedPortariaId),
-      observacao: observacao || "", // Envia string vazia se null
+      observacao: observacao || "",
       ocupanteMatriculas: selectedOcupantes.map((o) => o.identificador) || [],
     };
 
@@ -215,13 +209,11 @@ const Portaria = () => {
       await registrarEntrada(payload);
       toast.success("Entrada registrada com sucesso!");
 
-      // Resetar formulário
       setSelectedPessoaId("");
       setSelectedOcupantes([]);
       setCurrentOcupanteSelection("");
-      setObservacao(""); // Limpa observação
+      setObservacao("");
 
-      // Recarrega histórico
       const histRes = await getAcessosHistorico(filtroDataDe, filtroDataAte);
       setHistoricoBase(histRes);
     } catch (error) {
@@ -231,7 +223,7 @@ const Portaria = () => {
         error.response?.data?.detail ||
         "Falha ao registrar entrada(s). Verifique os dados.";
       setFormError(errorMsg);
-      toast.error(errorMsg); 
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -246,16 +238,24 @@ const Portaria = () => {
       setHistoricoBase(histRes);
     } catch (error) {
       console.error(error);
-      toast.error("Falha ao registrar saída."); 
+      toast.error("Falha ao registrar saída.");
     }
   };
 
   return (
-    <main className="flex-1 p-4 md:p-10 ml-16">
-      <div className="relative z-10 w-full max-w-6xl mx-auto space-y-8">
+    <main
+      className="
+        flex-1 min-h-screen bg-slate-50
+        px-3 sm:px-4 lg:px-28
+        py-4
+        ml-16
+      "
+    >
+      {/* CONTAINER PRINCIPAL – largura total, igual Gerenciar Linhas/Colaboradores */}
+      <div className="relative z-10 w-full space-y-6">
         <header>
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#3B7258]">
-            Controle de Portaria
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#3B7258]">
+            Controle de portaria
           </h1>
         </header>
 
@@ -270,15 +270,15 @@ const Portaria = () => {
         )}
 
         {/* CARD: Registrar entrada */}
-        <section className="bg-white p-6 rounded-xl shadow-lg relative px-4 md:px-12">
+        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 relative px-4 md:px-8 py-6">
           {loadingInitial && (
-            <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-xl z-10">
+            <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
               <Loading size={140} message="" />
             </div>
           )}
 
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Registrar Entrada
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">
+            Registrar entrada
           </h2>
 
           {!loadingInitial && (
@@ -286,7 +286,7 @@ const Portaria = () => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Tipo (Principal)
+                    Tipo (principal)
                   </label>
                   <select
                     value={tipoPessoa}
@@ -305,7 +305,7 @@ const Portaria = () => {
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Pessoa Principal
+                    Pessoa principal
                   </label>
                   <select
                     value={selectedPessoaId}
@@ -368,7 +368,7 @@ const Portaria = () => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <div className="md:col-span-3">
                   <label className="block text-sm font-medium text-gray-700">
-                    Adicionar Ocupante (máx 10)
+                    Adicionar ocupante (máx. 10)
                   </label>
                   <select
                     value={currentOcupanteSelection}
@@ -415,16 +415,16 @@ const Portaria = () => {
                 </div>
               </div>
 
-              {/* 👈 Novo Campo de Observação */}
+              {/* Observação */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Observação (Opcional)
+                  Observação (opcional)
                 </label>
                 <textarea
                   rows="2"
                   value={observacao}
                   onChange={(e) => setObservacao(e.target.value)}
-                  placeholder="Ex: Acompanhado de estagiário, Entrega de material..."
+                  placeholder="Ex: Acompanhado de estagiário, entrega de material..."
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
                 />
               </div>
@@ -433,7 +433,7 @@ const Portaria = () => {
               {selectedOcupantes.length > 0 && (
                 <div className="border rounded-md p-4 bg-gray-50 max-h-40 overflow-y-auto">
                   <h3 className="text-sm font-medium text-gray-700 mb-2">
-                    Ocupantes Adicionados ({selectedOcupantes.length}):
+                    Ocupantes adicionados ({selectedOcupantes.length}):
                   </h3>
                   <ul className="space-y-2">
                     {selectedOcupantes.map((o) => (
@@ -457,7 +457,9 @@ const Portaria = () => {
                 </div>
               )}
 
-              {formError && <p className="text-red-600 text-sm">{formError}</p>}
+              {formError && (
+                <p className="text-red-600 text-sm">{formError}</p>
+              )}
 
               <div className="text-right">
                 <button
@@ -465,7 +467,7 @@ const Portaria = () => {
                   disabled={isSubmitting}
                   className="w-full bg-[#038C3E] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#026d32] transition disabled:opacity-50"
                 >
-                  {isSubmitting ? "Registrando..." : "Registrar Entrada"}
+                  {isSubmitting ? "Registrando..." : "Registrar entrada"}
                 </button>
               </div>
             </form>
@@ -473,15 +475,15 @@ const Portaria = () => {
         </section>
 
         {/* CARD: Histórico */}
-        <section className="bg-white p-6 rounded-xl shadow-lg relative px-4 md:px-12">
+        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 relative px-4 md:px-8 py-6">
           {loadingHistorico && (
-            <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-xl z-10">
+            <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
               <Loading size={130} message="" />
             </div>
           )}
 
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Histórico de Acessos
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">
+            Histórico de acessos
           </h2>
 
           {/* Filtros */}
@@ -510,7 +512,7 @@ const Portaria = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Tipo Pessoa
+                Tipo pessoa
               </label>
               <select
                 value={filtroTipo}
@@ -548,7 +550,7 @@ const Portaria = () => {
                 <thead className="bg-gray-50 sticky top-0 z-20">
                   <tr>
                     <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                      Nome (Condutor)
+                      Nome (condutor)
                     </th>
                     <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
                       Tipo
@@ -608,7 +610,7 @@ const Portaria = () => {
                             onClick={() => handleRegisterExit(acesso.id)}
                             className="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded border border-red-300 hover:bg-red-50"
                           >
-                            Registrar Saída
+                            Registrar saída
                           </button>
                         )}
                       </td>

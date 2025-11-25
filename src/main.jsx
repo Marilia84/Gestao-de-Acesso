@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom"; // Importamos apenas o Browser
 import "./index.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "./components/delete-button.css"; // Importa o CSS do botão de exclusão
 
 import App from "./App"; // Nosso componente principal que cuidará das rotas
 

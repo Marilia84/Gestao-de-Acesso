@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  /*botar a font usado aqui*/
+  --tp-track-bg: #F8FAFC;
 }
 
 
@@ -13,4 +13,79 @@ body {
 
 }
 
+/* NAVBAR ESTILO DASHBOARD (Efeito curva pra fora) */
 
+.tp-nav-list {
+  margin: 12px 0 ; /* margem externa */
+  padding: 0 12px 1 ; /* alinhamento interno */
+  list-style: none;
+}
+
+.tp-nav-item {
+  position: relative;
+  width: 100%;
+  border-top-left-radius: 30px;
+  border-bottom-left-radius: 30px;
+  margin-bottom: 4px;
+}
+
+/* estado normal: texto branco, sem fundo */
+.tp-nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-decoration: none;
+  color: #ffffff;
+}
+
+/* ícone normal branco */
+.tp-nav-link svg {
+  color: #ffffff;
+}
+
+/* HOVER + ATIVO: fundo branco e texto verde */
+.tp-nav-item:hover,
+.tp-nav-item.tp-nav-item--active {
+  background-color: #F8FAFC;
+}
+
+.tp-nav-item:hover .tp-nav-link,
+.tp-nav-item.tp-nav-item--active .tp-nav-link {
+  color: #059669; /* emerald */
+}
+
+.tp-nav-item:hover .tp-nav-link svg,
+.tp-nav-item.tp-nav-item--active .tp-nav-link svg {
+  color: #059669;
+}
+
+/* --------- curvas externas (mesma lógica do CSS que você mandou) ---------- */
+/* --------- curvas externas MAIS DISCRETAS ---------- */
+.tp-nav-item:hover::before,
+.tp-nav-item.tp-nav-item--active::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: -28px;          /* estava -50px */
+  width: 32px;         /* antes 50px */
+  height: 32px;        /* antes 52px */
+  background-color: transparent;
+  border-radius: 50%;
+  box-shadow: 16px 16px 0 0 #F8FAFC;  /* antes 35px 35px 0 10px */
+  pointer-events: none;
+}
+
+.tp-nav-item:hover::after,
+.tp-nav-item.tp-nav-item--active::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -28px;       /* estava -30px (quase igual, só sobe um pouquinho) */
+  width: 32px;         /* antes 50px */
+  height: 32px;        /* antes 30px */
+  background-color: transparent;
+  border-radius: 50%;
+  box-shadow: 16px -16px 0 0 #F8FAFC; /* antes 20px -20px 0 0 */
+  pointer-events: none;
+}

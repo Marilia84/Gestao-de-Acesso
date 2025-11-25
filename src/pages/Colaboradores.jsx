@@ -8,7 +8,7 @@ import Loading from "../components/Loading";
 export default function Colaboradores() {
   const [colaboradores, setColaboradores] = useState([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -21,8 +21,9 @@ export default function Colaboradores() {
       } catch (err) {
         console.error("Erro ao buscar colaboradores:", err);
         const errorMsg = "Não foi possível carregar os colaboradores.";
-        toast.error(errorMsg); 
         toast.error(errorMsg);
+        toast.error(errorMsg);
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -31,7 +32,6 @@ export default function Colaboradores() {
     fetchData();
   }, []);
 
-  // evita erro se algum registro vier sem nome/matricula
   const colaboradoresFiltrados = useMemo(() => {
     const term = search.toLowerCase();
 
@@ -43,10 +43,18 @@ export default function Colaboradores() {
   }, [colaboradores, search]);
 
   return (
-    <main className="flex-1 p-4 md:p-10 ml-16">
-      <div className="relative z-10 bg-white shadow-md rounded-xl w-full max-w-6xl mx-auto p-4 sm:p-6 md:p-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#3B7258] mb-4 sm:mb-6">
-          Gerenciar Colaboradores
+    <main
+      className="
+        flex-1 min-h-screen bg-slate-50
+        px-3 sm:px-4 lg:px-28
+        py-4
+        ml-16
+      "
+    >
+      {/* CONTAINER PRINCIPAL - agora ocupa toda a largura, como em Gerenciar Linhas */}
+      <div className="relative z-10 bg-white shadow-sm rounded-2xl w-full p-4 sm:p-6 md:p-8">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-[#3B7258] mb-4 sm:mb-6">
+          Gerenciar colaboradores
         </h1>
 
         {/* Campo de busca */}
