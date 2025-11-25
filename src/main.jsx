@@ -5,12 +5,15 @@ import "./index.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./components/delete-button.css"; // Importa o CSS do botão de exclusão
+import { ConfirmAlert } from "./components/ConfirmAlert"; // Importa o ConfirmAlert
 
 import App from "./App"; // Nosso componente principal que cuidará das rotas
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
+    <ConfirmAlert>
+    <App /> {/* O App agora é o ponto central */}
       <ToastContainer
         position="top-right"
         autoClose={4000}
@@ -21,7 +24,7 @@ createRoot(document.getElementById("root")).render(
         draggable
         theme="light"
       />
-      <App /> {/* O App agora é o ponto central */}
+      </ConfirmAlert>
     </BrowserRouter>
   </StrictMode>
 );

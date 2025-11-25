@@ -6,6 +6,7 @@ import crownImg from "../assets/coroa.png";
 import Remover from "../assets/remove.png";
 import Loading from "../components/Loading";
 import GoogleMapaRota from "./GoogleMapaRota";
+import {useConfirm} from "../components/ConfirmAlert";
 
 function classNames(...xs) {
   return xs.filter(Boolean).join(" ");
@@ -19,10 +20,12 @@ export default function ModalColaboradores({ open, onClose, rota }) {
   const [pontos, setPontos] = useState([]);
   const [colabs, setColabs] = useState([]);
   const [lideres, setLideres] = useState([]);
+  const [todosColabs, setTodosColabs] = useState([]);
 
   const [pontoAddId, setPontoAddId] = useState("");
   const [buscaAdd, setBuscaAdd] = useState("");
   const [resultAdd, setResultAdd] = useState([]);
+  const { confirm } = useConfirm();
 
   useEffect(() => {
     if (!open || !rota?.idRota) return;
@@ -36,7 +39,7 @@ export default function ModalColaboradores({ open, onClose, rota }) {
           api.get(`/rotas/${rota.idRota}/lideres`),
           api.get(`/colaboradores`),
         ]);
-
+        setTodosColabs(allColabs.data || []);
         const mapColabs = new Map(
           (allColabs.data || []).map((c) => [
             c.idColaborador ?? c.id_colaborador,
@@ -51,6 +54,10 @@ export default function ModalColaboradores({ open, onClose, rota }) {
                 c.matriculaColaborador ??
                 c.matricula_colaborador ??
                 "",
+              // 👇 pega a role do colaborador (ex: GESTOR, COLABORADOR)
+              roleSistema: (c.role ?? c.funcao ?? c.role_colaborador ?? "")
+                .toString()
+                .toUpperCase(),
             },
           ])
         );
@@ -59,10 +66,7 @@ export default function ModalColaboradores({ open, onClose, rota }) {
           .map((p) => ({
             idPonto: p.idPonto ?? p.id_ponto,
             nome:
-              p.nomePonto ??
-              p.nome ??
-              p.nome_ponto ??
-              "— sem nome do ponto —",
+              p.nomePonto ?? p.nome ?? p.nome_ponto ?? "— sem nome do ponto —",
             ordem: Number(p.ordem),
             lat: Number(
               typeof p.latitude === "string"
@@ -82,23 +86,23 @@ export default function ModalColaboradores({ open, onClose, rota }) {
         const lideresIds = (lids.data || []).map(
           (l) => l.idColaborador ?? l.id_colaborador
         );
+        setLideres(lideresIds); // guarda só líderes ATIVOS
 
         const colabsNorm = (cols.data || []).map((c) => {
           const id = c.idColaborador ?? c.id_colaborador;
           const base = mapColabs.get(id) || {};
+
+          const isLider = lideresIds.includes(id); // só olha o endpoint de líderes
+
           return {
             idColaborador: id,
             nome: base.nome || "— sem nome —",
             matricula: base.matricula || "",
             idPonto: c.idPonto ?? c.id_ponto ?? null,
-            isLider:
-              lideresIds.includes(id) || c.role === "LIDER",
-            role:
-              c.role ||
-              (lideresIds.includes(id) ? "LIDER" : "COLABORADOR"),
+            isLider,
+            roleSistema: base.roleSistema || "COLABORADOR", // 👈 mantém a role original
           };
         });
-
         setPontos(pontosNorm);
         setLideres(lideresIds);
         setColabs(colabsNorm);
@@ -139,44 +143,84 @@ export default function ModalColaboradores({ open, onClose, rota }) {
   }, [colabs, pontosById]);
 
   const refreshColabs = async () => {
-    try {
-      const [cols, lids] = await Promise.all([
-        api.get(`/rotaColaborador/${rota.idRota}/colaboradores`),
-        api.get(`/rotas/${rota.idRota}/lideres`),
-      ]);
-      const lideresIds = (lids.data || []).map(
-        (l) => l.idColaborador ?? l.id_colaborador
-      );
-      setLideres(lideresIds);
+  try {
+    const [cols, lids] = await Promise.all([
+      api.get(`/rotaColaborador/${rota.idRota}/colaboradores`),
+      api.get(`/rotas/${rota.idRota}/lideres`),
+    ]);
 
-      const normCols = (cols.data || []).map((c) => ({
-        idColaborador: c.idColaborador ?? c.id_colaborador,
+    const lideresIds = (lids.data || []).map(
+      (l) => l.idColaborador ?? l.id_colaborador
+    );
+    setLideres(lideresIds);
+
+    // 👇 reaproveita a mesma base de colaboradores globais
+    const mapTodosColabs = new Map(
+      (todosColabs || []).map((c) => [
+        c.idColaborador ?? c.id_colaborador,
+        {
+          nome:
+            c.nome ??
+            c.nomeColaborador ??
+            c.nome_colaborador ??
+            "— sem nome —",
+          matricula:
+            c.matricula ??
+            c.matriculaColaborador ??
+            c.matricula_colaborador ??
+            "",
+          roleSistema: (c.role ?? c.funcao ?? c.role_colaborador ?? "")
+            .toString()
+            .toUpperCase(),
+        },
+      ])
+    );
+
+    const normCols = (cols.data || []).map((c) => {
+      const id = c.idColaborador ?? c.id_colaborador;
+      const isLider = lideresIds.includes(id); // só líderes ATIVOS
+
+      const base = mapTodosColabs.get(id) || {};
+
+      return {
+        idColaborador: id,
         nome:
-          c.nome ?? c.nomeColaborador ?? c.nome_colaborador ?? "— sem nome —",
-        matricula: c.matricula ?? c.matriculaColaborador ?? "",
+          c.nome ??
+          c.nomeColaborador ??
+          c.nome_colaborador ??
+          base.nome ??
+          "— sem nome —",
+        matricula:
+          c.matricula ?? c.matriculaColaborador ?? base.matricula ?? "",
         idPonto: c.idPonto ?? c.id_ponto ?? null,
-        isLider:
-          lideresIds.includes(c.idColaborador ?? c.id_colaborador) ||
-          c.role === "LIDER",
-        role:
-          c.role ||
-          (lideresIds.includes(c.idColaborador ?? c.id_colaborador)
-            ? "LIDER"
-            : "COLABORADOR"),
-      }));
+        isLider,
+        roleSistema: base.roleSistema || "COLABORADOR", // 👈 mantém GESTOR
+      };
+    });
 
-      setColabs(normCols);
-    } catch (e) {
-      console.error("Erro ao atualizar lista de colaboradores:", e);
-    }
-  };
-
+    setColabs(normCols);
+  } catch (e) {
+    console.error("Erro ao atualizar lista de colaboradores:", e);
+  }
+};
   const handleToggleLeader = async (c) => {
+    const isGestor = c.roleSistema === "GESTOR";
+
+    // 👇 se for gestor e ainda não for líder, bloqueia
+    if (!c.isLider && isGestor) {
+      toast.warn(
+        "Colaboradores com cargo de GESTOR não podem ser líderes de rota."
+      );
+      return;
+    }
+
     try {
       if (!c.isLider) {
         await api.put(`/rotas/${rota.idRota}/lideres/${c.idColaborador}`);
+        toast.success(`${c.nome} agora é líder da rota.`);
       } else {
         await api.delete(`/rotas/${rota.idRota}/lideres/${c.idColaborador}`);
+        toast.info(`Liderança removida de ${c.nome}.`);
       }
       await refreshColabs();
     } catch (e) {
@@ -203,65 +247,124 @@ export default function ModalColaboradores({ open, onClose, rota }) {
       await refreshColabs();
     } catch (e) {
       console.error(e);
-      toast.error("Não foi possível mover o colaborador para o ponto selecionado.");
+      toast.error(
+        "Não foi possível mover o colaborador para o ponto selecionado."
+      );
       setColabs(prev);
     }
   };
 
-  const handleRemoveColab = async (c) => {
-    const ok = confirm(`Desvincular ${c.nome} desta rota?`);
-    if (!ok) return;
-    const prev = [...colabs];
-    setColabs(prev.filter((x) => x.idColaborador !== c.idColaborador));
-    try {
-      await api.delete(`/rotaColaborador/${rota.idRota}/${c.idColaborador}`);
-      await refreshColabs();
-    } catch (e) {
-      console.error(e);
-      toast.error("Não foi possível desvincular.");
-      setColabs(prev);
-    }
-  };
+const handleRemoveColab = async (c) => {
+  // 1) Confirmação bonitinha via confirm global
+  try {
+    await confirm({
+      title: "Remover colaborador",
+      message: `Deseja realmente remover ${c.nome} da rota?`,
+      confirmText: "Remover",
+      cancelText: "Cancelar",
+    });
+  } catch {
+    // cancelou → não faz nada
+    return;
+  }
+
+  // 2) Atualização otimista da UI
+  const prev = [...colabs];
+  setColabs(prev.filter((x) => x.idColaborador !== c.idColaborador));
+
+  try {
+    // 3) Feedback imediato com toast.promise
+    await toast.promise(
+      (async () => {
+        // tenta remover dos líderes antes (se não for líder, back ignora / erro 404/400)
+        try {
+          await api.delete(
+            `/rotas/${rota.idRota}/lideres/${c.idColaborador}`
+          );
+        } catch (err) {
+          const status = err?.response?.status;
+          if (status !== 400 && status !== 404) {
+            console.warn(
+              "Erro ao remover liderança antes de tirar da rota:",
+              status,
+              err?.response?.data
+            );
+          }
+          // 400/404 aqui não quebram o fluxo
+        }
+
+        // remove vínculo da rota
+        await api.delete(
+          `/rotaColaborador/${rota.idRota}/${c.idColaborador}`
+        );
+
+        // atualiza lista real
+        await refreshColabs();
+      })(),
+      {
+        pending: "Removendo colaborador...",
+        success: "Colaborador desvinculado com sucesso.",
+        error: {
+          render({ data }) {
+            // data é o erro lançado dentro da promise
+            if (data?.response?.status === 403) {
+              return "O sistema não permitiu remover este colaborador da rota. Verifique com o back-end.";
+            }
+            return "Não foi possível desvincular.";
+          },
+        },
+      }
+    );
+  } catch (e) {
+    console.error(e);
+    // se deu erro na promise, volta a lista pro estado anterior
+    setColabs(prev);
+  }
+};
 
   const normalizar = (s = "") =>
-    s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+    s
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase();
 
-  const handleSearchGlobais = async (txt) => {
+  const handleSearchGlobais = (txt) => {
     setBuscaAdd(txt);
     const texto = txt.trim();
 
+    // menos de 2 caracteres: limpa resultados
     if (texto.length < 2) {
       setResultAdd([]);
       return;
     }
 
-    setLoadingSearch(true);
-    try {
-      const r = await api.get(`/colaboradores`);
-      const lista = r.data || [];
-      const filtro = normalizar(texto);
-      const filtrados = lista.filter((colab) => {
-        const nome = normalizar(
-          colab.nome ||
-            colab.nomeColaborador ||
-            colab.nome_colaborador ||
-            ""
-        );
-        const mat = normalizar(colab.matricula || "");
-        return nome.includes(filtro) || mat.includes(filtro);
-      });
-      setResultAdd(filtrados);
-    } catch (e) {
-      console.error(e);
-      setResultAdd([]);
-    } finally {
-      setLoadingSearch(false);
-    }
+    const filtro = normalizar(texto);
+
+    // evita sugerir quem já está na rota
+    const idsNaRota = new Set(
+      colabs.map((c) => c.idColaborador ?? c.id_colaborador)
+    );
+
+    const filtrados = (todosColabs || []).filter((colab) => {
+      const id = colab.idColaborador ?? colab.id_colaborador;
+      if (idsNaRota.has(id)) return false; // já está na rota, não sugere
+
+      const nome = normalizar(
+        colab.nome || colab.nomeColaborador || colab.nome_colaborador || ""
+      );
+
+      const matriculaRaw = colab.matricula || colab.matriculaColaborador || "";
+      const mat = normalizar(String(matriculaRaw));
+
+      return nome.includes(filtro) || mat.includes(filtro);
+    });
+
+    setResultAdd(filtrados);
   };
 
   const handleAddColab = async (idColaborador) => {
     if (!pontoAddId) {
-      alert("Escolha um ponto da rota para adicionar.");
+      toast.warn("Escolha um ponto da rota para adicionar.");
       return;
     }
 
@@ -278,9 +381,10 @@ export default function ModalColaboradores({ open, onClose, rota }) {
       setPontoAddId("");
 
       await refreshColabs();
+      toast.success("Colaborador adicionado com sucesso.");
     } catch (e) {
       console.error(e);
-      alert("Não foi possível adicionar o colaborador.");
+      toast.error("Não foi possível adicionar o colaborador.");
     } finally {
       setLoadingAdd(false);
     }
@@ -324,7 +428,8 @@ export default function ModalColaboradores({ open, onClose, rota }) {
                   Colaboradores desta rota
                 </h3>
                 <h1 className="text-xs text-gray-500 mb-4">
-                  Apena colaboradores do primeiro ponto (ordem 1) - podem virar líder
+                  Apena colaboradores do primeiro ponto (ordem 1) - podem virar
+                  líder
                 </h1>
 
                 {loading ? (
@@ -338,13 +443,22 @@ export default function ModalColaboradores({ open, onClose, rota }) {
                         ? pontosById.get(c.idPonto)
                         : null;
                       const ehOrdem1 = pontoAtual?.ordem === 1;
-                      const canBeLeader = !!ehOrdem1;
+
+                      // 👇 garante string e upper case pra não dar erro
+                      const isGestor =
+                        (c.roleSistema || "").toUpperCase() === "GESTOR";
+
+                      // só pode ser líder se estiver no ponto 1 E não for gestor
+                      const canBeLeader = ehOrdem1 && !isGestor;
+
                       return (
                         <div
                           key={c.idColaborador}
                           className={classNames(
                             "rounded-xl border p-4",
-                            c.isLider
+                            isGestor
+                              ? "border-2 border-green-500 bg-green-50/20"
+                              : c.isLider
                               ? "border-2 border-yellow-500 bg-yellow-50/15 shadow-sm shadow-yellow-500/50"
                               : "border-2 border-gray-200 bg-gray-50/30"
                           )}
@@ -358,6 +472,11 @@ export default function ModalColaboradores({ open, onClose, rota }) {
                                 {c.matricula && (
                                   <span className="text-sm text-gray-600">
                                     - {c.matricula}
+                                  </span>
+                                )}
+                                {isGestor && (
+                                  <span className="text-[10px] px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                    Gestor
                                   </span>
                                 )}
                                 {c.isLider && (
@@ -383,12 +502,14 @@ export default function ModalColaboradores({ open, onClose, rota }) {
                                 )}
                                 disabled={c.isLider ? false : !canBeLeader}
                                 title={
-                                  c.isLider
-                                    ? "Remover liderança"
-                                    : canBeLeader
-                                    ? "Marcar este colaborador como líder da rota"
-                                    : "Só pode marcar líder se o colaborador estiver no ponto de ordem 1"
-                                }
+                                 c.isLider
+                ? "Remover liderança"
+                : isGestor
+                ? "Colaboradores com cargo de GESTOR não podem ser líderes de rota."
+                : canBeLeader
+                ? "Marcar este colaborador como líder da rota"
+                : "Só pode marcar líder se o colaborador estiver no ponto de ordem 1"
+            }
                                 onClick={() => handleToggleLeader(c)}
                               >
                                 <img
@@ -400,12 +521,24 @@ export default function ModalColaboradores({ open, onClose, rota }) {
                                       : "grayscale brightness-50"
                                   }`}
                                 />
-                                {c.isLider ? "Remover liderança" : "Marcar líder"}
+                                {c.isLider
+                                  ? "Remover liderança"
+                                  : "Marcar líder"}
                               </button>
 
                               <button
-                                className="px-3 py-1.5 rounded-lg border flex items-center  gap-1 border-red-300 text-left text-red-600 hover:bg-red-50 "
-                                onClick={() => handleRemoveColab(c)}
+                                className="px-3 py-1.5 rounded-lg border flex items-center gap-1 border-red-300 text-left text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={c.isLider} // líder ativo não pode ser removido
+                                title={
+                                  c.isLider
+                                    ? "Remova a liderança deste colaborador antes de tirá-lo da rota."
+                                    : "Remover colaborador da rota"
+                                }
+                                onClick={() => {
+                                  if (!c.isLider) {
+                                    handleRemoveColab(c);
+                                  }
+                                }}
                               >
                                 <img
                                   src={Remover}
@@ -452,9 +585,12 @@ export default function ModalColaboradores({ open, onClose, rota }) {
 
               {/* DIREITA */}
               <div className="md:col-span-1">
-                <h3 className="text-sm font-semibold text-[#3B7258] mb-4">
+                <h3 className="text-sm font-semibold text-[#3B7258] mb-1">
                   Adicionar colaborador
                 </h3>
+                <h1 className="text-xs text-gray-500 mb-2">
+                  Seleciona um ponto para atribuir um colaborador a rota
+                </h1>
 
                 <div className="mb-4">
                   <label className="text-xs font-medium text-gray-700">
@@ -464,7 +600,9 @@ export default function ModalColaboradores({ open, onClose, rota }) {
                     className="w-full border border-gray-500  focus:outline-none focus:ring-2 focus:ring-[#038C3E] rounded-lg px-3 py-2 mt-1 text-sm text-gray-600"
                     value={pontoAddId}
                     onChange={(e) =>
-                      setPontoAddId(e.target.value ? Number(e.target.value) : "")
+                      setPontoAddId(
+                        e.target.value ? Number(e.target.value) : ""
+                      )
                     }
                   >
                     <option value="">Selecione o ponto</option>
@@ -493,7 +631,11 @@ export default function ModalColaboradores({ open, onClose, rota }) {
                 <div className="mt-3 max-h-[40vh] overflow-y-auto space-y-2 relative">
                   {loadingSearch ? (
                     <div className="flex items-center justify-center py-6">
-                      <Loading size={60} message="Carregando..." className="p-0" />
+                      <Loading
+                        size={60}
+                        message="Carregando..."
+                        className="p-0"
+                      />
                     </div>
                   ) : (
                     <>
@@ -511,7 +653,8 @@ export default function ModalColaboradores({ open, onClose, rota }) {
                             </div>
                             {(r.matricula || r.matriculaColaborador) && (
                               <div className="text-xs text-gray-600">
-                                Matrícula: {r.matricula || r.matriculaColaborador}
+                                Matrícula:{" "}
+                                {r.matricula || r.matriculaColaborador}
                               </div>
                             )}
                           </div>
@@ -519,7 +662,9 @@ export default function ModalColaboradores({ open, onClose, rota }) {
                             className="px-3 py-1.5 rounded-lg text-xs bg-gray-100 border hover:bg-[#038C3E] hover:text-white disabled:opacity-50 shrink-0"
                             disabled={!pontoAddId}
                             onClick={() =>
-                              handleAddColab(r.idColaborador ?? r.id_colaborador)
+                              handleAddColab(
+                                r.idColaborador ?? r.id_colaborador
+                              )
                             }
                           >
                             Adicionar
@@ -533,11 +678,12 @@ export default function ModalColaboradores({ open, onClose, rota }) {
                         </div>
                       )}
 
-                      {buscaAdd.trim().length >= 1 && resultAdd.length === 0 && (
-                        <div className="text-sm text-gray-500">
-                          Nenhum colaborador encontrado.
-                        </div>
-                      )}
+                      {buscaAdd.trim().length >= 2 &&
+                        resultAdd.length === 0 && (
+                          <div className="text-sm text-gray-500">
+                            Nenhum colaborador encontrado.
+                          </div>
+                        )}
                     </>
                   )}
                 </div>
@@ -552,7 +698,11 @@ export default function ModalColaboradores({ open, onClose, rota }) {
 
               {pontos.length > 0 ? (
                 <div className="w-full rounded-xl overflow-hidden border border-slate-200">
-                  <GoogleMapaRota pontos={pontos} height={260} followRoads={true} />
+                  <GoogleMapaRota
+                    pontos={pontos}
+                    height={260}
+                    followRoads={true}
+                  />
                 </div>
               ) : (
                 <div className="h-[220px] w-full bg-white text-slate-400 text-xs grid place-items-center rounded-xl border border-dashed border-slate-200">
