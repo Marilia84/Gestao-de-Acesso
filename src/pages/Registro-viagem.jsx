@@ -13,6 +13,7 @@ import { getColaboradorById } from "../api/colaboradorService";
 import { getMotoristas } from "../api/motoristaService";
 import { getVeiculos } from "../api/veiculoService";
 
+
 // Importação do seu Loader personalizado
 import Loading from "../components/Loading";
 
@@ -62,6 +63,7 @@ const RegistroViagem = () => {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [tripToToggle, setTripToToggle] = useState(null);
   const [isToggling, setIsToggling] = useState(false);
+
 
   const [newTripData, setNewTripData] = useState({
     idMotorista: "",
@@ -250,7 +252,7 @@ const RegistroViagem = () => {
       <div className="w-full space-y-6">
         {/* CABEÇALHO */}
         <header className="mb-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#3B7258]">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-emerald-600 mb-2 sm:mb-4">
             Registro de viagem
           </h1>
           <p className="text-gray-600 mt-1 text-sm">

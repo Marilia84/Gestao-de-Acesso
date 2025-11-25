@@ -109,7 +109,7 @@ export default function Impedimentos() {
             <AlertTriangle className="w-5 h-5 text-[#F59E0B]" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#3B7258]">
+            <h1 className="text-2xl sm:text-3xl font-semibold text-emerald-600 ">
               Registo de Impedimentos
             </h1>
             <p className="text-xs sm:text-sm text-gray-500 mt-1">

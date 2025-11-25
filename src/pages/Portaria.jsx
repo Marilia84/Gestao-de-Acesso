@@ -254,7 +254,7 @@ const Portaria = () => {
       {/* CONTAINER PRINCIPAL – largura total, igual Gerenciar Linhas/Colaboradores */}
       <div className="relative z-10 w-full space-y-6">
         <header>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-[#3B7258]">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-emerald-600">
             Controle de portaria
           </h1>
         </header>

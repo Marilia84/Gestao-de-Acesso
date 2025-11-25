@@ -163,12 +163,11 @@ const Visitantes = () => {
         ml-16
       "
     >
-      <div className="relative z-10 w-full space-y-6 overflow-x-hidden">
+      <div className="relative z-10 w-full p-2 sm:p-6 md:p-2">
         {/* bolha decorativa (mantida) */}
-        <div className="absolute top-0 right-0 w-1/3 h-1/3 sm:w-1/4 sm:h-1/2 bg-[#F9FAFB] rounded-bl-full -z-10" />
 
         <header className="mb-4 sm:mb-6">
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#3B7258]">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-emerald-600 mb-4 sm:mb-6">
             Visitantes
           </h1>
         </header>
