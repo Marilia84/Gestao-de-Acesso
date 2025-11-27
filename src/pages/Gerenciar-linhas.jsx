@@ -1,5 +1,3 @@
-// src/pages/Gerenciar-linhas.jsx
-
 import React, { useState, useEffect, useCallback } from "react";
 import Navbar from "../components/Navbar";
 import api from "../api/axios";
@@ -13,6 +11,16 @@ import DeleteRotaButton from "../components/DeleteRotaButton";
 import CadastroCidadeCard from "../components/CadastroCidadeCard";
 import CadastroPontoCard from "../components/CadastroPontoCard";
 import ListaPontosCard from "../components/ListaPontosCard";
+
+const normalizarAtivo = (valor) => {
+  return (
+    valor === true ||
+    valor === 1 ||
+    valor === "ATIVO" ||
+    valor === "ativo" ||
+    valor === "Ativo"
+  );
+};
 
 export default function GerenciarLinhas() {
   const [tokenOk, setTokenOk] = useState(false);
@@ -47,32 +55,32 @@ export default function GerenciarLinhas() {
   const [loadingCadastrarPonto, setLoadingCadastrarPonto] = useState(false);
   const [loadingListaPontos, setLoadingListaPontos] = useState(true);
   const [loadingCadastrarRota, setLoadingCadastrarRota] = useState(false);
-  const [loadingRotasCadastradas, setLoadingRotasCadastradas] = useState(true);
+  const [loadingRotasCadastradas, setLoadingRotasCadastradas] =
+    useState(true);
 
   const [activeTab, setActiveTab] = useState("PONTOS");
 
   const handleToggleAtivoRota = async (rota, novoAtivo) => {
-    const ativoAnterior =
-      rota.ativo === true ||
-      rota.ativo === 1 ||
-      rota.ativo === "ATIVO" ||
-      rota.ativo === "ativo";
+    const ativoAnteriorBool = normalizarAtivo(rota.ativo);
+    const novoAtivoBool = !!novoAtivo;
 
-    if (novoAtivo === ativoAnterior) return;
+    if (novoAtivoBool === ativoAnteriorBool) return;
 
     setRotas((prev) =>
       prev.map((r) =>
-        r.idRota === rota.idRota ? { ...r, ativo: novoAtivo } : r
+        r.idRota === rota.idRota ? { ...r, ativo: novoAtivoBool } : r
       )
     );
 
     try {
       await api.patch(`/rotas/${rota.idRota}`, {
-        ativo: novoAtivo,
+        ativo: novoAtivoBool,
       });
 
       toast.success(
-        novoAtivo ? "Rota ativada com sucesso!" : "Rota inativada com sucesso!"
+        novoAtivoBool
+          ? "Rota ativada com sucesso!"
+          : "Rota inativada com sucesso!"
       );
     } catch (err) {
       console.error(
@@ -82,7 +90,7 @@ export default function GerenciarLinhas() {
 
       setRotas((prev) =>
         prev.map((r) =>
-          r.idRota === rota.idRota ? { ...r, ativo: ativoAnterior } : r
+          r.idRota === rota.idRota ? { ...r, ativo: ativoAnteriorBool } : r
         )
       );
 
@@ -178,7 +186,12 @@ export default function GerenciarLinhas() {
           api.get("/rotas"),
           api.get("/colaboradores"),
         ]);
-        const rotasLista = rotasRes.data || [];
+
+        const rotasBrutas = rotasRes.data || [];
+        const rotasLista = rotasBrutas.map((rota) => ({
+          ...rota,
+          ativo: normalizarAtivo(rota.ativo),
+        }));
 
         setCidades(cidadesRes.data || []);
         setPontos(pontosRes.data || []);
@@ -378,7 +391,11 @@ export default function GerenciarLinhas() {
 
       setLoadingRotasCadastradas(true);
       const rotasRes = await api.get("/rotas");
-      const rotasLista = rotasRes.data || [];
+      const rotasBrutas = rotasRes.data || [];
+      const rotasLista = rotasBrutas.map((rota) => ({
+        ...rota,
+        ativo: normalizarAtivo(rota.ativo),
+      }));
       setRotas(rotasLista);
       await prefetchTrajetos(rotasLista);
 
@@ -535,7 +552,6 @@ export default function GerenciarLinhas() {
                 )}
 
                 <div className="flex flex-col gap-1 mb-4 border-b border-slate-100 pb-3">
-                 
                   <h2 className="text-lg sm:text-xl font-semibold text-slate-900">
                     Cadastrar rota
                   </h2>
@@ -836,11 +852,7 @@ export default function GerenciarLinhas() {
                   {rotas.map((rota) => {
                     const pontosDaRota = trajetosByRota[rota.idRota] || [];
 
-                    const isAtiva =
-                      rota.ativo === true ||
-                      rota.ativo === 1 ||
-                      rota.ativo === "ATIVO" ||
-                      rota.ativo === "ativo";
+                    const isAtiva = normalizarAtivo(rota.ativo);
 
                     const horarioPartida = rota.horaPartida || "--:--";
                     const horarioChegada = rota.horaChegada || "--:--";
@@ -887,7 +899,7 @@ export default function GerenciarLinhas() {
                             <Toggle
                               checked={isAtiva}
                               onChange={(checked) =>
-                                handleToggleAtivoRota(rota, checked)
+                                handleToggleAtivoRota(rota, !!checked)
                               }
                               offLabel="Inativar"
                               onLabel="Ativar"
@@ -931,7 +943,7 @@ export default function GerenciarLinhas() {
                             )}
                           </div>
 
-                          <div className="mt-8S space-x-0 text-[11px] text-slate-600">
+                          <div className="mt-8 space-x-0 text-[11px] text-slate-600">
                             <p className="flex justify-between">
                               <span className="text-slate-500">Período</span>
                               <span className="font-medium text-slate-800">
@@ -1008,7 +1020,7 @@ export default function GerenciarLinhas() {
                             <button
                               className="
                                 mt-3
-                                inline-flex items-center justify-center
+                                inline-flex items-end 
                                 px-3.5 py-2
                                 rounded-full
                                 text-[14px] font-semibold

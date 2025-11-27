@@ -1,7 +1,6 @@
 // src/pages/RegistroViagem.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
-// Importações de serviços
 import { getRotas } from "../api/rotaService";
 import {
   getViagensPorRota,
@@ -12,10 +11,8 @@ import {
 import { getColaboradorById } from "../api/colaboradorService";
 import { getMotoristas } from "../api/motoristaService";
 import { getVeiculos } from "../api/veiculoService";
-
-
-// Importação do seu Loader personalizado
 import Loading from "../components/Loading";
+import Navbar from "../components/Navbar";
 
 import {
   Users,
@@ -39,7 +36,6 @@ import {
 } from "../utils/formatters";
 
 const RegistroViagem = () => {
-  // === ESTADOS ===
   const [rotas, setRotas] = useState([]);
   const [motoristas, setMotoristas] = useState([]);
   const [veiculos, setVeiculos] = useState([]);
@@ -64,7 +60,6 @@ const RegistroViagem = () => {
   const [tripToToggle, setTripToToggle] = useState(null);
   const [isToggling, setIsToggling] = useState(false);
 
-
   const [newTripData, setNewTripData] = useState({
     idMotorista: "",
     idVeiculo: "",
@@ -74,7 +69,6 @@ const RegistroViagem = () => {
     tipoViagem: "ida",
   });
 
-  // === 1. BUSCAR DADOS INICIAIS ===
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -100,7 +94,6 @@ const RegistroViagem = () => {
     fetchInitialData();
   }, []);
 
-  // === 2. BUSCAR VIAGENS ===
   const fetchViagens = async () => {
     if (!selectedRotaId) return;
     try {
@@ -127,9 +120,11 @@ const RegistroViagem = () => {
     fetchViagens();
   }, [selectedRotaId]);
 
-  // === 3. BUSCAR EMBARQUES ===
   useEffect(() => {
-    if (!selectedTripId) return setEmbarques([]);
+    if (!selectedTripId) {
+      setEmbarques([]);
+      return;
+    }
 
     const fetchEmbarques = async () => {
       try {
@@ -156,7 +151,6 @@ const RegistroViagem = () => {
     fetchEmbarques();
   }, [selectedTripId]);
 
-  // === 4. FILTRAR EMBARQUES ===
   const filteredEmbarques = useMemo(() => {
     if (!embarqueDateFilter) return embarques;
     return embarques.filter(
@@ -171,7 +165,21 @@ const RegistroViagem = () => {
       v.idVeiculo === selectedTrip?.idVeiculo
   );
 
-  // === HANDLERS ===
+  const totalViagensRota = useMemo(
+    () => (viagens || []).length,
+    [viagens]
+  );
+
+  const totalViagensAtivas = useMemo(
+    () => (viagens || []).filter((v) => v.ativo).length,
+    [viagens]
+  );
+
+  const totalEmbarquesDiaSelecionado = useMemo(
+    () => filteredEmbarques.length,
+    [filteredEmbarques]
+  );
+
   const handleInputChange = (e) => {
     setNewTripData({ ...newTripData, [e.target.name]: e.target.value });
   };
@@ -249,20 +257,99 @@ const RegistroViagem = () => {
         ml-16
       "
     >
+      <Navbar />
+
       <div className="w-full space-y-6">
-        {/* CABEÇALHO */}
         <header className="mb-2">
           <h1 className="text-2xl sm:text-3xl font-semibold text-emerald-600 mb-2 sm:mb-4">
             Registro de viagem
           </h1>
-          <p className="text-gray-600 mt-1 text-sm">
-            Gerencie as viagens e visualize os embarques diários por rota.
+          <p className="text-gray-600 mt-1 text-sm max-w-2xl">
+            Gerencie as viagens por rota, controle status e acompanhe os
+            embarques diários dos colaboradores.
           </p>
         </header>
 
-        {/* CONTEÚDO PRINCIPAL */}
+        {/* Cards resumo */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Card 1 */}
+          <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center overflow-hidden">
+                <Route className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-emerald-700">
+                  Viagens da rota selecionada
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  Quantidade total de viagens cadastradas para esta rota.
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-2xl sm:text-3xl font-semibold text-emerald-600 leading-none">
+                {totalViagensRota}
+              </span>
+              <span className="text-[10px] text-slate-400 mt-1">
+                viagens cadastradas
+              </span>
+            </div>
+          </div>
+
+          {/* Card 2 */}
+          <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center overflow-hidden">
+                <Clock className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-emerald-700">
+                  Viagens ativas
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  Viagens com status ativo e prontas para operação.
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-2xl sm:text-3xl font-semibold text-emerald-600 leading-none">
+                {totalViagensAtivas}
+              </span>
+              <span className="text-[10px] text-slate-400 mt-1">
+                viagens em andamento
+              </span>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div className="bg-white rounded-2xl border border-sky-100 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center overflow-hidden">
+                <Users className="w-6 h-6 text-sky-600" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-sky-700">
+                  Embarques no dia filtrado
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  Passageiros embarcados na viagem selecionada para o dia.
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-2xl sm:text-3xl font-semibold text-sky-600 leading-none">
+                {selectedTrip ? totalEmbarquesDiaSelecionado : 0}
+              </span>
+              <span className="text-[10px] text-slate-400 mt-1">
+                embarques registrados
+              </span>
+            </div>
+          </div>
+        </section>
+
         <div className="flex flex-col lg:flex-row gap-6 items-start">
-          {/* ESQUERDA: LISTA DE ROTAS */}
+          {/* Lista de rotas */}
           <aside className="w-full lg:w-1/4">
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 h-fit">
               <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -296,9 +383,9 @@ const RegistroViagem = () => {
             </div>
           </aside>
 
-          {/* DIREITA: VIAGENS E EMBARQUES */}
+          {/* Viagens + Embarques */}
           <section className="flex-1 space-y-6">
-            {/* Card seleção de viagem */}
+            {/* Seleção de viagem */}
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-bold text-gray-800">
@@ -356,8 +443,8 @@ const RegistroViagem = () => {
                             }
                             className={`p-1.5 rounded-full transition-colors shadow-sm z-10 ${
                               v.ativo
-                                ? "bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600"
-                                : "bg-gray-200 text-gray-500 hover:bg-green-100 hover:text-green-700"
+                                ? "bg-emerald-50 text-emerald-700 hover:bg-red-50 hover:text-red-600"
+                                : "bg-gray-200 text-gray-500 hover:bg-emerald-50 hover:text-emerald-700"
                             }`}
                           >
                             {isProcessing ? (
@@ -396,7 +483,7 @@ const RegistroViagem = () => {
               )}
             </div>
 
-            {/* Card embarques */}
+            {/* Card de embarques */}
             {selectedTrip && (
               <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 min-h-[400px]">
                 <div className="flex flex-col sm:flex-row justify-between items-end sm:items-center mb-6 border-b pb-4 border-gray-100 gap-4">
@@ -409,7 +496,7 @@ const RegistroViagem = () => {
                       <span
                         className={`text-xs px-2 py-1 rounded-md font-bold border ${
                           selectedTrip.ativo
-                            ? "bg-green-50 text-green-700 border-green-200"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                             : "bg-red-50 text-red-700 border-red-200"
                         }`}
                       >
@@ -435,7 +522,7 @@ const RegistroViagem = () => {
                         type="date"
                         value={embarqueDateFilter}
                         onChange={(e) => setEmbarqueDateFilter(e.target.value)}
-                        className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#038C4C] outline-none w-full"
+                        className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none w-full"
                       />
                     </div>
                   </div>
@@ -458,7 +545,7 @@ const RegistroViagem = () => {
                         className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-[#36A293] flex items-center justify-center text-white font-bold text-sm">
+                          <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-sm">
                             {getInitials(e.nomeColaborador)}
                           </div>
                           <div>
@@ -507,12 +594,12 @@ const RegistroViagem = () => {
         </div>
       </div>
 
-      {/* MODAL: CRIAR NOVA VIAGEM */}
+      {/* Modal criar viagem */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
             <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
-              <h3 className="font-bold text-lg text-[#3B7258]">
+              <h3 className="font-bold text-lg text-emerald-700">
                 Criar nova viagem
               </h3>
               <button
@@ -533,7 +620,7 @@ const RegistroViagem = () => {
                     required
                     value={newTripData.idMotorista}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none bg-white"
+                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
                   >
                     <option value="">Selecione um motorista...</option>
                     {motoristas.map((m) => (
@@ -555,7 +642,7 @@ const RegistroViagem = () => {
                     required
                     value={newTripData.idVeiculo}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none bg-white"
+                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
                   >
                     <option value="">Selecione um veículo...</option>
                     {veiculos.map((v) => (
@@ -580,7 +667,7 @@ const RegistroViagem = () => {
                   value={newTripData.data}
                   required
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none"
+                  className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
               </div>
 
@@ -594,7 +681,7 @@ const RegistroViagem = () => {
                     name="saidaPrevista"
                     required
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none"
+                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                   />
                 </div>
                 <div>
@@ -606,7 +693,7 @@ const RegistroViagem = () => {
                     name="chegadaPrevista"
                     required
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none"
+                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                   />
                 </div>
               </div>
@@ -617,8 +704,9 @@ const RegistroViagem = () => {
                 </label>
                 <select
                   name="tipoViagem"
+                  value={newTripData.tipoViagem}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#36A293] outline-none bg-white"
+                  className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
                 >
                   <option value="ida">Ida</option>
                   <option value="volta">Volta</option>
@@ -636,9 +724,9 @@ const RegistroViagem = () => {
                 <button
                   type="submit"
                   disabled={isCreating}
-                  className="px-4 py-2 text-sm bg-[#038C4C] text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors font-medium shadow-sm disabled:opacity-70"
+                  className="px-4 py-2 text-sm bg-[#038C4C] text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 transition-colors font-medium shadow-sm disabled:opacity-70"
                 >
-                  {isCreating ? <Loading size={16} /> : <Save size={16} />}{" "}
+                  {isCreating ? <Loading size={16} /> : <Save size={16} />}
                   Salvar viagem
                 </button>
               </div>
@@ -647,18 +735,18 @@ const RegistroViagem = () => {
         </div>
       )}
 
-      {/* MODAL: CONFIRMAR ALTERAÇÃO DE STATUS */}
+      {/* Modal confirmar alteração de status */}
       {isConfirmModalOpen && tripToToggle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 p-6 text-center">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden p-6 text-center">
             <div
               className={`mx-auto w-12 h-12 flex items-center justify-center rounded-full mb-4 ${
-                tripToToggle.ativo ? "bg-red-100" : "bg-green-100"
+                tripToToggle.ativo ? "bg-red-100" : "bg-emerald-100"
               }`}
             >
               <AlertTriangle
                 className={
-                  tripToToggle.ativo ? "text-red-600" : "text-green-600"
+                  tripToToggle.ativo ? "text-red-600" : "text-emerald-600"
                 }
                 size={24}
               />
@@ -687,13 +775,15 @@ const RegistroViagem = () => {
                 className={`flex-1 py-2.5 text-sm font-semibold text-white rounded-xl transition-colors flex items-center justify-center gap-2 ${
                   tripToToggle.ativo
                     ? "bg-red-600 hover:bg-red-700"
-                    : "bg-green-600 hover:bg-green-700"
+                    : "bg-emerald-600 hover:bg-emerald-700"
                 }`}
               >
                 {isToggling ? (
                   <Loading size={16} />
+                ) : tripToToggle.ativo ? (
+                  "Sim, encerrar"
                 ) : (
-                  <>{tripToToggle.ativo ? "Sim, encerrar" : "Sim, ativar"}</>
+                  "Sim, ativar"
                 )}
               </button>
             </div>

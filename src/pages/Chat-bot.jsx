@@ -1,23 +1,24 @@
+// src/pages/Home.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
-import { Send, Copy, Check, User, Bot } from "lucide-react"; 
+import { Send, Copy, Check, User, MessageCircle } from "lucide-react";
 import api from "../api/axios";
+import Navbar from "../components/Navbar";
 import botIcon from "../assets/bot.jpg";
 
 const UserAvatar = () => (
-  <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 shrink-0">
+  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
     <User size={20} />
   </div>
 );
 
 const AiAvatar = () => (
-  <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-700 shrink-0">
-    <img src={botIcon} alt="AI Bot" className="w-8 h-8 rounded-full" />
+  <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700 shrink-0 overflow-hidden border border-emerald-100">
+    <img src={botIcon} alt="AI Bot" className="w-8 h-8 rounded-full object-cover" />
   </div>
 );
 
 export default function Home() {
- 
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -25,25 +26,33 @@ export default function Home() {
       text: "Olá! 👋 Em que posso ajudar hoje com a gestão de transportes ou acesso?",
     },
   ]);
-  
+
   const [inputText, setInputText] = useState("");
-  
   const [isAiThinking, setIsAiThinking] = useState(false);
- 
   const [copiedMessageId, setCopiedMessageId] = useState(null);
 
-  
-  const chatEndRef = useRef(null);
+  const [creatingPointMode, setCreatingPointMode] = useState(false);
+  const [creatingRouteMode, setCreatingRouteMode] = useState(false);
+  const [assigningPointToRouteMode, setAssigningPointToRouteMode] = useState(false);
+  const [askingNaoEmbarcouMode, setAskingNaoEmbarcouMode] = useState(false);
 
+  const chatEndRef = useRef(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isAiThinking]);
 
+  const resetModes = () => {
+    setCreatingPointMode(false);
+    setCreatingRouteMode(false);
+    setAssigningPointToRouteMode(false);
+    setAskingNaoEmbarcouMode(false);
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     const trimmedInput = inputText.trim();
-    if (!trimmedInput) return;
+    if (!trimmedInput || isAiThinking) return;
 
     const newUserMessage = {
       id: Date.now(),
@@ -51,29 +60,39 @@ export default function Home() {
       text: trimmedInput,
     };
 
-   
     setMessages((prevMessages) => [...prevMessages, newUserMessage]);
     setInputText("");
     setIsAiThinking(true);
 
-   
+    let mensagemParaApi = trimmedInput;
+
+    if (creatingPointMode) {
+      mensagemParaApi = `Criar ponto chamado ${trimmedInput}`;
+    } else if (creatingRouteMode) {
+      mensagemParaApi = `Quero criar uma rota ${trimmedInput}`;
+    } else if (assigningPointToRouteMode) {
+      mensagemParaApi = `Coloca o ponto ${trimmedInput}`;
+    } else if (askingNaoEmbarcouMode) {
+      mensagemParaApi = `Quem ainda não embarcou na ${trimmedInput}?`;
+    }
+
+    resetModes();
+
     try {
       const response = await api.get("/chat", {
         params: {
-          mensagem: trimmedInput,
+          mensagem: mensagemParaApi,
         },
       });
 
       const aiText = response.data;
 
       if (!aiText) {
-        throw new Error(
-          "A API retornou uma resposta, mas sem o texto esperado."
-        );
+        throw new Error("A API retornou uma resposta, mas sem o texto esperado.");
       }
 
       const aiResponse = {
-        id: Date.now() + 1, 
+        id: Date.now() + 1,
         sender: "ai",
         text: aiText,
       };
@@ -86,17 +105,13 @@ export default function Home() {
         text: "Desculpe, não consegui processar sua solicitação no momento. 😥 Tente novamente mais tarde.",
       };
       setMessages((prevMessages) => [...prevMessages, errorResponse]);
-
-     
       toast.error("Desculpe, não consegui processar sua solicitação. 😥");
     } finally {
-      setIsAiThinking(false); 
+      setIsAiThinking(false);
     }
-   
   };
 
   const handleCopy = (text, messageId) => {
-  
     const textArea = document.createElement("textarea");
     textArea.value = text;
     document.body.appendChild(textArea);
@@ -104,110 +119,474 @@ export default function Home() {
     textArea.select();
     try {
       document.execCommand("copy");
-      setCopiedMessageId(messageId); 
+      setCopiedMessageId(messageId);
       setTimeout(() => {
         setCopiedMessageId(null);
       }, 2000);
-
-      
       toast.success("Texto copiado!");
     } catch (err) {
       console.error("Falha ao copiar texto:", err);
-      
       toast.error("Falha ao copiar o texto.");
     }
     document.body.removeChild(textArea);
   };
 
+  const dispararSugestao = (texto) => {
+    setInputText(texto);
+    setTimeout(() => {
+      const fakeEvent = { preventDefault: () => {} };
+      handleSendMessage(fakeEvent);
+    }, 0);
+  };
+
+  const iniciarFluxoCriarPonto = () => {
+    resetModes();
+    setCreatingPointMode(true);
+    const msg = {
+      id: Date.now(),
+      sender: "ai",
+      text:
+        "Certo! Vamos criar um ponto de embarque. ✨\n\n" +
+        "Digite agora apenas o nome do ponto e o endereço completo em uma única frase, seguindo este modelo:\n\n" +
+        "Portaria Principal na Rua São José, 250, São Joaquim da Barra - SP, Brasil.\n\n" +
+        "Depois é só enviar que eu tento criar o ponto pra você. 😊",
+    };
+    setMessages((prev) => [...prev, msg]);
+  };
+
+  const iniciarFluxoCriarRota = () => {
+    resetModes();
+    setCreatingRouteMode(true);
+    const msg = {
+      id: Date.now(),
+      sender: "ai",
+      text:
+        "Perfeito! Vamos criar uma rota. 🚌\n\n" +
+        "Digite agora os dados em uma única frase, completando depois de \"rota\", seguindo este modelo:\n\n" +
+        "em São Joaquim da Barra chamada Rota T, no período da manhã, rota ativa, saindo às 07:10 e chegando às 08:00, com 44 lugares.\n\n" +
+        "Você pode trocar cidade, nome, período, horários e capacidade. Depois de enviar, eu tento criar a rota pra você. 😊",
+    };
+    setMessages((prev) => [...prev, msg]);
+  };
+
+  const iniciarFluxoAtribuirPontoRota = () => {
+    resetModes();
+    setAssigningPointToRouteMode(true);
+    const msg = {
+      id: Date.now(),
+      sender: "ai",
+      text:
+        "Vamos atribuir um ponto a uma rota. 🔗\n\n" +
+        "Digite agora apenas o que vem depois de \"ponto\", em uma frase, seguindo este modelo:\n\n" +
+        "Portaria Principal na rota Rota 01 Matutina como primeira parada.\n\n" +
+        "Você pode trocar o nome do ponto, o nome da rota e a ordem (primeira, segunda, terceira, etc.).",
+    };
+    setMessages((prev) => [...prev, msg]);
+  };
+
+  const iniciarFluxoNaoEmbarcou = () => {
+    resetModes();
+    setAskingNaoEmbarcouMode(true);
+    const msg = {
+      id: Date.now(),
+      sender: "ai",
+      text:
+        "Vamos consultar quem ainda não embarcou. ✅\n\n" +
+        "Digite agora a rota, o período e a cidade com o código, seguindo este modelo:\n\n" +
+        "rota A do período da manhã em São Joaquim da Barra (3)\n\n" +
+        "Depois de enviar, eu retorno a lista de colaboradores que ainda não embarcaram nessa rota hoje.",
+    };
+    setMessages((prev) => [...prev, msg]);
+  };
+
+  const placeholderInput = creatingPointMode
+    ? "Digite o nome do ponto e o endereço completo nesse formato..."
+    : creatingRouteMode
+    ? 'Digite os dados da rota, ex: "em São Joaquim..., chamada..., período..., horários..."'
+    : assigningPointToRouteMode
+    ? 'Digite ponto, rota e ordem, ex: "Portaria Principal na rota..., como primeira parada"'
+    : askingNaoEmbarcouMode
+    ? 'Digite rota, período e cidade, ex: "rota A do período da manhã em São Joaquim da Barra (3)"'
+    : "Pergunte ou peça algo...";
+
   return (
-    <div className="flex bg-[#F4F7F6] min-h-screen ml-20">
-      <div className="flex-1 flex flex-col max-h-screen overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex items-start gap-3.5 ${
-                msg.sender === "user" ? "justify-end" : ""
-              }`}
-            >
-              {msg.sender === "ai" && <AiAvatar />}
+    <main
+      className="
+        flex-1 min-h-screen bg-slate-50
+        px-3 sm:px-4 lg:px-28
+        py-4
+        ml-16
+      "
+    >
+      <Navbar />
 
-              <div
-                className={`max-w-xl lg:max-w-2xl p-4 rounded-xl shadow-md ${
-                  msg.sender === "user"
-                    ? "bg-[#038C4C] text-white ml-auto rounded-br-none" 
-                    : "bg-white text-gray-800 rounded-bl-none" 
-                }`}
-              >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {msg.text}
-                </p>
-                {msg.sender === "ai" && (
-                  <div className="flex justify-end gap-3 mt-2 text-xs text-gray-500">
-                    <button
-                      onClick={() => handleCopy(msg.text, msg.id)}
-                      className="flex items-center gap-1 hover:text-gray-800 transition-colors"
-                      title="Copiar texto"
-                      disabled={copiedMessageId === msg.id} 
-                    >
-                      {copiedMessageId === msg.id ? (
-                        <>
-                          <Check size={16} /> Copiado!
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={16} /> Copiar
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
-              </div>
-              {msg.sender === "user" && <UserAvatar />}
+      <div className="w-full space-y-6">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
+              <MessageCircle className="w-5 h-5 text-emerald-600" />
             </div>
-          ))}
-          {isAiThinking && (
-            <div className="flex items-start gap-3.5">
-              <AiAvatar />
-              <div className="max-w-xl lg:max-w-2xl p-4 rounded-xl shadow-md bg-white text-gray-500 rounded-bl-none animate-pulse">
-                <p className="text-sm italic">Digitando...</p>
-              </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-semibold text-emerald-600">
+                Assistente do Sistema
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl">
+                Converse com o assistente sobre rotas, pontos, embarques e uso do TrackPass.
+              </p>
             </div>
-          )}
+          </div>
 
-          <div ref={chatEndRef} />
-        </div>
-
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <form
-            onSubmit={handleSendMessage}
-            className="flex items-center gap-3 bg-white border border-gray-300 rounded-xl p-2 focus-within:ring-2 focus-within:ring-[#36A293]"
+          <div
+            className="
+              inline-flex items-center gap-2
+              bg-white border border-emerald-100
+              rounded-full px-3 py-1.5
+              shadow-sm
+            "
           >
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Pergunte ou peça algo..."
-              rows="1"
-              className="flex-1 px-2 py-1 border-none resize-none focus:ring-0 outline-none text-sm bg-transparent"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage(e);
-                }
-              }}
-              disabled={isAiThinking} 
-            />
-            <button
-              type="submit"
-              className="bg-[#038C4C] text-white p-2.5 rounded-lg hover:bg-[#036f4c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!inputText.trim() || isAiThinking}
-              title="Enviar mensagem"
-            >
-              <Send size={20} />
-            </button>
-          </form>
-        </div>
+            <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            <span className="text-[11px] sm:text-xs font-medium text-emerald-700">
+              Online • resposta automática
+            </span>
+          </div>
+        </header>
+
+        <section
+          className="
+            grid grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]
+            gap-5 lg:gap-6
+          "
+        >
+          <div
+            className="
+              bg-white border border-slate-200 shadow-sm rounded-2xl
+              flex flex-col
+              h-[540px] sm:h-[580px]
+            "
+          >
+            <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm sm:text-base font-semibold text-slate-900">
+                  Janela do chat
+                </h2>
+                <p className="text-[11px] sm:text-xs text-slate-500">
+                  Envie perguntas e receba respostas dentro do fluxo do sistema.
+                </p>
+              </div>
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full overflow-hidden border border-emerald-100">
+                  <img
+                    src={botIcon}
+                    alt="Bot"
+                    className="w-7 h-7 object-cover rounded-full"
+                  />
+                </div>
+                <span className="text-[11px] text-slate-500">TrackPass • Bot</span>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 space-y-4 bg-slate-50/70">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex items-start gap-3.5 ${
+                    msg.sender === "user" ? "justify-end" : ""
+                  }`}
+                >
+                  {msg.sender === "ai" && <AiAvatar />}
+
+                  <div
+                    className={`
+                      max-w-[80%] sm:max-w-[70%] p-3.5 rounded-2xl shadow-sm
+                      text-sm leading-relaxed whitespace-pre-wrap break-words
+                      ${
+                        msg.sender === "user"
+                          ? "bg-emerald-600 text-white ml-auto rounded-br-md"
+                          : "bg-white text-slate-800 rounded-bl-md border border-slate-200"
+                      }
+                    `}
+                  >
+                    <p>{msg.text}</p>
+
+                    {msg.sender === "ai" && (
+                      <div className="flex justify-end gap-3 mt-2 text-[11px] text-slate-500">
+                        <button
+                          onClick={() => handleCopy(msg.text, msg.id)}
+                          className="flex items-center gap-1 hover:text-slate-800 transition-colors"
+                          title="Copiar texto"
+                          disabled={copiedMessageId === msg.id}
+                        >
+                          {copiedMessageId === msg.id ? (
+                            <>
+                              <Check size={14} /> Copiado
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={14} /> Copiar
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {msg.sender === "user" && <UserAvatar />}
+                </div>
+              ))}
+
+              {isAiThinking && (
+                <div className="flex items-start gap-3.5">
+                  <AiAvatar />
+                  <div className="max-w-[80%] sm:max-w-[70%] p-3.5 rounded-2xl shadow-sm bg-white text-slate-500 rounded-bl-md border border-slate-200 animate-pulse text-sm">
+                    Digitando...
+                  </div>
+                </div>
+              )}
+
+              <div ref={chatEndRef} />
+            </div>
+
+            <div className="border-t border-slate-100 px-3 sm:px-5 py-3 sm:py-4 bg-white rounded-b-2xl">
+              <form
+                onSubmit={handleSendMessage}
+                className="
+                  flex items-end gap-3
+                  bg-slate-50 border border-slate-300
+                  rounded-xl px-3 py-2
+                  focus-within:bg-white
+                  focus-within:ring-2 focus-within:ring-emerald-500/70
+                  focus-within:border-emerald-500
+                "
+              >
+                <textarea
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder={placeholderInput}
+                  rows={1}
+                  className="
+                    flex-1 px-1.5 py-1 border-none resize-none
+                    focus:ring-0 outline-none text-sm bg-transparent
+                    max-h-28
+                  "
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage(e);
+                    }
+                  }}
+                  disabled={isAiThinking}
+                />
+                <button
+                  type="submit"
+                  className="
+                    inline-flex items-center justify-center
+                    bg-emerald-600 text-white
+                    px-3.5 py-2.5 rounded-xl
+                    hover:bg-emerald-700
+                    disabled:bg-emerald-300 disabled:cursor-not-allowed
+                    transition-colors
+                    text-sm font-semibold
+                  "
+                  disabled={!inputText.trim() || isAiThinking}
+                  title="Enviar mensagem"
+                >
+                  <Send size={18} className="mr-1.5" />
+                  <span className="hidden sm:inline">Enviar</span>
+                </button>
+              </form>
+              <p className="mt-1 text-[10px] text-slate-400">
+                Pressione <span className="font-semibold">Enter</span> para enviar ou{" "}
+                <span className="font-semibold">Shift + Enter</span> para quebrar linha.
+              </p>
+            </div>
+          </div>
+
+          <aside
+            className="
+              bg-white border border-slate-200 shadow-sm rounded-2xl
+              p-4 sm:p-5 flex flex-col gap-4
+            "
+          >
+            <div>
+              <h3 className="text-sm sm:text-base font-semibold text-slate-900">
+                Sugestões rápidas
+              </h3>
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-1">
+                Use fluxos guiados ou comandos prontos para falar com o assistente.
+              </p>
+            </div>
+
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                Fluxos guiados
+              </p>
+              <div className="grid grid-cols-1 gap-2.5">
+                <button
+                  type="button"
+                  onClick={iniciarFluxoCriarPonto}
+                  className="
+                    text-left text-xs sm:text-sm
+                    px-3 py-2
+                    rounded-xl
+                    bg-emerald-50 hover:bg-emerald-100
+                    border border-emerald-100
+                    text-emerald-800
+                    transition-colors
+                    font-semibold
+                  "
+                >
+                  Criar ponto de embarque
+                </button>
+                <button
+                  type="button"
+                  onClick={iniciarFluxoCriarRota}
+                  className="
+                    text-left text-xs sm:text-sm
+                    px-3 py-2
+                    rounded-xl
+                    bg-emerald-50 hover:bg-emerald-100
+                    border border-emerald-100
+                    text-emerald-800
+                    transition-colors
+                    font-semibold
+                  "
+                >
+                  Criar rota
+                </button>
+                <button
+                  type="button"
+                  onClick={iniciarFluxoAtribuirPontoRota}
+                  className="
+                    text-left text-xs sm:text-sm
+                    px-3 py-2
+                    rounded-xl
+                    bg-emerald-50 hover:bg-emerald-100
+                    border border-emerald-100
+                    text-emerald-800
+                    transition-colors
+                    font-semibold
+                  "
+                >
+                  Atribuir ponto à rota
+                </button>
+                <button
+                  type="button"
+                  onClick={iniciarFluxoNaoEmbarcou}
+                  className="
+                    text-left text-xs sm:text-sm
+                    px-3 py-2
+                    rounded-xl
+                    bg-emerald-50 hover:bg-emerald-100
+                    border border-emerald-100
+                    text-emerald-800
+                    transition-colors
+                    font-semibold
+                  "
+                >
+                  Quem ainda não embarcou na rota
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                Rotas
+              </p>
+              <div className="grid grid-cols-1 gap-2.5">
+                {[
+                  "Quantas rotas ativas tenho hoje?",
+                  "Quantas rotas cadastradas tenho no total?",
+                  "Qual rota tem mais colaboradores?",
+                  "Qual rota tem mais embarques hoje?",
+                  "Quantos colaboradores estão na rota A de manhã?",
+                ].map((texto) => (
+                  <button
+                    key={texto}
+                    type="button"
+                    onClick={() => dispararSugestao(texto)}
+                    className="
+                      text-left text-xs sm:text-sm
+                      px-3 py-2
+                      rounded-xl
+                      bg-slate-50 hover:bg-slate-100
+                      border border-slate-100
+                      text-slate-700
+                      transition-colors
+                    "
+                  >
+                    {texto}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                Pontos de embarque
+              </p>
+              <div className="grid grid-cols-1 gap-2.5">
+                {[
+                  "Como criar um ponto de embarque?",
+                  "Como atribuir um ponto a uma rota?",
+                ].map((texto) => (
+                  <button
+                    key={texto}
+                    type="button"
+                    onClick={() => dispararSugestao(texto)}
+                    className="
+                      text-left text-xs sm:text-sm
+                      px-3 py-2
+                      rounded-xl
+                      bg-slate-50 hover:bg-slate-100
+                      border border-slate-100
+                      text-slate-700
+                      transition-colors
+                    "
+                  >
+                    {texto}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                Embarques e presença
+              </p>
+              <div className="grid grid-cols-1 gap-2.5">
+                {[
+                  "Quais são os embarques inválidos desta semana?",
+                  "Quem ainda não embarcou na rota A do período da manhã em São Joaquim da Barra (3)?",
+                ].map((texto) => (
+                  <button
+                    key={texto}
+                    type="button"
+                    onClick={() => dispararSugestao(texto)}
+                    className="
+                      text-left text-xs sm:text-sm
+                      px-3 py-2
+                      rounded-xl
+                      bg-slate-50 hover:bg-slate-100
+                      border border-slate-100
+                      text-slate-700
+                      transition-colors
+                    "
+                  >
+                    {texto}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-2 rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-3">
+              <p className="text-[11px] sm:text-xs text-emerald-900">
+                Você pode usar os fluxos guiados ou escrever livremente. O assistente interpreta
+                a mensagem e consulta o TrackPass para ajudar com rotas, pontos e embarques.
+              </p>
+            </div>
+          </aside>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

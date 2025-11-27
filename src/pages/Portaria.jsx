@@ -10,8 +10,8 @@ import {
 } from "../api/acessoService";
 import { formatDateTime } from "../utils/formatters";
 import Loading from "../components/Loading";
+import Navbar from "../components/Navbar";
 
-// Lista fixa de portarias
 const portariasDisponiveis = [
   { id: 1, nome: "Portaria Principal" },
   { id: 2, nome: "Portaria Carga/Descarga" },
@@ -22,24 +22,23 @@ const Portaria = () => {
   const [visitantes, setVisitantes] = useState([]);
   const [historicoBase, setHistoricoBase] = useState([]);
 
-  // Estados do Formulário
   const [tipoPessoa, setTipoPessoa] = useState("COLABORADOR");
   const [selectedPessoaId, setSelectedPessoaId] = useState("");
   const [selectedPortariaId, setSelectedPortariaId] = useState(
     portariasDisponiveis[0]?.id || ""
   );
   const [observacao, setObservacao] = useState("");
-  const [currentOcupanteSelection, setCurrentOcupanteSelection] = useState("");
+
+  const [ocupanteSearch, setOcupanteSearch] = useState("");
+  const [ocupanteFocused, setOcupanteFocused] = useState(false);
   const [selectedOcupantes, setSelectedOcupantes] = useState([]);
 
-  // Filtros
   const today = new Date().toISOString().slice(0, 10);
   const [filtroDataDe, setFiltroDataDe] = useState(today);
   const [filtroDataAte, setFiltroDataAte] = useState(today);
   const [filtroTipo, setFiltroTipo] = useState("TODOS");
   const [filtroPortaria, setFiltroPortaria] = useState("");
 
-  // Loading e Erros
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,8 +54,8 @@ const Portaria = () => {
           getColaboradores(),
           getVisitantes(),
         ]);
-        setColaboradores(colabData);
-        setVisitantes(visitData);
+        setColaboradores(colabData || []);
+        setVisitantes(visitData || []);
       } catch (error) {
         console.error(error);
         const errorMsg =
@@ -79,7 +78,7 @@ const Portaria = () => {
       setLoadingHistorico(true);
       try {
         const data = await getAcessosHistorico(filtroDataDe, filtroDataAte);
-        setHistoricoBase(data);
+        setHistoricoBase(data || []);
       } catch (error) {
         console.error(error);
         toast.error("Falha ao carregar histórico de acessos.");
@@ -101,17 +100,61 @@ const Portaria = () => {
   }, [filtroDataDe, filtroDataAte]);
 
   const ocupantesDisponiveis = useMemo(() => {
-    return (colaboradores || [])
-      .map((c) => ({
-        id: c.idColaborador,
-        nome: c.nome,
-        identificador: c.matricula,
-      }))
-      .sort((a, b) => a.nome.localeCompare(b.nome));
-  }, [colaboradores]);
+    const colabs = (colaboradores || []).map((c) => ({
+      id: c.idColaborador,
+      nome: c.nome,
+      identificador: c.matricula,
+      tipo: "COLABORADOR",
+      label: `${c.nome} (${c.matricula})`,
+    }));
+
+    const visits = (visitantes || []).map((v) => ({
+      id: v.id,
+      nome: v.nomeCompleto,
+      identificador: v.numeroDocumento,
+      tipo: "VISITANTE",
+      label: `${v.nomeCompleto} (${v.numeroDocumento})`,
+    }));
+
+    return [...colabs, ...visits].sort((a, b) =>
+      a.nome.localeCompare(b.nome)
+    );
+  }, [colaboradores, visitantes]);
+
+  // Sugestões que aparecem ao focar no input (mesmo sem texto)
+  const sugestoesOcupantes = useMemo(() => {
+    if (!ocupanteFocused || !selectedPessoaId) return [];
+
+    const base = ocupantesDisponiveis.filter((p) => {
+      if (String(p.id) === String(selectedPessoaId)) return false;
+      if (selectedOcupantes.some((o) => String(o.id) === String(p.id))) {
+        return false;
+      }
+      return true;
+    });
+
+    const search = (ocupanteSearch || "").trim().toLowerCase();
+    if (!search) {
+      return base.slice(0, 8);
+    }
+
+    return base
+      .filter((p) => {
+        const nome = p.nome?.toLowerCase() || "";
+        const ident = p.identificador?.toLowerCase() || "";
+        return nome.includes(search) || ident.includes(search);
+      })
+      .slice(0, 8);
+  }, [
+    ocupanteFocused,
+    ocupanteSearch,
+    ocupantesDisponiveis,
+    selectedPessoaId,
+    selectedOcupantes,
+  ]);
 
   const historicoFiltrado = useMemo(() => {
-    return historicoBase.filter((acesso) => {
+    return (historicoBase || []).filter((acesso) => {
       if (!acesso) return false;
       const matchTipo =
         filtroTipo === "TODOS" || acesso.tipoPessoa === filtroTipo;
@@ -121,36 +164,70 @@ const Portaria = () => {
     });
   }, [historicoBase, filtroTipo, filtroPortaria]);
 
-  // Handlers
-  const handleAddOcupante = () => {
-    if (!currentOcupanteSelection) return;
+  const activeEntradasHoje = useMemo(() => {
+    const hoje = new Date().toISOString().slice(0, 10);
+    return (historicoBase || []).filter((acesso) => {
+      if (!acesso) return false;
+      if (acesso.saida) return false;
+      if (!acesso.entrada) return false;
+      const entradaData = String(acesso.entrada).slice(0, 10);
+      return entradaData === hoje;
+    }).length;
+  }, [historicoBase]);
+
+  const totalEntradasHoje = useMemo(() => {
+    const hoje = new Date().toISOString().slice(0, 10);
+    return (historicoBase || []).filter((acesso) => {
+      if (!acesso || !acesso.entrada) return false;
+      const entradaData = String(acesso.entrada).slice(0, 10);
+      return entradaData === hoje;
+    }).length;
+  }, [historicoBase]);
+
+  const totalSaidasHoje = useMemo(() => {
+    const hoje = new Date().toISOString().slice(0, 10);
+    return (historicoBase || []).filter((acesso) => {
+      if (!acesso || !acesso.saida) return false;
+      const saidaData = String(acesso.saida).slice(0, 10);
+      return saidaData === hoje;
+    }).length;
+  }, [historicoBase]);
+
+  const handleAddOcupanteFromSuggestion = (pessoa) => {
+    if (!pessoa) return;
+
     if (selectedOcupantes.length >= 10) {
       toast.warn("Limite de 10 ocupantes atingido.");
       return;
     }
-    if (selectedOcupantes.some((o) => o.id === currentOcupanteSelection)) {
-      toast.warn("Este ocupante já foi adicionado.");
-      return;
-    }
-    if (
-      tipoPessoa === "COLABORADOR" &&
-      currentOcupanteSelection === selectedPessoaId
-    ) {
+
+    if (String(pessoa.id) === String(selectedPessoaId)) {
       toast.warn("A pessoa principal não pode ser adicionada como ocupante.");
       return;
     }
 
-    const ocupanteToAdd = ocupantesDisponiveis.find(
-      (p) => p.id === currentOcupanteSelection
-    );
-    if (ocupanteToAdd) {
-      setSelectedOcupantes((prev) => [...prev, ocupanteToAdd]);
-      setCurrentOcupanteSelection("");
+    if (selectedOcupantes.some((o) => String(o.id) === String(pessoa.id))) {
+      toast.warn("Este ocupante já foi adicionado.");
+      return;
     }
+
+    setSelectedOcupantes((prev) => [...prev, pessoa]);
+    setOcupanteSearch("");
+  };
+
+  const handleAddOcupante = () => {
+    const candidatos = sugestoesOcupantes;
+    if (!candidatos || candidatos.length === 0) {
+      toast.warn("Nenhuma pessoa encontrada para adicionar.");
+      return;
+    }
+    handleAddOcupanteFromSuggestion(candidatos[0]);
   };
 
   const handleRemoveOcupante = (idToRemove) => {
-    setSelectedOcupantes((prev) => prev.filter((o) => o.id !== idToRemove));
+    setSelectedOcupantes((prev) =>
+      prev.filter((o) => String(o.id) !== String(idToRemove))
+    );
   };
 
   const handleRegisterEntry = async (e) => {
@@ -166,19 +243,20 @@ const Portaria = () => {
       return;
     }
 
-    let identificadorPrincipal;
-    let tipoPrincipal = tipoPessoa;
+    let identificadorPrincipal = "";
+    const tipoPrincipal = tipoPessoa;
 
     try {
       if (tipoPrincipal === "COLABORADOR") {
-        identificadorPrincipal = colaboradores.find(
-          (c) => c.idColaborador === selectedPessoaId
-        )?.matricula;
-      } else {
-        const visitanteSelecionado = visitantes.find(
-          (v) => v.id === selectedPessoaId
+        const col = (colaboradores || []).find(
+          (c) => String(c.idColaborador) === String(selectedPessoaId)
         );
-        identificadorPrincipal = visitanteSelecionado?.numeroDocumento;
+        identificadorPrincipal = col?.matricula || "";
+      } else {
+        const visitanteSelecionado = (visitantes || []).find(
+          (v) => String(v.id) === String(selectedPessoaId)
+        );
+        identificadorPrincipal = visitanteSelecionado?.numeroDocumento || "";
       }
     } catch (error) {
       const errorMsg = "Erro ao processar seleção principal.";
@@ -197,12 +275,23 @@ const Portaria = () => {
       return;
     }
 
+    const ocupanteMatriculas =
+      selectedOcupantes
+        .filter((o) => o.tipo === "COLABORADOR")
+        .map((o) => o.identificador) || [];
+
+    const ocupanteDocumentos =
+      selectedOcupantes
+        .filter((o) => o.tipo === "VISITANTE")
+        .map((o) => o.identificador) || [];
+
     const payload = {
       tipoPessoa: tipoPrincipal,
       matriculaOuDocumento: identificadorPrincipal,
-      codPortaria: parseInt(selectedPortariaId),
+      codPortaria: Number(selectedPortariaId),
       observacao: observacao || "",
-      ocupanteMatriculas: selectedOcupantes.map((o) => o.identificador) || [],
+      ocupanteMatriculas,
+      ocupanteDocumentos,
     };
 
     try {
@@ -211,11 +300,11 @@ const Portaria = () => {
 
       setSelectedPessoaId("");
       setSelectedOcupantes([]);
-      setCurrentOcupanteSelection("");
+      setOcupanteSearch("");
       setObservacao("");
 
       const histRes = await getAcessosHistorico(filtroDataDe, filtroDataAte);
-      setHistoricoBase(histRes);
+      setHistoricoBase(histRes || []);
     } catch (error) {
       console.error(error);
       const errorMsg =
@@ -235,7 +324,7 @@ const Portaria = () => {
       await registrarSaida(idAcesso);
       toast.success("Saída registrada com sucesso!");
       const histRes = await getAcessosHistorico(filtroDataDe, filtroDataAte);
-      setHistoricoBase(histRes);
+      setHistoricoBase(histRes || []);
     } catch (error) {
       console.error(error);
       toast.error("Falha ao registrar saída.");
@@ -251,381 +340,634 @@ const Portaria = () => {
         ml-16
       "
     >
-      {/* CONTAINER PRINCIPAL – largura total, igual Gerenciar Linhas/Colaboradores */}
-      <div className="relative z-10 w-full space-y-6">
-        <header>
+      <Navbar />
+
+      <div className="w-full space-y-6">
+        {/* HEADER */}
+        <header className="flex flex-col gap-2">
           <h1 className="text-2xl sm:text-3xl font-semibold text-emerald-600">
             Controle de portaria
           </h1>
+          <p className="text-sm text-slate-500 max-w-2xl">
+            Registre entradas e saídas de colaboradores e visitantes, controle
+            ocupantes e acompanhe o histórico em tempo real.
+          </p>
         </header>
+
+        {/* CARDS RESUMO */}
+        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {/* Card 1 - Entradas em andamento */}
+          <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center overflow-hidden">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-6 h-6 text-emerald-600"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M12 2a3 3 0 0 1 3 3v1h2.5A2.5 2.5 0 0 1 20 8.5V19a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8.5A2.5 2.5 0 0 1 6.5 6H9V5a3 3 0 0 1 3-3Zm0 2a1 1 0 0 0-1 1v1h2V5a1 1 0 0 0-1-1Zm-2 7a1 1 0 0 0-1 1v5h2v-2h2v2h2v-5a1 1 0 0 0-1-1H10Z"
+                  />
+                </svg>
+              </div>
+
+              <div className="flex flex-col">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-emerald-600">
+                  Entradas em andamento hoje
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  {activeEntradasHoje > 0
+                    ? "Veículos ainda dentro da unidade."
+                    : "Nenhuma permanência registrada no dia."}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-end">
+              <span className="text-2xl sm:text-3xl font-semibold text-emerald-600 leading-none">
+                {activeEntradasHoje}
+              </span>
+              <span className="text-[10px] text-slate-400 mt-1">
+                sem saída registrada
+              </span>
+            </div>
+          </div>
+
+          {/* Card 2 - Total de entradas hoje */}
+          <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center overflow-hidden">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-6 h-6 text-emerald-600"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M11 3a1 1 0 0 1 1 1v9.586l3.293-3.293a1 1 0 0 1 1.414 1.414l-4.999 5a1 1 0 0 1-1.416 0l-5-5A1 1 0 0 1 6.707 10.3L10 13.586V4a1 1 0 0 1 1-1Zm-6 14a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v1a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-1a1 1 0 0 1 1-1Z"
+                  />
+                </svg>
+              </div>
+
+              <div className="flex flex-col">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-emerald-600">
+                  Total de entradas hoje
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  Soma de todas as entradas registradas na data atual.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-end">
+              <span className="text-2xl sm:text-3xl font-semibold text-emerald-600 leading-none">
+                {totalEntradasHoje}
+              </span>
+              <span className="text-[10px] text-slate-400 mt-1">
+                condutores registrados
+              </span>
+            </div>
+          </div>
+
+          {/* Card 3 - Saídas registradas hoje */}
+          <div className="bg-white rounded-2xl border border-sky-100 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center overflow-hidden">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-6 h-6 text-sky-600"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M17 2a3 3 0 0 1 3 3v10.5a.5.5 0 0 1-1 0V5a2 2 0 0 0-2-2H8A2 2 0 0 0 6 5v14a2 2 0 0 0 2 2h6.5a.5.5 0 0 1 0 1H8a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h9Zm1.707 12.293a1 1 0 0 1 0 1.414l-4.25 4.25a1 1 0 0 1-1.414 0l-2.25-2.25a1 1 0 0 1 1.414-1.414L13 17.836l3.543-3.543a1 1 0 0 1 1.414 0Z"
+                  />
+                </svg>
+              </div>
+
+              <div className="flex flex-col">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-sky-700">
+                  Saídas registradas hoje
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  Entradas que já tiveram saída confirmada na data atual.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-end">
+              <span className="text-2xl sm:text-3xl font-semibold text-sky-600 leading-none">
+                {totalSaidasHoje}
+              </span>
+              <span className="text-[10px] text-slate-400 mt-1">
+                movimentações concluídas
+              </span>
+            </div>
+          </div>
+        </section>
 
         {fetchError && (
           <div
-            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
+            className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
             role="alert"
           >
-            <strong className="font-bold">Erro: </strong>
+            <strong className="font-semibold">Erro: </strong>
             <span>{fetchError}</span>
           </div>
         )}
 
-        {/* CARD: Registrar entrada */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 relative px-4 md:px-8 py-6">
-          {loadingInitial && (
-            <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
-              <Loading size={140} message="" />
-            </div>
-          )}
-
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">
-            Registrar entrada
-          </h2>
-
-          {!loadingInitial && (
-            <form onSubmit={handleRegisterEntry} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Tipo (principal)
-                  </label>
-                  <select
-                    value={tipoPessoa}
-                    onChange={(e) => {
-                      setTipoPessoa(e.target.value);
-                      setSelectedPessoaId("");
-                      setSelectedOcupantes([]);
-                      setCurrentOcupanteSelection("");
-                    }}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-                  >
-                    <option value="COLABORADOR">Colaborador</option>
-                    <option value="VISITANTE">Visitante</option>
-                  </select>
+        {/* CADASTRO + HISTÓRICO LADO A LADO */}
+        <section className="flex flex-col xl:flex-row gap-6 items-start">
+          {/* LADO ESQUERDO – CADASTRO */}
+          <div className="w-full xl:w-[36%]">
+            <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl p-5 sm:p-6 md:p-7">
+              {loadingInitial && (
+                <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
+                  <Loading size={120} message="" />
                 </div>
+              )}
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Pessoa principal
-                  </label>
-                  <select
-                    value={selectedPessoaId}
-                    onChange={(e) => setSelectedPessoaId(e.target.value)}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-                    required
-                    disabled={
-                      tipoPessoa === "COLABORADOR"
-                        ? colaboradores.length === 0
-                        : visitantes.length === 0
-                    }
-                  >
-                    <option value="">
-                      {tipoPessoa === "COLABORADOR" &&
-                        colaboradores.length === 0 &&
-                        "Nenhum colaborador"}
-                      {tipoPessoa === "VISITANTE" &&
-                        visitantes.length === 0 &&
-                        "Nenhum visitante"}
-                      {(tipoPessoa === "COLABORADOR" &&
-                        colaboradores.length > 0) ||
-                      (tipoPessoa === "VISITANTE" && visitantes.length > 0)
-                        ? "Selecione..."
-                        : ""}
-                    </option>
-                    {tipoPessoa === "COLABORADOR"
-                      ? colaboradores.map((c) => (
-                          <option key={c.idColaborador} value={c.idColaborador}>
-                            {c.nome} ({c.matricula})
-                          </option>
-                        ))
-                      : visitantes.map((v) => (
-                          <option key={v.id} value={v.id}>
-                            {v.nomeCompleto} ({v.numeroDocumento})
+              <div className="flex flex-col gap-1 mb-4 border-b border-slate-100 pb-3">
+                <h2 className="text-lg sm:text-xl font-semibold text-slate-900">
+                  Registrar entrada
+                </h2>
+                <p className="text-xs text-slate-500 max-w-md">
+                  Selecione a pessoa principal, defina portaria e ocupantes e
+                  registre a entrada no sistema.
+                </p>
+              </div>
+
+              {!loadingInitial && (
+                <form onSubmit={handleRegisterEntry} className="space-y-5">
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-slate-700">
+                        Tipo (principal)
+                      </label>
+                      <select
+                        value={tipoPessoa}
+                        onChange={(e) => {
+                          setTipoPessoa(e.target.value);
+                          setSelectedPessoaId("");
+                          setSelectedOcupantes([]);
+                          setOcupanteSearch("");
+                        }}
+                        className="
+                          border border-slate-300 bg-slate-50
+                          rounded-xl px-3.5 py-2.5 text-sm text-slate-800
+                          focus:bg-white focus:outline-none
+                          focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                        "
+                      >
+                        <option value="COLABORADOR">Colaborador</option>
+                        <option value="VISITANTE">Visitante</option>
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-slate-700">
+                        Pessoa principal
+                      </label>
+                      <select
+                        value={selectedPessoaId}
+                        onChange={(e) => setSelectedPessoaId(e.target.value)}
+                        className="
+                          border border-slate-300 bg-slate-50
+                          rounded-xl px-3.5 py-2.5 text-sm text-slate-800
+                          focus:bg-white focus:outline-none
+                          focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                        "
+                        required
+                        disabled={
+                          tipoPessoa === "COLABORADOR"
+                            ? colaboradores.length === 0
+                            : visitantes.length === 0
+                        }
+                      >
+                        <option value="">
+                          {tipoPessoa === "COLABORADOR" &&
+                            colaboradores.length === 0 &&
+                            "Nenhum colaborador"}
+                          {tipoPessoa === "VISITANTE" &&
+                            visitantes.length === 0 &&
+                            "Nenhum visitante"}
+                          {(tipoPessoa === "COLABORADOR" &&
+                            colaboradores.length > 0) ||
+                          (tipoPessoa === "VISITANTE" &&
+                            visitantes.length > 0)
+                            ? "Selecione..."
+                            : ""}
+                        </option>
+                        {tipoPessoa === "COLABORADOR"
+                          ? colaboradores.map((c) => (
+                              <option
+                                key={c.idColaborador}
+                                value={c.idColaborador}
+                              >
+                                {c.nome} ({c.matricula})
+                              </option>
+                            ))
+                          : visitantes.map((v) => (
+                              <option key={v.id} value={v.id}>
+                                {v.nomeCompleto} ({v.numeroDocumento})
+                              </option>
+                            ))}
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-slate-700">
+                        Portaria
+                      </label>
+                      <select
+                        value={selectedPortariaId}
+                        onChange={(e) => setSelectedPortariaId(e.target.value)}
+                        className="
+                          border border-slate-300 bg-slate-50
+                          rounded-xl px-3.5 py-2.5 text-sm text-slate-800
+                          focus:bg-white focus:outline-none
+                          focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                        "
+                        required
+                      >
+                        {portariasDisponiveis.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.nome}
                           </option>
                         ))}
-                  </select>
-                </div>
+                      </select>
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Portaria
-                  </label>
-                  <select
-                    value={selectedPortariaId}
-                    onChange={(e) => setSelectedPortariaId(e.target.value)}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-                    required
-                  >
-                    {portariasDisponiveis.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nome}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                  {/* Ocupantes mistos (colab + visitante) com busca por texto */}
+                  <div className="space-y-2">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-slate-700">
+                        Adicionar ocupante (máx. 10)
+                      </label>
+                      <div className="flex gap-2 relative">
+                        <input
+                          type="text"
+                          value={ocupanteSearch}
+                          onChange={(e) => setOcupanteSearch(e.target.value)}
+                          onFocus={() => setOcupanteFocused(true)}
+                          onBlur={() =>
+                            setTimeout(() => setOcupanteFocused(false), 150)
+                          }
+                          placeholder="Clique ou digite nome/matrícula/documento..."
+                          className="
+                            flex-1
+                            border border-slate-300 bg-slate-50
+                            rounded-xl px-3.5 py-2.5 text-sm text-slate-800
+                            focus:bg-white focus:outline-none
+                            focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                          "
+                          disabled={!selectedPessoaId}
+                        />
 
-              {/* Linha Ocupantes */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                <div className="md:col-span-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Adicionar ocupante (máx. 10)
-                  </label>
-                  <select
-                    value={currentOcupanteSelection}
-                    onChange={(e) =>
-                      setCurrentOcupanteSelection(e.target.value)
-                    }
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-                    disabled={
-                      selectedOcupantes.length >= 10 ||
-                      !selectedPessoaId ||
-                      colaboradores.length === 0
-                    }
-                  >
-                    <option value="">
-                      {colaboradores.length === 0
-                        ? "Nenhum colaborador carregado"
-                        : "Selecione um colaborador..."}
-                    </option>
-                    {ocupantesDisponiveis
-                      .filter(
-                        (p) =>
-                          p.id !== selectedPessoaId &&
-                          !selectedOcupantes.some((o) => o.id === p.id)
-                      )
-                      .map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.nome} ({p.identificador})
-                        </option>
-                      ))}
-                  </select>
-                </div>
-                <div>
-                  <button
-                    type="button"
-                    onClick={handleAddOcupante}
-                    disabled={
-                      !currentOcupanteSelection ||
-                      selectedOcupantes.length >= 10
-                    }
-                    className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Adicionar
-                  </button>
-                </div>
-              </div>
-
-              {/* Observação */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Observação (opcional)
-                </label>
-                <textarea
-                  rows="2"
-                  value={observacao}
-                  onChange={(e) => setObservacao(e.target.value)}
-                  placeholder="Ex: Acompanhado de estagiário, entrega de material..."
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-                />
-              </div>
-
-              {/* Ocupantes adicionados */}
-              {selectedOcupantes.length > 0 && (
-                <div className="border rounded-md p-4 bg-gray-50 max-h-40 overflow-y-auto">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">
-                    Ocupantes adicionados ({selectedOcupantes.length}):
-                  </h3>
-                  <ul className="space-y-2">
-                    {selectedOcupantes.map((o) => (
-                      <li
-                        key={o.id}
-                        className="flex justify-between items-center text-sm bg-white p-2 rounded shadow-sm"
-                      >
-                        <span>
-                          {o.nome} ({o.identificador})
-                        </span>
                         <button
                           type="button"
-                          onClick={() => handleRemoveOcupante(o.id)}
-                          className="text-red-500 hover:text-red-700 text-xs font-semibold"
+                          onClick={handleAddOcupante}
+                          disabled={
+                            !selectedPessoaId ||
+                            selectedOcupantes.length >= 10 ||
+                            sugestoesOcupantes.length === 0
+                          }
+                          className="
+                            inline-flex items-center justify-center
+                            px-3.5 py-2.5
+                            rounded-xl
+                            bg-emerald-600 hover:bg-emerald-700
+                            disabled:bg-emerald-400
+                            text-white text-xs font-semibold
+                            transition-colors
+                            whitespace-nowrap
+                          "
                         >
-                          Remover
+                          Adicionar
                         </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                      </div>
+
+                      {sugestoesOcupantes.length > 0 && (
+                        <div
+                          className="
+                            mt-1 border border-slate-200 rounded-xl bg-white shadow-sm
+                            max-h-40 overflow-y-auto
+                          "
+                          onMouseDown={(e) => e.preventDefault()}
+                        >
+                          {sugestoesOcupantes.map((p) => (
+                            <button
+                              key={`${p.tipo}-${p.id}`}
+                              type="button"
+                              onClick={() => handleAddOcupanteFromSuggestion(p)}
+                              className="
+                                w-full text-left px-3 py-1.5 text-xs
+                                hover:bg-emerald-50 flex justify-between items-center
+                              "
+                            >
+                              <span className="text-slate-800">
+                                {p.nome} ({p.identificador})
+                              </span>
+                              <span className="text-[10px] uppercase text-slate-400 font-semibold">
+                                {p.tipo === "COLABORADOR"
+                                  ? "Colab."
+                                  : "Visitante"}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedOcupantes.length > 0 && (
+                      <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 max-h-32 overflow-y-auto">
+                        <h3 className="text-[11px] font-semibold text-slate-700 mb-1">
+                          Ocupantes adicionados ({selectedOcupantes.length})
+                        </h3>
+                        <ul className="space-y-1.5">
+                          {selectedOcupantes.map((o) => (
+                            <li
+                              key={`${o.tipo}-${o.id}`}
+                              className="flex justify-between items-center text-xs bg-white px-2 py-1.5 rounded-lg border border-slate-100"
+                            >
+                              <span className="text-slate-800">
+                                {o.nome} ({o.identificador}){" "}
+                                <span className="text-[10px] text-slate-400 ml-1">
+                                  {o.tipo === "COLABORADOR"
+                                    ? "Colaborador"
+                                    : "Visitante"}
+                                </span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveOcupante(o.id)}
+                                className="text-red-500 hover:text-red-700 text-[11px] font-semibold"
+                              >
+                                Remover
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Observação */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-slate-700">
+                      Observação (opcional)
+                    </label>
+                    <textarea
+                      rows="2"
+                      value={observacao}
+                      onChange={(e) => setObservacao(e.target.value)}
+                      placeholder="Ex: Acompanhado de estagiário, entrega de material..."
+                      className="
+                        border border-slate-300 bg-slate-50
+                        rounded-xl px-3.5 py-2.5 text-sm text-slate-800
+                        focus:bg-white focus:outline-none
+                        focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                      "
+                    />
+                  </div>
+
+                  {formError && (
+                    <p className="text-red-600 text-xs">{formError}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="
+                      w-full
+                      bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400
+                      text-white
+                      py-2.5
+                      rounded-xl
+                      text-sm sm:text-base font-semibold
+                      transition-colors
+                    "
+                  >
+                    {isSubmitting ? "Registrando..." : "Registrar entrada"}
+                  </button>
+                </form>
               )}
-
-              {formError && (
-                <p className="text-red-600 text-sm">{formError}</p>
-              )}
-
-              <div className="text-right">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-[#038C3E] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#026d32] transition disabled:opacity-50"
-                >
-                  {isSubmitting ? "Registrando..." : "Registrar entrada"}
-                </button>
-              </div>
-            </form>
-          )}
-        </section>
-
-        {/* CARD: Histórico */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 relative px-4 md:px-8 py-6">
-          {loadingHistorico && (
-            <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
-              <Loading size={130} message="" />
-            </div>
-          )}
-
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">
-            Histórico de acessos
-          </h2>
-
-          {/* Filtros */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-end">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                De:
-              </label>
-              <input
-                type="date"
-                value={filtroDataDe}
-                onChange={(e) => setFiltroDataDe(e.target.value)}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Até:
-              </label>
-              <input
-                type="date"
-                value={filtroDataAte}
-                onChange={(e) => setFiltroDataAte(e.target.value)}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Tipo pessoa
-              </label>
-              <select
-                value={filtroTipo}
-                onChange={(e) => setFiltroTipo(e.target.value)}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-              >
-                <option value="TODOS">Todos</option>
-                <option value="COLABORADOR">Colaborador</option>
-                <option value="VISITANTE">Visitante</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Portaria
-              </label>
-              <select
-                value={filtroPortaria}
-                onChange={(e) => setFiltroPortaria(e.target.value)}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#36A293] focus:border-[#36A293]"
-              >
-                <option value="">Todas</option>
-                {portariasDisponiveis.map((p) => (
-                  <option key={p.id} value={String(p.id)}>
-                    {p.nome}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
 
-          {/* Tabela */}
-          {!loadingHistorico && historicoFiltrado.length > 0 ? (
-            <div className="overflow-x-auto max-h-96">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50 sticky top-0 z-20">
-                  <tr>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                      Nome (condutor)
-                    </th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                      Tipo
-                    </th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                      Portaria
-                    </th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                      Entrada
-                    </th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                      Saída
-                    </th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                      Ocupantes
-                    </th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                      Ação
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {historicoFiltrado.map((acesso) => (
-                    <tr key={acesso.id}>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        {acesso.condutor?.nome || "N/A"}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        {acesso.tipoPessoa || "N/A"}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        {portariasDisponiveis.find(
-                          (p) => p.id === acesso.codPortaria
-                        )?.nome || "N/A"}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        {formatDateTime(acesso.entrada)}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap font-medium">
-                        {acesso.saida ? (
-                          formatDateTime(acesso.saida)
-                        ) : (
-                          <span className="text-orange-600">Pendente</span>
-                        )}
-                      </td>
-                      <td
-                        className="px-4 py-2 text-xs text-gray-600 max-w-xs truncate"
-                        title={acesso.ocupantes?.map((o) => o.nome).join(", ")}
+          {/* LADO DIREITO – HISTÓRICO */}
+          <div className="w-full xl:flex-1">
+            <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl p-5 lg:p-7 w-full max-h-[780px] flex flex-col">
+              {loadingHistorico && (
+                <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
+                  <Loading size={110} message="" />
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1 mb-4 border-b border-slate-100 pb-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-semibold text-slate-900">
+                      Histórico de acessos
+                    </h2>
+                    <p className="text-xs text-slate-500 max-w-xl">
+                      Filtre por período, tipo de pessoa e portaria para
+                      acompanhar todas as movimentações.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* FAIXA DE FILTROS */}
+              <div className="mb-4">
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/70 px-3 py-3">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-medium text-slate-700">
+                        De
+                      </label>
+                      <input
+                        type="date"
+                        value={filtroDataDe}
+                        onChange={(e) => setFiltroDataDe(e.target.value)}
+                        className="
+                          border border-slate-300 bg-white
+                          rounded-xl px-3 py-2 text-xs text-slate-800
+                          focus:outline-none
+                          focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                        "
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-medium text-slate-700">
+                        Até
+                      </label>
+                      <input
+                        type="date"
+                        value={filtroDataAte}
+                        onChange={(e) => setFiltroDataAte(e.target.value)}
+                        className="
+                          border border-slate-300 bg-white
+                          rounded-xl px-3 py-2 text-xs text-slate-800
+                          focus:outline-none
+                          focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                        "
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-medium text-slate-700">
+                        Tipo pessoa
+                      </label>
+                      <select
+                        value={filtroTipo}
+                        onChange={(e) => setFiltroTipo(e.target.value)}
+                        className="
+                          border border-slate-300 bg-white
+                          rounded-xl px-3 py-2 text-xs text-slate-800
+                          focus:outline-none
+                          focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                        "
                       >
-                        {acesso.ocupantes?.length > 0
-                          ? acesso.ocupantes.map((o) => o.nome).join(", ")
-                          : "-"}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        {!acesso.saida && (
-                          <button
-                            onClick={() => handleRegisterExit(acesso.id)}
-                            className="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded border border-red-300 hover:bg-red-50"
+                        <option value="TODOS">Todos</option>
+                        <option value="COLABORADOR">Colaborador</option>
+                        <option value="VISITANTE">Visitante</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-medium text-slate-700">
+                        Portaria
+                      </label>
+                      <select
+                        value={filtroPortaria}
+                        onChange={(e) => setFiltroPortaria(e.target.value)}
+                        className="
+                          border border-slate-300 bg-white
+                          rounded-xl px-3 py-2 text-xs text-slate-800
+                          focus:outline-none
+                          focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                        "
+                      >
+                        <option value="">Todas</option>
+                        {portariasDisponiveis.map((p) => (
+                          <option key={p.id} value={String(p.id)}>
+                            {p.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* TABELA */}
+              <div className="flex-1 min-h-0">
+                {!loadingHistorico && historicoFiltrado.length > 0 ? (
+                  <div className="overflow-x-auto max-h-[560px] rounded-xl border border-slate-200">
+                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                      <thead className="bg-slate-50 sticky top-0 z-20">
+                        <tr>
+                          <th className="px-4 py-2 text-left font-medium text-slate-500 uppercase tracking-wider text-[11px]">
+                            Nome (condutor)
+                          </th>
+                          <th className="px-4 py-2 text-left font-medium text-slate-500 uppercase tracking-wider text-[11px]">
+                            Tipo
+                          </th>
+                          <th className="px-4 py-2 text-left font-medium text-slate-500 uppercase tracking-wider text-[11px]">
+                            Portaria
+                          </th>
+                          <th className="px-4 py-2 text-left font-medium text-slate-500 uppercase tracking-wider text-[11px]">
+                            Entrada
+                          </th>
+                          <th className="px-4 py-2 text-left font-medium text-slate-500 uppercase tracking-wider text-[11px]">
+                            Saída
+                          </th>
+                          <th className="px-4 py-2 text-left font-medium text-slate-500 uppercase tracking-wider text-[11px]">
+                            Ocupantes
+                          </th>
+                          <th className="px-4 py-2 text-left font-medium text-slate-500 uppercase tracking-wider text-[11px]">
+                            Ação
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-slate-100">
+                        {historicoFiltrado.map((acesso) => (
+                          <tr
+                            key={acesso.id}
+                            className="hover:bg-slate-50/80 transition-colors"
                           >
-                            Registrar saída
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                            <td className="px-4 py-2 whitespace-nowrap text-slate-800">
+                              {acesso.condutor?.nome || "N/A"}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-slate-700">
+                              {acesso.tipoPessoa || "N/A"}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-slate-700">
+                              {portariasDisponiveis.find(
+                                (p) => p.id === acesso.codPortaria
+                              )?.nome || "N/A"}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-slate-700">
+                              {formatDateTime(acesso.entrada)}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap font-medium">
+                              {acesso.saida ? (
+                                <span className="text-slate-700">
+                                  {formatDateTime(acesso.saida)}
+                                </span>
+                              ) : (
+                                <span className="text-orange-600 text-[11px] rounded-full bg-orange-50 px-2 py-0.5 border border-orange-200">
+                                  Pendente
+                                </span>
+                              )}
+                            </td>
+                            <td
+                              className="px-4 py-2 text-xs text-slate-600 max-w-xs truncate"
+                              title={acesso.ocupantes
+                                ?.map((o) => o.nome)
+                                .join(", ")}
+                            >
+                              {acesso.ocupantes?.length > 0
+                                ? acesso.ocupantes
+                                    .map((o) => o.nome)
+                                    .join(", ")
+                                : "-"}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap">
+                              {!acesso.saida && (
+                                <button
+                                  onClick={() => handleRegisterExit(acesso.id)}
+                                  className="
+                                    inline-flex items-center
+                                    text-[11px] font-semibold
+                                    text-red-600 hover:text-red-700
+                                    border border-red-200 hover:border-red-300
+                                    rounded-full px-3 py-1
+                                    bg-red-50/40 hover:bg-red-50
+                                    transition-colors
+                                  "
+                                >
+                                  Registrar saída
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  !loadingHistorico && (
+                    <p className="text-center text-slate-500 py-8 text-sm">
+                      Nenhum registro encontrado para o período e filtros
+                      selecionados.
+                    </p>
+                  )
+                )}
+              </div>
             </div>
-          ) : (
-            !loadingHistorico && (
-              <p className="text-center text-gray-500 py-4">
-                Nenhum registro encontrado.
-              </p>
-            )
-          )}
+          </div>
         </section>
       </div>
     </main>
