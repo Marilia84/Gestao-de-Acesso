@@ -55,8 +55,7 @@ export default function GerenciarLinhas() {
   const [loadingCadastrarPonto, setLoadingCadastrarPonto] = useState(false);
   const [loadingListaPontos, setLoadingListaPontos] = useState(true);
   const [loadingCadastrarRota, setLoadingCadastrarRota] = useState(false);
-  const [loadingRotasCadastradas, setLoadingRotasCadastradas] =
-    useState(true);
+  const [loadingRotasCadastradas, setLoadingRotasCadastradas] = useState(true);
 
   const [activeTab, setActiveTab] = useState("PONTOS");
 
@@ -338,9 +337,7 @@ export default function GerenciarLinhas() {
         (p) => String(p.idPonto) === String(ponto.idPonto)
       );
       if (jaExiste) {
-        return prev.filter(
-          (p) => String(p.idPonto) !== String(ponto.idPonto)
-        );
+        return prev.filter((p) => String(p.idPonto) !== String(ponto.idPonto));
       }
       return [...prev, ponto];
     });
@@ -429,8 +426,6 @@ export default function GerenciarLinhas() {
         ml-16
       "
     >
-      <Navbar />
-
       <div className="w-full space-y-6">
         <header className="flex flex-col gap-2">
           <h1 className="text-2xl sm:text-3xl font-semibold  text-emerald-600">
@@ -597,10 +592,7 @@ export default function GerenciarLinhas() {
                       >
                         <option value="">Selecione</option>
                         {cidades.map((cidade) => (
-                          <option
-                            key={cidade.idCidade}
-                            value={cidade.idCidade}
-                          >
+                          <option key={cidade.idCidade} value={cidade.idCidade}>
                             {cidade.nome} - {cidade.uf}
                           </option>
                         ))}

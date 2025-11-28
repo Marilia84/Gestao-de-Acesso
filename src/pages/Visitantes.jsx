@@ -154,10 +154,7 @@ const Visitantes = () => {
     });
   }, [visitors, searchTerm]);
 
-  const totalVisitantes = useMemo(
-    () => (visitors || []).length,
-    [visitors]
-  );
+  const totalVisitantes = useMemo(() => (visitors || []).length, [visitors]);
 
   const totalAtivos = useMemo(
     () => (visitors || []).filter((v) => v.ativo).length,
@@ -188,8 +185,6 @@ const Visitantes = () => {
         ml-16
       "
     >
-      <Navbar />
-
       <div className="w-full space-y-6">
         <header className="flex flex-col gap-2">
           <h1 className="text-2xl sm:text-3xl font-semibold text-emerald-600">
@@ -317,12 +312,13 @@ const Visitantes = () => {
         </section>
 
         {/* Cadastro + Lista lado a lado */}
-        <section className="flex flex-col xl:flex-row gap-6 items-start">
+        {/* ALTURA FIXA APLICADA AQUI: h-[calc(100vh-330px)] */}
+        <section className="flex flex-col xl:flex-row gap-6 items-stretch h-[calc(100vh-310px)] min-h-[600px]">
           {/* Card de cadastro */}
-          <div className="w-full xl:w-[38%]">
-            <div className="relative bg-white border border-slate-200 rounded-2xl shadow-sm px-4 sm:px-6 md:px-7 py-5">
+          <div className="w-full xl:w-[38%] flex flex-col">
+            <div className="relative bg-white border border-slate-200 rounded-2xl shadow-sm px-4 sm:px-6 md:px-7 py-5 h-full flex flex-col">
               {loading && (
-                <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
+                <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-20">
                   <Loading size={90} message="" />
                 </div>
               )}
@@ -337,60 +333,19 @@ const Visitantes = () => {
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-slate-700">
-                    Nome completo
-                  </label>
-                  <input
-                    type="text"
-                    name="nomeCompleto"
-                    value={newVisitor.nomeCompleto}
-                    onChange={handleChange}
-                    placeholder="Digite o nome"
-                    required
-                    className="
-                      border border-slate-300 bg-slate-50
-                      rounded-xl px-3.5 py-2.5 text-sm text-slate-800
-                      focus:bg-white focus:outline-none
-                      focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
-                    "
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Scroll container para o formulário */}
+              <div className="flex-1 overflow-y-auto pr-1">
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-medium text-slate-700">
-                      Tipo de documento
-                    </label>
-                    <select
-                      name="tipoDocumento"
-                      value={newVisitor.tipoDocumento}
-                      onChange={handleChange}
-                      className="
-                        border border-slate-300 bg-slate-50
-                        rounded-xl px-3.5 py-2.5 text-sm text-slate-800
-                        focus:bg-white focus:outline-none
-                        focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
-                      "
-                    >
-                      <option value="CPF">CPF</option>
-                      <option value="RG">RG</option>
-                      <option value="Passaporte">Passaporte</option>
-                    </select>
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-slate-700">
-                      Número do documento
+                      Nome completo
                     </label>
                     <input
                       type="text"
-                      name="numeroDocumento"
-                      value={newVisitor.numeroDocumento}
+                      name="nomeCompleto"
+                      value={newVisitor.nomeCompleto}
                       onChange={handleChange}
-                      placeholder={docInputProps.placeholder}
-                      maxLength={docInputProps.maxLength}
+                      placeholder="Digite o nome"
                       required
                       className="
                         border border-slate-300 bg-slate-50
@@ -400,18 +355,101 @@ const Visitantes = () => {
                       "
                     />
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-slate-700">
+                        Tipo de documento
+                      </label>
+                      <select
+                        name="tipoDocumento"
+                        value={newVisitor.tipoDocumento}
+                        onChange={handleChange}
+                        className="
+                          border border-slate-300 bg-slate-50
+                          rounded-xl px-3.5 py-2.5 text-sm text-slate-800
+                          focus:bg-white focus:outline-none
+                          focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                        "
+                      >
+                        <option value="CPF">CPF</option>
+                        <option value="RG">RG</option>
+                        <option value="Passaporte">Passaporte</option>
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-slate-700">
+                        Número do documento
+                      </label>
+                      <input
+                        type="text"
+                        name="numeroDocumento"
+                        value={newVisitor.numeroDocumento}
+                        onChange={handleChange}
+                        placeholder={docInputProps.placeholder}
+                        maxLength={docInputProps.maxLength}
+                        required
+                        className="
+                          border border-slate-300 bg-slate-50
+                          rounded-xl px-3.5 py-2.5 text-sm text-slate-800
+                          focus:bg-white focus:outline-none
+                          focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                        "
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-slate-700">
+                        Data de nascimento
+                      </label>
+                      <input
+                        type="date"
+                        name="dataNascimento"
+                        value={newVisitor.dataNascimento}
+                        onChange={handleChange}
+                        className="
+                          border border-slate-300 bg-slate-50
+                          rounded-xl px-3.5 py-2.5 text-sm text-slate-800
+                          focus:bg-white focus:outline-none
+                          focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                        "
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-slate-700">
+                        Telefone
+                      </label>
+                      <input
+                        type="tel"
+                        name="telefone"
+                        value={newVisitor.telefone}
+                        onChange={handleChange}
+                        placeholder="(XX) XXXXX-XXXX"
+                        maxLength={15}
+                        className="
+                          border border-slate-300 bg-slate-50
+                          rounded-xl px-3.5 py-2.5 text-sm text-slate-800
+                          focus:bg-white focus:outline-none
+                          focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                        "
+                      />
+                    </div>
+                  </div>
+
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-medium text-slate-700">
-                      Data de nascimento
+                      Empresa (opcional)
                     </label>
                     <input
-                      type="date"
-                      name="dataNascimento"
-                      value={newVisitor.dataNascimento}
+                      type="text"
+                      name="empresaVisitante"
+                      value={newVisitor.empresaVisitante}
                       onChange={handleChange}
+                      placeholder="Ex: Empresa Exemplo"
                       className="
                         border border-slate-300 bg-slate-50
                         rounded-xl px-3.5 py-2.5 text-sm text-slate-800
@@ -423,15 +461,42 @@ const Visitantes = () => {
 
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-medium text-slate-700">
-                      Telefone
+                      Responsável (anfitrião)
+                    </label>
+                    <select
+                      name="pessoaAnfitria"
+                      value={newVisitor.pessoaAnfitria}
+                      onChange={handleChange}
+                      required
+                      className="
+                        border border-slate-300 bg-slate-50
+                        rounded-xl px-3.5 py-2.5 text-sm text-slate-800
+                        focus:bg-white focus:outline-none
+                        focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                      "
+                    >
+                      <option value="">Selecione um anfitrião</option>
+                      {collaborators.map((col) => (
+                        <option
+                          key={col.idColaborador}
+                          value={col.idColaborador}
+                        >
+                          {col.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-slate-700">
+                      Motivo da visita
                     </label>
                     <input
-                      type="tel"
-                      name="telefone"
-                      value={newVisitor.telefone}
+                      type="text"
+                      name="motivoVisita"
+                      value={newVisitor.motivoVisita}
                       onChange={handleChange}
-                      placeholder="(XX) XXXXX-XXXX"
-                      maxLength={15}
+                      placeholder="Ex: Reunião, entrevista, auditoria..."
                       className="
                         border border-slate-300 bg-slate-50
                         rounded-xl px-3.5 py-2.5 text-sm text-slate-800
@@ -440,97 +505,37 @@ const Visitantes = () => {
                       "
                     />
                   </div>
-                </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-slate-700">
-                    Empresa (opcional)
-                  </label>
-                  <input
-                    type="text"
-                    name="empresaVisitante"
-                    value={newVisitor.empresaVisitante}
-                    onChange={handleChange}
-                    placeholder="Ex: Empresa Exemplo"
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
                     className="
-                      border border-slate-300 bg-slate-50
-                      rounded-xl px-3.5 py-2.5 text-sm text-slate-800
-                      focus:bg-white focus:outline-none
-                      focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
-                    "
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-slate-700">
-                    Responsável (anfitrião)
-                  </label>
-                  <select
-                    name="pessoaAnfitria"
-                    value={newVisitor.pessoaAnfitria}
-                    onChange={handleChange}
-                    required
-                    className="
-                      border border-slate-300 bg-slate-50
-                      rounded-xl px-3.5 py-2.5 text-sm text-slate-800
-                      focus:bg-white focus:outline-none
-                      focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                      mt-2
+                      w-full
+                      bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400
+                      text-white
+                      py-2.5 px-4
+                      rounded-xl
+                      text-sm sm:text-base font-semibold
+                      transition-colors
                     "
                   >
-                    <option value="">Selecione um anfitrião</option>
-                    {collaborators.map((col) => (
-                      <option
-                        key={col.idColaborador}
-                        value={col.idColaborador}
-                      >
-                        {col.nome}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-slate-700">
-                    Motivo da visita
-                  </label>
-                  <input
-                    type="text"
-                    name="motivoVisita"
-                    value={newVisitor.motivoVisita}
-                    onChange={handleChange}
-                    placeholder="Ex: Reunião, entrevista, auditoria..."
-                    className="
-                      border border-slate-300 bg-slate-50
-                      rounded-xl px-3.5 py-2.5 text-sm text-slate-800
-                      focus:bg-white focus:outline-none
-                      focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
-                    "
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="
-                    mt-2
-                    w-full
-                    bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400
-                    text-white
-                    py-2.5 px-4
-                    rounded-xl
-                    text-sm sm:text-base font-semibold
-                    transition-colors
-                  "
-                >
-                  {isSubmitting ? "Cadastrando..." : "Cadastrar visitante"}
-                </button>
-              </form>
+                    {isSubmitting ? "Cadastrando..." : "Cadastrar visitante"}
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
 
           {/* Card de listagem */}
-          <div className="w-full xl:flex-1">
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm px-4 sm:px-6 md:px-7 py-5">
+          <div className="w-full xl:flex-1 flex flex-col">
+            <div className="relative bg-white border border-slate-200 rounded-2xl shadow-sm px-4 sm:px-6 md:px-7 py-5 h-full flex flex-col">
+              {loading && (
+                <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-20">
+                  <Loading size={90} message="" />
+                </div>
+              )}
+
               <div className="flex flex-col gap-1 mb-4 border-b border-slate-100 pb-3">
                 <h2 className="text-lg sm:text-xl font-semibold text-slate-900">
                   Lista de visitantes
@@ -572,7 +577,7 @@ const Visitantes = () => {
                 </p>
               </div>
 
-              <div className="overflow-x-auto max-h-[420px] rounded-xl border border-slate-200">
+              <div className="flex-1 min-h-0 overflow-x-auto rounded-xl border border-slate-200">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                   <thead className="bg-slate-50 sticky top-0 z-10">
                     <tr>
@@ -598,65 +603,56 @@ const Visitantes = () => {
                   </thead>
 
                   <tbody className="bg-white divide-y divide-slate-100">
-                    {loading ? (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="text-center py-6 text-slate-500 text-sm"
-                        >
-                          Carregando visitantes...
-                        </td>
-                      </tr>
-                    ) : filteredVisitors.length > 0 ? (
-                      filteredVisitors.map((v) => (
-                        <tr key={v.id} className="hover:bg-slate-50/70">
-                          <td className="px-4 py-3 text-slate-900 font-medium whitespace-nowrap">
-                            {v.nomeCompleto}
-                          </td>
-                          <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
-                            {v.tipoDocumento && v.numeroDocumento
-                              ? `${v.tipoDocumento}: ${v.numeroDocumento}`
-                              : "-"}
-                          </td>
-                          <td className="px-4 py-3 text-slate-600 hidden sm:table-cell">
-                            {v.motivoVisita || "—"}
-                          </td>
-                          <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
-                            {v.empresaVisitante || "—"}
-                          </td>
-                          <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
-                            {v.nomeAnfitriao || "—"}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`inline-flex items-center px-3 py-1 text-[11px] font-semibold rounded-full border ${
-                                v.ativo
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : "bg-red-50 text-red-700 border-red-200"
-                              }`}
-                            >
+                    {!loading && filteredVisitors.length > 0
+                      ? filteredVisitors.map((v) => (
+                          <tr key={v.id} className="hover:bg-slate-50/70">
+                            <td className="px-4 py-3 text-slate-900 font-medium whitespace-nowrap">
+                              {v.nomeCompleto}
+                            </td>
+                            <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
+                              {v.tipoDocumento && v.numeroDocumento
+                                ? `${v.tipoDocumento}: ${v.numeroDocumento}`
+                                : "-"}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600 hidden sm:table-cell">
+                              {v.motivoVisita || "—"}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
+                              {v.empresaVisitante || "—"}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
+                              {v.nomeAnfitriao || "—"}
+                            </td>
+                            <td className="px-4 py-3">
                               <span
-                                className={`w-1.5 h-1.5 rounded-full mr-2 ${
-                                  v.ativo ? "bg-emerald-500" : "bg-red-500"
+                                className={`inline-flex items-center px-3 py-1 text-[11px] font-semibold rounded-full border ${
+                                  v.ativo
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : "bg-red-50 text-red-700 border-red-200"
                                 }`}
-                              />
-                              {v.ativo ? "Ativo" : "Inativo"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="text-center py-6 text-slate-500 text-sm"
-                        >
-                          {searchTerm
-                            ? "Nenhum visitante encontrado para a busca."
-                            : "Nenhum visitante cadastrado até o momento."}
-                        </td>
-                      </tr>
-                    )}
+                              >
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full mr-2 ${
+                                    v.ativo ? "bg-emerald-500" : "bg-red-500"
+                                  }`}
+                                />
+                                {v.ativo ? "Ativo" : "Inativo"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      : !loading && (
+                          <tr>
+                            <td
+                              colSpan={6}
+                              className="text-center py-6 text-slate-500 text-sm"
+                            >
+                              {searchTerm
+                                ? "Nenhum visitante encontrado para a busca."
+                                : "Nenhum visitante cadastrado até o momento."}
+                            </td>
+                          </tr>
+                        )}
                   </tbody>
                 </table>
               </div>

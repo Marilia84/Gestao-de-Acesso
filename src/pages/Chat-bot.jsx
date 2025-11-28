@@ -14,7 +14,11 @@ const UserAvatar = () => (
 
 const AiAvatar = () => (
   <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700 shrink-0 overflow-hidden border border-emerald-100">
-    <img src={botIcon} alt="Buzzy" className="w-8 h-8 rounded-full object-cover" />
+    <img
+      src={botIcon}
+      alt="Buzzy"
+      className="w-8 h-8 rounded-full object-cover"
+    />
   </div>
 );
 
@@ -35,7 +39,8 @@ export default function Home() {
 
   const [creatingPointMode, setCreatingPointMode] = useState(false);
   const [creatingRouteMode, setCreatingRouteMode] = useState(false);
-  const [assigningPointToRouteMode, setAssigningPointToRouteMode] = useState(false);
+  const [assigningPointToRouteMode, setAssigningPointToRouteMode] =
+    useState(false);
   const [askingNaoEmbarcouMode, setAskingNaoEmbarcouMode] = useState(false);
 
   const chatEndRef = useRef(null);
@@ -90,7 +95,9 @@ export default function Home() {
       const aiText = response.data;
 
       if (!aiText) {
-        throw new Error("A API retornou uma resposta, mas sem o texto esperado.");
+        throw new Error(
+          "A API retornou uma resposta, mas sem o texto esperado."
+        );
       }
 
       const aiResponse = {
@@ -109,7 +116,9 @@ export default function Home() {
           "Tente novamente em alguns instantes ou ajuste um pouco a pergunta.",
       };
       setMessages((prevMessages) => [...prevMessages, errorResponse]);
-      toast.error("Desculpe, o Buzzy não conseguiu responder agora. Tente novamente.");
+      toast.error(
+        "Desculpe, o Buzzy não conseguiu responder agora. Tente novamente."
+      );
     } finally {
       setIsAiThinking(false);
     }
@@ -166,7 +175,7 @@ export default function Home() {
       sender: "ai",
       text:
         "Ótimo! Vamos criar uma rota com o Buzzy. 🚌\n\n" +
-        "Digite agora os dados em uma única frase, completando depois de \"rota\", seguindo este modelo:\n\n" +
+        'Digite agora os dados em uma única frase, completando depois de "rota", seguindo este modelo:\n\n' +
         "em São Joaquim da Barra chamada Rota T, no período da manhã, rota ativa, saindo às 07:10 e chegando às 08:00, com 44 lugares.\n\n" +
         "Você pode trocar cidade, nome, período, horários e capacidade. Depois de enviar, eu tento criar a rota pra você. 😊",
     };
@@ -181,7 +190,7 @@ export default function Home() {
       sender: "ai",
       text:
         "Vamos atribuir um ponto a uma rota. 🔗\n\n" +
-        "Digite agora apenas o que vem depois de \"ponto\", em uma frase, seguindo este modelo:\n\n" +
+        'Digite agora apenas o que vem depois de "ponto", em uma frase, seguindo este modelo:\n\n' +
         "Portaria Principal na rota Rota 01 Matutina como primeira parada.\n\n" +
         "Você pode trocar o nome do ponto, o nome da rota e a ordem (primeira, segunda, terceira, etc.).",
     };
@@ -223,8 +232,6 @@ export default function Home() {
         flex flex-col
       "
     >
-      <Navbar />
-
       <div className="w-full flex-1 flex flex-col space-y-6 overflow-hidden">
         <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -236,8 +243,8 @@ export default function Home() {
                 Buzzy • Assistente do Sistema
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl">
-                Converse com o Buzzy sobre rotas, pontos de embarque, embarques do dia e uso do
-                TrackPass em uma linguagem natural.
+                Converse com o Buzzy sobre rotas, pontos de embarque, embarques
+                do dia e uso do TrackPass em uma linguagem natural.
               </p>
             </div>
           </div>
@@ -278,8 +285,8 @@ export default function Home() {
                   Chat com o Buzzy
                 </h2>
                 <p className="text-[11px] sm:text-xs text-slate-500">
-                  Faça perguntas, peça ações ou siga os fluxos guiados para o Buzzy executar no
-                  TrackPass.
+                  Faça perguntas, peça ações ou siga os fluxos guiados para o
+                  Buzzy executar no TrackPass.
                 </p>
               </div>
               <div className="hidden sm:flex items-center gap-2">
@@ -290,7 +297,9 @@ export default function Home() {
                     className="w-7 h-7 object-cover rounded-full"
                   />
                 </div>
-                <span className="text-[11px] text-slate-500">Buzzy • Assistente IA</span>
+                <span className="text-[11px] text-slate-500">
+                  Buzzy • Assistente IA
+                </span>
               </div>
             </div>
 
@@ -404,8 +413,9 @@ export default function Home() {
                 </button>
               </form>
               <p className="mt-1 text-[10px] text-slate-400">
-                Pressione <span className="font-semibold">Enter</span> para enviar ou{" "}
-                <span className="font-semibold">Shift + Enter</span> para quebrar linha.
+                Pressione <span className="font-semibold">Enter</span> para
+                enviar ou <span className="font-semibold">Shift + Enter</span>{" "}
+                para quebrar linha.
               </p>
             </div>
           </div>
@@ -422,8 +432,8 @@ export default function Home() {
                 Sugestões do Buzzy
               </h3>
               <p className="text-[11px] sm:text-xs text-slate-500 mt-1">
-                Use atalhos prontos ou fluxos guiados para o Buzzy executar ações no TrackPass sem
-                você precisar escrever tudo.
+                Use atalhos prontos ou fluxos guiados para o Buzzy executar
+                ações no TrackPass sem você precisar escrever tudo.
               </p>
             </div>
 
@@ -592,8 +602,9 @@ export default function Home() {
 
               <div className="rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-3">
                 <p className="text-[11px] sm:text-xs text-emerald-900">
-                  Você pode escrever livremente ou usar as sugestões. O Buzzy interpreta sua
-                  mensagem, consulta o TrackPass e retorna os dados de forma simples e organizada.
+                  Você pode escrever livremente ou usar as sugestões. O Buzzy
+                  interpreta sua mensagem, consulta o TrackPass e retorna os
+                  dados de forma simples e organizada.
                 </p>
               </div>
             </div>

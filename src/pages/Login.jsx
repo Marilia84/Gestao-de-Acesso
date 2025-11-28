@@ -54,7 +54,6 @@ export default function Login() {
     touchedSenha && senha.length > 0 ? senhaSchema.safeParse(senha) : null;
 
   const emailMessage = () => {
-   
     if (username.length === 0) return "Informe o e-mail.";
     if (!emailStatus) return "Digite seu e-mail corporativo";
 
@@ -124,7 +123,6 @@ export default function Login() {
 
       const status = err.response?.status;
 
-  
       if (!err.response) {
         setServerError(true);
         setError(
@@ -136,7 +134,6 @@ export default function Login() {
           "Ocorreu um erro interno no servidor. Tente novamente em alguns instantes."
         );
       } else {
-
         setServerError(false);
         setAuthError("Email ou senha inválidos.");
       }
@@ -152,8 +149,7 @@ export default function Login() {
 
   const senhaHasError =
     touchedSenha && senha.length > 0 && senhaStatus && !senhaStatus.success;
-  const senhaIsValid =
-    touchedSenha && senha.length > 0 && senhaStatus?.success;
+  const senhaIsValid = touchedSenha && senha.length > 0 && senhaStatus?.success;
 
   const baseInputClasses =
     "bg-white/15 w-full text-sm text-white placeholder-white/60 px-3 py-2.5 rounded-md outline-none border border-white/10 focus:ring-2 transition-all";
@@ -165,7 +161,7 @@ export default function Login() {
       return;
     }
 
-    const duration = 5000; 
+    const duration = 5000;
     const stepMs = 100;
     const step = 100 / (duration / stepMs);
 

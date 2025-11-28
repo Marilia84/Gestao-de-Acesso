@@ -104,8 +104,6 @@ export default function Impedimentos() {
         ml-16
       "
     >
-      <Navbar />
-
       <div className="w-full space-y-6">
         <header className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">

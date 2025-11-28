@@ -116,12 +116,9 @@ const Portaria = () => {
       label: `${v.nomeCompleto} (${v.numeroDocumento})`,
     }));
 
-    return [...colabs, ...visits].sort((a, b) =>
-      a.nome.localeCompare(b.nome)
-    );
+    return [...colabs, ...visits].sort((a, b) => a.nome.localeCompare(b.nome));
   }, [colaboradores, visitantes]);
 
-  // Sugestões que aparecem ao focar no input (mesmo sem texto)
   const sugestoesOcupantes = useMemo(() => {
     if (!ocupanteFocused || !selectedPessoaId) return [];
 
@@ -340,8 +337,6 @@ const Portaria = () => {
         ml-16
       "
     >
-      <Navbar />
-
       <div className="w-full space-y-6">
         {/* HEADER */}
         <header className="flex flex-col gap-2">
@@ -356,7 +351,7 @@ const Portaria = () => {
 
         {/* CARDS RESUMO */}
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {/* Card 1 - Entradas em andamento */}
+          {/* Card 1 */}
           <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center overflow-hidden">
@@ -394,7 +389,7 @@ const Portaria = () => {
             </div>
           </div>
 
-          {/* Card 2 - Total de entradas hoje */}
+          {/* Card 2 */}
           <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center overflow-hidden">
@@ -430,7 +425,7 @@ const Portaria = () => {
             </div>
           </div>
 
-          {/* Card 3 - Saídas registradas hoje */}
+          {/* Card 3 */}
           <div className="bg-white rounded-2xl border border-sky-100 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center overflow-hidden">
@@ -478,12 +473,14 @@ const Portaria = () => {
         )}
 
         {/* CADASTRO + HISTÓRICO LADO A LADO */}
-        <section className="flex flex-col xl:flex-row gap-6 items-start">
+        {/* Alteração Principal: h-[calc(100vh-330px)] força altura fixa desde o início */}
+        <section className="flex flex-col xl:flex-row gap-6 items-stretch h-[calc(100vh-330px)] min-h-[600px]">
           {/* LADO ESQUERDO – CADASTRO */}
-          <div className="w-full xl:w-[36%]">
-            <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl p-5 sm:p-6 md:p-7">
+          <div className="w-full xl:w-[36%] flex flex-col">
+            {/* Adicionado h-full e flex-col para garantir preenchimento */}
+            <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl p-5 sm:p-6 md:p-7 h-full flex flex-col">
               {loadingInitial && (
-                <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
+                <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-20">
                   <Loading size={120} message="" />
                 </div>
               )}
@@ -498,7 +495,9 @@ const Portaria = () => {
                 </p>
               </div>
 
-              {!loadingInitial && (
+              {/* REMOVIDO o conditional check (!loadingInitial). O formulário renderiza sempre. */}
+              {/* Adicionado um div wrapper com flex-1 para ocupar espaço */}
+              <div className="flex-1 overflow-y-auto">
                 <form onSubmit={handleRegisterEntry} className="space-y-5">
                   <div className="grid grid-cols-1 gap-3">
                     <div className="flex flex-col gap-1">
@@ -554,8 +553,7 @@ const Portaria = () => {
                             "Nenhum visitante"}
                           {(tipoPessoa === "COLABORADOR" &&
                             colaboradores.length > 0) ||
-                          (tipoPessoa === "VISITANTE" &&
-                            visitantes.length > 0)
+                          (tipoPessoa === "VISITANTE" && visitors.length > 0)
                             ? "Selecione..."
                             : ""}
                         </option>
@@ -753,13 +751,13 @@ const Portaria = () => {
                     {isSubmitting ? "Registrando..." : "Registrar entrada"}
                   </button>
                 </form>
-              )}
+              </div>
             </div>
           </div>
 
           {/* LADO DIREITO – HISTÓRICO */}
-          <div className="w-full xl:flex-1">
-            <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl p-5 lg:p-7 w-full max-h-[780px] flex flex-col">
+          <div className="w-full xl:flex-1 flex flex-col">
+            <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl p-5 lg:p-7 w-full h-full flex flex-col">
               {loadingHistorico && (
                 <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
                   <Loading size={110} message="" />
@@ -862,9 +860,10 @@ const Portaria = () => {
               </div>
 
               {/* TABELA */}
+              {/* flex-1 min-h-0 garante que a tabela ocupe o restante da altura fixa */}
               <div className="flex-1 min-h-0">
                 {!loadingHistorico && historicoFiltrado.length > 0 ? (
-                  <div className="overflow-x-auto max-h-[560px] rounded-xl border border-slate-200">
+                  <div className="overflow-x-auto h-full rounded-xl border border-slate-200">
                     <table className="min-w-full divide-y divide-slate-200 text-sm">
                       <thead className="bg-slate-50 sticky top-0 z-20">
                         <tr>
@@ -929,9 +928,7 @@ const Portaria = () => {
                                 .join(", ")}
                             >
                               {acesso.ocupantes?.length > 0
-                                ? acesso.ocupantes
-                                    .map((o) => o.nome)
-                                    .join(", ")
+                                ? acesso.ocupantes.map((o) => o.nome).join(", ")
                                 : "-"}
                             </td>
                             <td className="px-4 py-2 whitespace-nowrap">
