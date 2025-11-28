@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import logoK from "../assets/logoK.png";
 import {
@@ -14,7 +13,7 @@ import {
 } from "lucide-react";
 
 const menuItems = [
-  { icon: Flag, label: "Impedimentos", path: "/home" },
+  { icon: Flag, label: "Mapas", path: "/home" },
   { icon: LayoutDashboard, label: "Chat-Bot", path: "/chat-bot" },
   { icon: Bus, label: "Gerenciar Linhas", path: "/gerenciarLinhas" },
   { icon: Users, label: "Colaboradores", path: "/colaboradores" },

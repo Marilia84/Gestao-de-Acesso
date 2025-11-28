@@ -1,4 +1,3 @@
-// src/pages/Login.jsx
 import { useState, useEffect } from "react";
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
@@ -25,7 +24,6 @@ const loginSchema = z.object({
     ),
 });
 
-// Reaproveitando as regras do schema para feedback em tempo real
 const emailSchema = loginSchema.shape.username;
 const senhaSchema = loginSchema.shape.senha;
 
@@ -47,7 +45,6 @@ export default function Login() {
     <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
   );
 
-  // --- FEEDBACK EM TEMPO REAL USANDO ZOD ---
   const emailStatus =
     touchedEmail && username.length > 0
       ? emailSchema.safeParse(username)
@@ -87,7 +84,6 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // zera qualquer alerta anterior
     setError("");
     setServerError(false);
     setAuthError("");
@@ -160,7 +156,7 @@ export default function Login() {
     touchedSenha && senha.length > 0 && senhaStatus?.success;
 
   const baseInputClasses =
-    "bg-white/15 w-full text-sm text-white placeholder-white/60 px-3 py-2.5 rounded-lg outline-none border border-white/10 focus:ring-2 transition-all";
+    "bg-white/15 w-full text-sm text-white placeholder-white/60 px-3 py-2.5 rounded-md outline-none border border-white/10 focus:ring-2 transition-all";
 
   useEffect(() => {
     const hasAlert = (serverError && error) || (!serverError && authError);
@@ -264,7 +260,7 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-md px-4">
         <form
           onSubmit={handleSubmit}
-          className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/40 w-full px-8 py-10 flex flex-col items-center space-y-6"
+          className="bg-white/10 backdrop-blur-xl rounded-md shadow-2xl shadow-black/40 w-full px-8 py-10 flex flex-col items-center space-y-6"
         >
           <div className="flex flex-col items-center gap-2 mb-2">
             <img

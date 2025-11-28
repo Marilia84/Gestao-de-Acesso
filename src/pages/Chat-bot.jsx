@@ -14,7 +14,7 @@ const UserAvatar = () => (
 
 const AiAvatar = () => (
   <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700 shrink-0 overflow-hidden border border-emerald-100">
-    <img src={botIcon} alt="AI Bot" className="w-8 h-8 rounded-full object-cover" />
+    <img src={botIcon} alt="Buzzy" className="w-8 h-8 rounded-full object-cover" />
   </div>
 );
 
@@ -23,7 +23,9 @@ export default function Home() {
     {
       id: 1,
       sender: "ai",
-      text: "Olá! 👋 Em que posso ajudar hoje com a gestão de transportes ou acesso?",
+      text:
+        "Olá! 👋 Eu sou o Buzzy, assistente inteligente do TrackPass.\n\n" +
+        "Posso te ajudar com rotas, pontos de embarque, embarques do dia e dúvidas sobre o sistema. O que você gostaria de fazer agora?",
     },
   ]);
 
@@ -98,14 +100,16 @@ export default function Home() {
       };
       setMessages((prevMessages) => [...prevMessages, aiResponse]);
     } catch (error) {
-      console.error("Erro ao comunicar com a IA:", error);
+      console.error("Erro ao comunicar com o Buzzy:", error);
       const errorResponse = {
         id: Date.now() + 1,
         sender: "ai",
-        text: "Desculpe, não consegui processar sua solicitação no momento. 😥 Tente novamente mais tarde.",
+        text:
+          "Desculpe, tive um problema para processar sua solicitação agora. 😥\n\n" +
+          "Tente novamente em alguns instantes ou ajuste um pouco a pergunta.",
       };
       setMessages((prevMessages) => [...prevMessages, errorResponse]);
-      toast.error("Desculpe, não consegui processar sua solicitação. 😥");
+      toast.error("Desculpe, o Buzzy não conseguiu responder agora. Tente novamente.");
     } finally {
       setIsAiThinking(false);
     }
@@ -123,10 +127,10 @@ export default function Home() {
       setTimeout(() => {
         setCopiedMessageId(null);
       }, 2000);
-      toast.success("Texto copiado!");
+      toast.success("Resposta copiada com sucesso!");
     } catch (err) {
       console.error("Falha ao copiar texto:", err);
-      toast.error("Falha ao copiar o texto.");
+      toast.error("Não foi possível copiar o texto.");
     }
     document.body.removeChild(textArea);
   };
@@ -146,7 +150,7 @@ export default function Home() {
       id: Date.now(),
       sender: "ai",
       text:
-        "Certo! Vamos criar um ponto de embarque. ✨\n\n" +
+        "Perfeito, vamos criar um ponto de embarque com o Buzzy. ✨\n\n" +
         "Digite agora apenas o nome do ponto e o endereço completo em uma única frase, seguindo este modelo:\n\n" +
         "Portaria Principal na Rua São José, 250, São Joaquim da Barra - SP, Brasil.\n\n" +
         "Depois é só enviar que eu tento criar o ponto pra você. 😊",
@@ -161,7 +165,7 @@ export default function Home() {
       id: Date.now(),
       sender: "ai",
       text:
-        "Perfeito! Vamos criar uma rota. 🚌\n\n" +
+        "Ótimo! Vamos criar uma rota com o Buzzy. 🚌\n\n" +
         "Digite agora os dados em uma única frase, completando depois de \"rota\", seguindo este modelo:\n\n" +
         "em São Joaquim da Barra chamada Rota T, no período da manhã, rota ativa, saindo às 07:10 e chegando às 08:00, com 44 lugares.\n\n" +
         "Você pode trocar cidade, nome, período, horários e capacidade. Depois de enviar, eu tento criar a rota pra você. 😊",
@@ -191,7 +195,7 @@ export default function Home() {
       id: Date.now(),
       sender: "ai",
       text:
-        "Vamos consultar quem ainda não embarcou. ✅\n\n" +
+        "Vamos consultar quem ainda não embarcou nessa rota hoje. ✅\n\n" +
         "Digite agora a rota, o período e a cidade com o código, seguindo este modelo:\n\n" +
         "rota A do período da manhã em São Joaquim da Barra (3)\n\n" +
         "Depois de enviar, eu retorno a lista de colaboradores que ainda não embarcaram nessa rota hoje.",
@@ -202,25 +206,26 @@ export default function Home() {
   const placeholderInput = creatingPointMode
     ? "Digite o nome do ponto e o endereço completo nesse formato..."
     : creatingRouteMode
-    ? 'Digite os dados da rota, ex: "em São Joaquim..., chamada..., período..., horários..."'
+    ? 'Descreva a rota para o Buzzy, ex: "em São Joaquim..., chamada..., período..., horários..."'
     : assigningPointToRouteMode
-    ? 'Digite ponto, rota e ordem, ex: "Portaria Principal na rota..., como primeira parada"'
+    ? 'Informe ponto, rota e ordem, ex: "Portaria Principal na rota..., como primeira parada"'
     : askingNaoEmbarcouMode
-    ? 'Digite rota, período e cidade, ex: "rota A do período da manhã em São Joaquim da Barra (3)"'
-    : "Pergunte ou peça algo...";
+    ? 'Exemplo: "rota A do período da manhã em São Joaquim da Barra (3)"'
+    : "Digite sua pergunta ou peça algo para o Buzzy...";
 
   return (
     <main
       className="
-        flex-1 min-h-screen bg-slate-50
+        flex-1 h-screen bg-slate-50
         px-3 sm:px-4 lg:px-28
         py-4
         ml-16
+        flex flex-col
       "
     >
       <Navbar />
 
-      <div className="w-full space-y-6">
+      <div className="w-full flex-1 flex flex-col space-y-6 overflow-hidden">
         <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
@@ -228,10 +233,11 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-semibold text-emerald-600">
-                Assistente do Sistema
+                Buzzy • Assistente do Sistema
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl">
-                Converse com o assistente sobre rotas, pontos, embarques e uso do TrackPass.
+                Converse com o Buzzy sobre rotas, pontos de embarque, embarques do dia e uso do
+                TrackPass em uma linguagem natural.
               </p>
             </div>
           </div>
@@ -246,46 +252,49 @@ export default function Home() {
           >
             <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
             <span className="text-[11px] sm:text-xs font-medium text-emerald-700">
-              Online • resposta automática
+              Buzzy online • resposta automática
             </span>
           </div>
         </header>
 
         <section
           className="
+            flex-1 min-h-0
             grid grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]
             gap-5 lg:gap-6
+            items-stretch
           "
         >
           <div
             className="
               bg-white border border-slate-200 shadow-sm rounded-2xl
               flex flex-col
-              h-[540px] sm:h-[580px]
+              h-full
             "
           >
             <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h2 className="text-sm sm:text-base font-semibold text-slate-900">
-                  Janela do chat
+                  Chat com o Buzzy
                 </h2>
                 <p className="text-[11px] sm:text-xs text-slate-500">
-                  Envie perguntas e receba respostas dentro do fluxo do sistema.
+                  Faça perguntas, peça ações ou siga os fluxos guiados para o Buzzy executar no
+                  TrackPass.
                 </p>
               </div>
               <div className="hidden sm:flex items-center gap-2">
                 <div className="w-7 h-7 rounded-full overflow-hidden border border-emerald-100">
                   <img
                     src={botIcon}
-                    alt="Bot"
+                    alt="Buzzy"
                     className="w-7 h-7 object-cover rounded-full"
                   />
                 </div>
-                <span className="text-[11px] text-slate-500">TrackPass • Bot</span>
+                <span className="text-[11px] text-slate-500">Buzzy • Assistente IA</span>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 space-y-4 bg-slate-50/70">
+            <div className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-5 py-4 space-y-4 bg-slate-50/70">
               {messages.map((msg) => (
                 <div
                   key={msg.id}
@@ -313,7 +322,7 @@ export default function Home() {
                         <button
                           onClick={() => handleCopy(msg.text, msg.id)}
                           className="flex items-center gap-1 hover:text-slate-800 transition-colors"
-                          title="Copiar texto"
+                          title="Copiar resposta do Buzzy"
                           disabled={copiedMessageId === msg.id}
                         >
                           {copiedMessageId === msg.id ? (
@@ -338,7 +347,7 @@ export default function Home() {
                 <div className="flex items-start gap-3.5">
                   <AiAvatar />
                   <div className="max-w-[80%] sm:max-w-[70%] p-3.5 rounded-2xl shadow-sm bg-white text-slate-500 rounded-bl-md border border-slate-200 animate-pulse text-sm">
-                    Digitando...
+                    Buzzy está pensando...
                   </div>
                 </div>
               )}
@@ -388,7 +397,7 @@ export default function Home() {
                     text-sm font-semibold
                   "
                   disabled={!inputText.trim() || isAiThinking}
-                  title="Enviar mensagem"
+                  title="Enviar mensagem para o Buzzy"
                 >
                   <Send size={18} className="mr-1.5" />
                   <span className="hidden sm:inline">Enviar</span>
@@ -405,184 +414,188 @@ export default function Home() {
             className="
               bg-white border border-slate-200 shadow-sm rounded-2xl
               p-4 sm:p-5 flex flex-col gap-4
+              h-full overflow-hidden
             "
           >
             <div>
               <h3 className="text-sm sm:text-base font-semibold text-slate-900">
-                Sugestões rápidas
+                Sugestões do Buzzy
               </h3>
               <p className="text-[11px] sm:text-xs text-slate-500 mt-1">
-                Use fluxos guiados ou comandos prontos para falar com o assistente.
+                Use atalhos prontos ou fluxos guiados para o Buzzy executar ações no TrackPass sem
+                você precisar escrever tudo.
               </p>
             </div>
 
-            <div className="space-y-2.5">
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-                Fluxos guiados
-              </p>
-              <div className="grid grid-cols-1 gap-2.5">
-                <button
-                  type="button"
-                  onClick={iniciarFluxoCriarPonto}
-                  className="
-                    text-left text-xs sm:text-sm
-                    px-3 py-2
-                    rounded-xl
-                    bg-emerald-50 hover:bg-emerald-100
-                    border border-emerald-100
-                    text-emerald-800
-                    transition-colors
-                    font-semibold
-                  "
-                >
-                  Criar ponto de embarque
-                </button>
-                <button
-                  type="button"
-                  onClick={iniciarFluxoCriarRota}
-                  className="
-                    text-left text-xs sm:text-sm
-                    px-3 py-2
-                    rounded-xl
-                    bg-emerald-50 hover:bg-emerald-100
-                    border border-emerald-100
-                    text-emerald-800
-                    transition-colors
-                    font-semibold
-                  "
-                >
-                  Criar rota
-                </button>
-                <button
-                  type="button"
-                  onClick={iniciarFluxoAtribuirPontoRota}
-                  className="
-                    text-left text-xs sm:text-sm
-                    px-3 py-2
-                    rounded-xl
-                    bg-emerald-50 hover:bg-emerald-100
-                    border border-emerald-100
-                    text-emerald-800
-                    transition-colors
-                    font-semibold
-                  "
-                >
-                  Atribuir ponto à rota
-                </button>
-                <button
-                  type="button"
-                  onClick={iniciarFluxoNaoEmbarcou}
-                  className="
-                    text-left text-xs sm:text-sm
-                    px-3 py-2
-                    rounded-xl
-                    bg-emerald-50 hover:bg-emerald-100
-                    border border-emerald-100
-                    text-emerald-800
-                    transition-colors
-                    font-semibold
-                  "
-                >
-                  Quem ainda não embarcou na rota
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-                Rotas
-              </p>
-              <div className="grid grid-cols-1 gap-2.5">
-                {[
-                  "Quantas rotas ativas tenho hoje?",
-                  "Quantas rotas cadastradas tenho no total?",
-                  "Qual rota tem mais colaboradores?",
-                  "Qual rota tem mais embarques hoje?",
-                  "Quantos colaboradores estão na rota A de manhã?",
-                ].map((texto) => (
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
+              <div className="space-y-2.5">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                  Fluxos guiados
+                </p>
+                <div className="grid grid-cols-1 gap-2.5">
                   <button
-                    key={texto}
                     type="button"
-                    onClick={() => dispararSugestao(texto)}
+                    onClick={iniciarFluxoCriarPonto}
                     className="
                       text-left text-xs sm:text-sm
                       px-3 py-2
                       rounded-xl
-                      bg-slate-50 hover:bg-slate-100
-                      border border-slate-100
-                      text-slate-700
+                      bg-emerald-50 hover:bg-emerald-100
+                      border border-emerald-100
+                      text-emerald-800
                       transition-colors
+                      font-semibold
                     "
                   >
-                    {texto}
+                    Criar ponto de embarque
                   </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-                Pontos de embarque
-              </p>
-              <div className="grid grid-cols-1 gap-2.5">
-                {[
-                  "Como criar um ponto de embarque?",
-                  "Como atribuir um ponto a uma rota?",
-                ].map((texto) => (
                   <button
-                    key={texto}
                     type="button"
-                    onClick={() => dispararSugestao(texto)}
+                    onClick={iniciarFluxoCriarRota}
                     className="
                       text-left text-xs sm:text-sm
                       px-3 py-2
                       rounded-xl
-                      bg-slate-50 hover:bg-slate-100
-                      border border-slate-100
-                      text-slate-700
+                      bg-emerald-50 hover:bg-emerald-100
+                      border border-emerald-100
+                      text-emerald-800
                       transition-colors
+                      font-semibold
                     "
                   >
-                    {texto}
+                    Criar rota
                   </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-                Embarques e presença
-              </p>
-              <div className="grid grid-cols-1 gap-2.5">
-                {[
-                  "Quais são os embarques inválidos desta semana?",
-                  "Quem ainda não embarcou na rota A do período da manhã em São Joaquim da Barra (3)?",
-                ].map((texto) => (
                   <button
-                    key={texto}
                     type="button"
-                    onClick={() => dispararSugestao(texto)}
+                    onClick={iniciarFluxoAtribuirPontoRota}
                     className="
                       text-left text-xs sm:text-sm
                       px-3 py-2
                       rounded-xl
-                      bg-slate-50 hover:bg-slate-100
-                      border border-slate-100
-                      text-slate-700
+                      bg-emerald-50 hover:bg-emerald-100
+                      border border-emerald-100
+                      text-emerald-800
                       transition-colors
+                      font-semibold
                     "
                   >
-                    {texto}
+                    Atribuir ponto à rota
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={iniciarFluxoNaoEmbarcou}
+                    className="
+                      text-left text-xs sm:text-sm
+                      px-3 py-2
+                      rounded-xl
+                      bg-emerald-50 hover:bg-emerald-100
+                      border border-emerald-100
+                      text-emerald-800
+                      transition-colors
+                      font-semibold
+                    "
+                  >
+                    Quem ainda não embarcou na rota
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div className="mt-2 rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-3">
-              <p className="text-[11px] sm:text-xs text-emerald-900">
-                Você pode usar os fluxos guiados ou escrever livremente. O assistente interpreta
-                a mensagem e consulta o TrackPass para ajudar com rotas, pontos e embarques.
-              </p>
+              <div className="space-y-2.5">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                  Rotas
+                </p>
+                <div className="grid grid-cols-1 gap-2.5">
+                  {[
+                    "Quantas rotas ativas tenho hoje?",
+                    "Quantas rotas cadastradas tenho no total?",
+                    "Qual rota tem mais colaboradores?",
+                    "Qual rota tem mais embarques hoje?",
+                    "Quantos colaboradores estão na rota A de manhã?",
+                  ].map((texto) => (
+                    <button
+                      key={texto}
+                      type="button"
+                      onClick={() => dispararSugestao(texto)}
+                      className="
+                        text-left text-xs sm:text-sm
+                        px-3 py-2
+                        rounded-xl
+                        bg-slate-50 hover:bg-slate-100
+                        border border-slate-100
+                        text-slate-700
+                        transition-colors
+                      "
+                    >
+                      {texto}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                  Pontos de embarque
+                </p>
+                <div className="grid grid-cols-1 gap-2.5">
+                  {[
+                    "Como criar um ponto de embarque?",
+                    "Como atribuir um ponto a uma rota?",
+                  ].map((texto) => (
+                    <button
+                      key={texto}
+                      type="button"
+                      onClick={() => dispararSugestao(texto)}
+                      className="
+                        text-left text-xs sm:text-sm
+                        px-3 py-2
+                        rounded-xl
+                        bg-slate-50 hover:bg-slate-100
+                        border border-slate-100
+                        text-slate-700
+                        transition-colors
+                      "
+                    >
+                      {texto}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                  Embarques e presença
+                </p>
+                <div className="grid grid-cols-1 gap-2.5">
+                  {[
+                    "Quais são os embarques inválidos desta semana?",
+                    "Quem ainda não embarcou na rota A do período da manhã em São Joaquim da Barra (3)?",
+                  ].map((texto) => (
+                    <button
+                      key={texto}
+                      type="button"
+                      onClick={() => dispararSugestao(texto)}
+                      className="
+                        text-left text-xs sm:text-sm
+                        px-3 py-2
+                        rounded-xl
+                        bg-slate-50 hover:bg-slate-100
+                        border border-slate-100
+                        text-slate-700
+                        transition-colors
+                      "
+                    >
+                      {texto}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-3">
+                <p className="text-[11px] sm:text-xs text-emerald-900">
+                  Você pode escrever livremente ou usar as sugestões. O Buzzy interpreta sua
+                  mensagem, consulta o TrackPass e retorna os dados de forma simples e organizada.
+                </p>
+              </div>
             </div>
           </aside>
         </section>
