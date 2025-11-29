@@ -149,7 +149,7 @@ export default function Navbar() {
               rounded-full
               text-sm font-medium
               text-red-50
-              hover:text-red-600 hover:bg-red-50/10
+              hover:text-red-600 hover:bg-white
               transition-colors
             "
           >
