@@ -6,7 +6,7 @@ import crownImg from "../assets/coroa.png";
 import Remover from "../assets/remove.png";
 import Loading from "../components/Loading";
 import GoogleMapaRota from "./GoogleMapaRota";
-import {useConfirm} from "../components/ConfirmAlert";
+import { useConfirm } from "../components/ConfirmAlert";
 
 function classNames(...xs) {
   return xs.filter(Boolean).join(" ");
@@ -26,7 +26,7 @@ export default function ModalColaboradores({ open, onClose, rota }) {
   const [buscaAdd, setBuscaAdd] = useState("");
   const [resultAdd, setResultAdd] = useState([]);
   const { confirm } = useConfirm();
-
+  const [removingId, setRemovingId] = useState(null);
   useEffect(() => {
     if (!open || !rota?.idRota) return;
 
@@ -143,66 +143,66 @@ export default function ModalColaboradores({ open, onClose, rota }) {
   }, [colabs, pontosById]);
 
   const refreshColabs = async () => {
-  try {
-    const [cols, lids] = await Promise.all([
-      api.get(`/rotaColaborador/${rota.idRota}/colaboradores`),
-      api.get(`/rotas/${rota.idRota}/lideres`),
-    ]);
+    try {
+      const [cols, lids] = await Promise.all([
+        api.get(`/rotaColaborador/${rota.idRota}/colaboradores`),
+        api.get(`/rotas/${rota.idRota}/lideres`),
+      ]);
 
-    const lideresIds = (lids.data || []).map(
-      (l) => l.idColaborador ?? l.id_colaborador
-    );
-    setLideres(lideresIds);
+      const lideresIds = (lids.data || []).map(
+        (l) => l.idColaborador ?? l.id_colaborador
+      );
+      setLideres(lideresIds);
 
-    // 👇 reaproveita a mesma base de colaboradores globais
-    const mapTodosColabs = new Map(
-      (todosColabs || []).map((c) => [
-        c.idColaborador ?? c.id_colaborador,
-        {
+      // 👇 reaproveita a mesma base de colaboradores globais
+      const mapTodosColabs = new Map(
+        (todosColabs || []).map((c) => [
+          c.idColaborador ?? c.id_colaborador,
+          {
+            nome:
+              c.nome ??
+              c.nomeColaborador ??
+              c.nome_colaborador ??
+              "— sem nome —",
+            matricula:
+              c.matricula ??
+              c.matriculaColaborador ??
+              c.matricula_colaborador ??
+              "",
+            roleSistema: (c.role ?? c.funcao ?? c.role_colaborador ?? "")
+              .toString()
+              .toUpperCase(),
+          },
+        ])
+      );
+
+      const normCols = (cols.data || []).map((c) => {
+        const id = c.idColaborador ?? c.id_colaborador;
+        const isLider = lideresIds.includes(id); // só líderes ATIVOS
+
+        const base = mapTodosColabs.get(id) || {};
+
+        return {
+          idColaborador: id,
           nome:
             c.nome ??
             c.nomeColaborador ??
             c.nome_colaborador ??
+            base.nome ??
             "— sem nome —",
           matricula:
-            c.matricula ??
-            c.matriculaColaborador ??
-            c.matricula_colaborador ??
-            "",
-          roleSistema: (c.role ?? c.funcao ?? c.role_colaborador ?? "")
-            .toString()
-            .toUpperCase(),
-        },
-      ])
-    );
+            c.matricula ?? c.matriculaColaborador ?? base.matricula ?? "",
+          idPonto: c.idPonto ?? c.id_ponto ?? null,
+          isLider,
+          roleSistema: base.roleSistema || "COLABORADOR", // 👈 mantém GESTOR
+        };
+      });
 
-    const normCols = (cols.data || []).map((c) => {
-      const id = c.idColaborador ?? c.id_colaborador;
-      const isLider = lideresIds.includes(id); // só líderes ATIVOS
-
-      const base = mapTodosColabs.get(id) || {};
-
-      return {
-        idColaborador: id,
-        nome:
-          c.nome ??
-          c.nomeColaborador ??
-          c.nome_colaborador ??
-          base.nome ??
-          "— sem nome —",
-        matricula:
-          c.matricula ?? c.matriculaColaborador ?? base.matricula ?? "",
-        idPonto: c.idPonto ?? c.id_ponto ?? null,
-        isLider,
-        roleSistema: base.roleSistema || "COLABORADOR", // 👈 mantém GESTOR
-      };
-    });
-
-    setColabs(normCols);
-  } catch (e) {
-    console.error("Erro ao atualizar lista de colaboradores:", e);
-  }
-};
+      setColabs(normCols);
+    } catch (e) {
+      console.error("Erro ao atualizar lista de colaboradores:", e);
+    }
+  };
   const handleToggleLeader = async (c) => {
     const isGestor = c.roleSistema === "GESTOR";
 
@@ -240,8 +240,7 @@ export default function ModalColaboradores({ open, onClose, rota }) {
     );
     try {
       await api.put(
-        `/rotaColaborador/${rota.idRota}/${c.idColaborador}?idPonto=${
-          novoPontoId ? Number(novoPontoId) : ""
+        `/rotaColaborador/${rota.idRota}/${c.idColaborador}?idPonto=${novoPontoId ? Number(novoPontoId) : ""
         }`
       );
       await refreshColabs();
@@ -254,73 +253,70 @@ export default function ModalColaboradores({ open, onClose, rota }) {
     }
   };
 
-const handleRemoveColab = async (c) => {
-  // 1) Confirmação bonitinha via confirm global
-  try {
-    await confirm({
-      title: "Remover colaborador",
-      message: `Deseja realmente remover ${c.nome} da rota?`,
-      confirmText: "Remover",
-      cancelText: "Cancelar",
-    });
-  } catch {
-    // cancelou → não faz nada
-    return;
-  }
+  const handleRemoveColab = async (c) => {
+    // 1) Confirmação
+    try {
+      await confirm({
+        title: "Remover colaborador",
+        message: `Deseja realmente remover ${c.nome} da rota?`,
+        confirmText: "Remover",
+        cancelText: "Cancelar",
+      });
+    } catch {
+      // cancelou → não faz nada
+      return;
+    }
 
-  // 2) Atualização otimista da UI
-  const prev = [...colabs];
-  setColabs(prev.filter((x) => x.idColaborador !== c.idColaborador));
+    // marca que este colaborador está em processo de remoção
+    setRemovingId(c.idColaborador);
 
-  try {
-    // 3) Feedback imediato com toast.promise
-    await toast.promise(
-      (async () => {
-        // tenta remover dos líderes antes (se não for líder, back ignora / erro 404/400)
-        try {
-          await api.delete(
-            `/rotas/${rota.idRota}/lideres/${c.idColaborador}`
-          );
-        } catch (err) {
-          const status = err?.response?.status;
-          if (status !== 400 && status !== 404) {
-            console.warn(
-              "Erro ao remover liderança antes de tirar da rota:",
-              status,
-              err?.response?.data
+    try {
+      await toast.promise(
+        (async () => {
+          // tenta remover dos líderes antes (se não for líder, o back ignora/retorna 400/404)
+          try {
+            await api.delete(
+              `/rotas/${rota.idRota}/lideres/${c.idColaborador}`
             );
-          }
-          // 400/404 aqui não quebram o fluxo
-        }
-
-        // remove vínculo da rota
-        await api.delete(
-          `/rotaColaborador/${rota.idRota}/${c.idColaborador}`
-        );
-
-        // atualiza lista real
-        await refreshColabs();
-      })(),
-      {
-        pending: "Removendo colaborador...",
-        success: "Colaborador desvinculado com sucesso.",
-        error: {
-          render({ data }) {
-            // data é o erro lançado dentro da promise
-            if (data?.response?.status === 403) {
-              return "O sistema não permitiu remover este colaborador da rota. Verifique com o back-end.";
+          } catch (err) {
+            const status = err?.response?.status;
+            if (status !== 400 && status !== 404) {
+              console.warn(
+                "Erro ao remover liderança antes de tirar da rota:",
+                status,
+                err?.response?.data
+              );
             }
-            return "Não foi possível desvincular.";
+          }
+
+          // remove o vínculo da rota
+          await api.delete(
+            `/rotaColaborador/${rota.idRota}/${c.idColaborador}`
+          );
+
+          // recarrega lista real
+          await refreshColabs();
+        })(),
+        {
+          pending: "Removendo colaborador...",
+          success: "Colaborador desvinculado com sucesso.",
+          error: {
+            render({ data }) {
+              if (data?.response?.status === 403) {
+                return "O sistema não permitiu remover este colaborador da rota. Verifique com o back-end.";
+              }
+              return "Não foi possível desvincular.";
+            },
           },
-        },
-      }
-    );
-  } catch (e) {
-    console.error(e);
-    // se deu erro na promise, volta a lista pro estado anterior
-    setColabs(prev);
-  }
-};
+        }
+      );
+    } catch (e) {
+      console.error(e);
+      // em caso de erro, só garante refresh (ou deixa quieto, o colab ainda está na lista)
+    } finally {
+      setRemovingId(null);
+    }
+  };
 
   const normalizar = (s = "") =>
     s
@@ -459,8 +455,8 @@ const handleRemoveColab = async (c) => {
                             isGestor
                               ? "border-2 border-green-500 bg-green-50/20"
                               : c.isLider
-                              ? "border-2 border-yellow-500 bg-yellow-50/15 shadow-sm shadow-yellow-500/50"
-                              : "border-2 border-gray-200 bg-gray-50/30"
+                                ? "border-2 border-yellow-500 bg-yellow-50/15 shadow-sm shadow-yellow-500/50"
+                                : "border-2 border-gray-200 bg-gray-50/30"
                           )}
                         >
                           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -502,24 +498,23 @@ const handleRemoveColab = async (c) => {
                                 )}
                                 disabled={c.isLider ? false : !canBeLeader}
                                 title={
-                                 c.isLider
-                ? "Remover liderança"
-                : isGestor
-                ? "Colaboradores com cargo de GESTOR não podem ser líderes de rota."
-                : canBeLeader
-                ? "Marcar este colaborador como líder da rota"
-                : "Só pode marcar líder se o colaborador estiver no ponto de ordem 1"
-            }
+                                  c.isLider
+                                    ? "Remover liderança"
+                                    : isGestor
+                                      ? "Colaboradores com cargo de GESTOR não podem ser líderes de rota."
+                                      : canBeLeader
+                                        ? "Marcar este colaborador como líder da rota"
+                                        : "Só pode marcar líder se o colaborador estiver no ponto de ordem 1"
+                                }
                                 onClick={() => handleToggleLeader(c)}
                               >
                                 <img
                                   src={crownImg}
                                   alt="Coroa"
-                                  className={`h-5 w-5 transition-all duration-200 ${
-                                    c.isLider
+                                  className={`h-5 w-5 transition-all duration-200 ${c.isLider
                                       ? "grayscale-0 brightness-100"
                                       : "grayscale brightness-50"
-                                  }`}
+                                    }`}
                                 />
                                 {c.isLider
                                   ? "Remover liderança"
@@ -528,14 +523,14 @@ const handleRemoveColab = async (c) => {
 
                               <button
                                 className="px-3 py-1.5 rounded-lg border flex items-center gap-1 border-red-300 text-left text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={c.isLider} // líder ativo não pode ser removido
+                                disabled={c.isLider || removingId === c.idColaborador}
                                 title={
                                   c.isLider
                                     ? "Remova a liderança deste colaborador antes de tirá-lo da rota."
                                     : "Remover colaborador da rota"
                                 }
                                 onClick={() => {
-                                  if (!c.isLider) {
+                                  if (!c.isLider && removingId !== c.idColaborador) {
                                     handleRemoveColab(c);
                                   }
                                 }}
@@ -545,7 +540,7 @@ const handleRemoveColab = async (c) => {
                                   alt="Remover"
                                   className="h-5 w-5 inline-block mr-1"
                                 />
-                                Remover
+                                {removingId === c.idColaborador ? "Removendo..." : "Remover"}
                               </button>
                             </div>
                           </div>

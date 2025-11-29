@@ -497,7 +497,7 @@ const Portaria = () => {
 
               {/* REMOVIDO o conditional check (!loadingInitial). O formulário renderiza sempre. */}
               {/* Adicionado um div wrapper com flex-1 para ocupar espaço */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto ">
                 <form onSubmit={handleRegisterEntry} className="space-y-5">
                   <div className="grid grid-cols-1 gap-3">
                     <div className="flex flex-col gap-1">
@@ -553,7 +553,7 @@ const Portaria = () => {
                             "Nenhum visitante"}
                           {(tipoPessoa === "COLABORADOR" &&
                             colaboradores.length > 0) ||
-                          (tipoPessoa === "VISITANTE" && visitors.length > 0)
+                          (tipoPessoa === "VISITANTE" && visitantes.length > 0)
                             ? "Selecione..."
                             : ""}
                         </option>
@@ -624,27 +624,7 @@ const Portaria = () => {
                           disabled={!selectedPessoaId}
                         />
 
-                        <button
-                          type="button"
-                          onClick={handleAddOcupante}
-                          disabled={
-                            !selectedPessoaId ||
-                            selectedOcupantes.length >= 10 ||
-                            sugestoesOcupantes.length === 0
-                          }
-                          className="
-                            inline-flex items-center justify-center
-                            px-3.5 py-2.5
-                            rounded-xl
-                            bg-emerald-600 hover:bg-emerald-700
-                            disabled:bg-emerald-400
-                            text-white text-xs font-semibold
-                            transition-colors
-                            whitespace-nowrap
-                          "
-                        >
-                          Adicionar
-                        </button>
+                       
                       </div>
 
                       {sugestoesOcupantes.length > 0 && (
