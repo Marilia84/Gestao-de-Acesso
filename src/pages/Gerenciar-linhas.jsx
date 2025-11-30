@@ -11,6 +11,7 @@ import DeleteRotaButton from "../components/DeleteRotaButton";
 import CadastroCidadeCard from "../components/CadastroCidadeCard";
 import CadastroPontoCard from "../components/CadastroPontoCard";
 import ListaPontosCard from "../components/ListaPontosCard";
+import { Pencil, X, Check } from "lucide-react";
 
 const normalizarAtivo = (valor) => {
   return (
@@ -58,6 +59,131 @@ export default function GerenciarLinhas() {
   const [loadingRotasCadastradas, setLoadingRotasCadastradas] = useState(true);
 
   const [activeTab, setActiveTab] = useState("PONTOS");
+
+  // ===== ESTADO / FUNÇÕES PARA EDITAR ROTA =====
+  const [rotaEditando, setRotaEditando] = useState(null);
+  const [editRotaNome, setEditRotaNome] = useState("");
+  const [editRotaPeriodo, setEditRotaPeriodo] = useState("");
+  const [editRotaHoraPartida, setEditRotaHoraPartida] = useState("");
+  const [editRotaHoraChegada, setEditRotaHoraChegada] = useState("");
+  const [editRotaCapacidade, setEditRotaCapacidade] = useState("");
+  const [editRotaIdCidade, setEditRotaIdCidade] = useState("");
+  const [editRotaAtivo, setEditRotaAtivo] = useState(true);
+  const [editRotaModalAberto, setEditRotaModalAberto] = useState(false);
+  const [salvandoRota, setSalvandoRota] = useState(false);
+
+  const getIdCidadeFromRota = (rota) =>
+    rota.idCidade ?? rota.cidade?.idCidade ?? rota.cidade_id ?? null;
+
+  const abrirModalEdicaoRota = (rota) => {
+    setRotaEditando(rota);
+    setEditRotaNome(rota.nome || "");
+    setEditRotaPeriodo(rota.periodo || "");
+    setEditRotaHoraPartida(
+      (rota.horaPartida && String(rota.horaPartida).substring(0, 5)) || ""
+    );
+    setEditRotaHoraChegada(
+      (rota.horaChegada && String(rota.horaChegada).substring(0, 5)) || ""
+    );
+    setEditRotaCapacidade(
+      rota.capacidade !== undefined && rota.capacidade !== null
+        ? String(rota.capacidade)
+        : ""
+    );
+    const idCidade = getIdCidadeFromRota(rota);
+    setEditRotaIdCidade(idCidade ? String(idCidade) : "");
+    setEditRotaAtivo(normalizarAtivo(rota.ativo));
+    setEditRotaModalAberto(true);
+  };
+
+  const fecharModalEdicaoRota = () => {
+    if (salvandoRota) return;
+    setEditRotaModalAberto(false);
+    setRotaEditando(null);
+    setEditRotaNome("");
+    setEditRotaPeriodo("");
+    setEditRotaHoraPartida("");
+    setEditRotaHoraChegada("");
+    setEditRotaCapacidade("");
+    setEditRotaIdCidade("");
+    setEditRotaAtivo(true);
+  };
+
+  const handleSalvarEdicaoRota = async () => {
+    if (!rotaEditando) return;
+
+    if (!editRotaNome.trim()) {
+      toast.warn("Informe o nome da rota.");
+      return;
+    }
+
+    const payload = {};
+
+    payload.nome = editRotaNome.trim();
+
+    if (editRotaPeriodo) {
+      payload.periodo = editRotaPeriodo;
+    }
+
+    if (editRotaHoraPartida) {
+      payload.horaPartida =
+        editRotaHoraPartida.length > 5
+          ? editRotaHoraPartida.substring(0, 5)
+          : editRotaHoraPartida;
+    }
+
+    if (editRotaHoraChegada) {
+      payload.horaChegada =
+        editRotaHoraChegada.length > 5
+          ? editRotaHoraChegada.substring(0, 5)
+          : editRotaHoraChegada;
+    }
+
+    if (editRotaCapacidade !== "") {
+      const capNumber = Number(editRotaCapacidade);
+      if (!Number.isNaN(capNumber)) {
+        payload.capacidade = capNumber;
+      }
+    }
+
+    if (editRotaIdCidade) {
+      payload.idCidade = Number(editRotaIdCidade);
+    }
+
+    payload.ativo = editRotaAtivo;
+
+    try {
+      setSalvandoRota(true);
+      await api.patch(`/rotas/${rotaEditando.idRota}`, payload);
+
+      let cidadeObj = null;
+      if (payload.idCidade) {
+        cidadeObj = cidades.find((c) => c.idCidade === payload.idCidade) || null;
+      }
+
+      setRotas((prev) =>
+        prev.map((r) =>
+          r.idRota === rotaEditando.idRota
+            ? {
+                ...r,
+                ...payload,
+                ...(cidadeObj ? { cidade: cidadeObj } : {}),
+              }
+            : r
+        )
+      );
+
+      toast.success("Rota atualizada com sucesso.");
+      fecharModalEdicaoRota();
+    } catch (err) {
+      console.error("Erro ao atualizar rota:", err.response?.data || err);
+      toast.error("Erro ao atualizar rota. Tente novamente.");
+    } finally {
+      setSalvandoRota(false);
+    }
+  };
+
+  // =============================================
 
   const handleToggleAtivoRota = async (rota, novoAtivo) => {
     const ativoAnteriorBool = normalizarAtivo(rota.ativo);
@@ -874,6 +1000,17 @@ export default function GerenciarLinhas() {
                       >
                         <div className="absolute top-2 right-1 z-10">
                           <div className="absolute top-1 right-1 z-10 flex items-center gap-1 sm:gap-2">
+                            {/* EDITAR ROTA */}
+                            <button
+                              type="button"
+                              onClick={() => abrirModalEdicaoRota(rota)}
+                              className="inline-flex items-center justify-center rounded-full p-1.5 hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 border border-transparent hover:border-emerald-100 transition"
+                              title="Editar rota"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+
+                            {/* EXCLUIR ROTA */}
                             <DeleteRotaButton
                               idRota={rota.idRota}
                               rotaNome={rota.nome}
@@ -888,6 +1025,7 @@ export default function GerenciarLinhas() {
                               }
                             />
 
+                            {/* ATIVAR / INATIVAR */}
                             <Toggle
                               checked={isAtiva}
                               onChange={(checked) =>
@@ -1088,6 +1226,156 @@ export default function GerenciarLinhas() {
               </div>
             </div>
           </section>
+        )}
+
+        {/* MODAL EDIÇÃO DE ROTA */}
+        {editRotaModalAberto && (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-5 md:p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-base md:text-lg font-semibold text-slate-900">
+                    Editar rota
+                  </h3>
+                  <p className="text-xs md:text-sm text-slate-500">
+                    Atualize as informações gerais desta rota.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={fecharModalEdicaoRota}
+                  className="p-1 rounded-full hover:bg-slate-100 text-slate-500"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Nome da rota
+                  </label>
+                  <input
+                    type="text"
+                    value={editRotaNome}
+                    onChange={(e) => setEditRotaNome(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Período
+                  </label>
+                  <select
+                    value={editRotaPeriodo}
+                    onChange={(e) => setEditRotaPeriodo(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-500"
+                  >
+                    <option value="">Selecione</option>
+                    <option value="MANHA">Manhã</option>
+                    <option value="TARDE">Tarde</option>
+                    <option value="NOITE">Noite</option>
+                    <option value="MADRUGADA">Madrugada</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Cidade
+                  </label>
+                  <select
+                    value={editRotaIdCidade}
+                    onChange={(e) => setEditRotaIdCidade(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-500"
+                  >
+                    <option value="">Selecione uma cidade</option>
+                    {cidades.map((cidade) => (
+                      <option
+                        key={cidade.idCidade}
+                        value={String(cidade.idCidade)}
+                      >
+                        {cidade.nome} - {cidade.uf}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Hora de partida
+                  </label>
+                  <input
+                    type="time"
+                    value={editRotaHoraPartida}
+                    onChange={(e) => setEditRotaHoraPartida(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Hora de chegada
+                  </label>
+                  <input
+                    type="time"
+                    value={editRotaHoraChegada}
+                    onChange={(e) => setEditRotaHoraChegada(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Capacidade (colaboradores)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={editRotaCapacidade}
+                    onChange={(e) => setEditRotaCapacidade(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 mt-2 md:mt-6">
+                  <input
+                    id="edit-rota-ativo"
+                    type="checkbox"
+                    checked={editRotaAtivo}
+                    onChange={(e) => setEditRotaAtivo(e.target.checked)}
+                    className="w-8 h-8 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <label
+                    htmlFor="edit-rota-ativo"
+                    className="text-xs text-slate-700"
+                  >
+                    Rota ativa
+                  </label>
+                </div>
+              </div>
+
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={fecharModalEdicaoRota}
+                  disabled={salvandoRota}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-1.5 text-xs md:text-sm text-slate-600 hover:bg-slate-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSalvarEdicaoRota}
+                  disabled={salvandoRota}
+                  className="inline-flex items-center gap-2 rounded-full bg-emerald-600 text-white px-4 py-1.5 text-xs md:text-sm font-medium hover:bg-emerald-700 disabled:opacity-70"
+                >
+                  <Check className="w-4 h-4" />
+                  {salvandoRota ? "Salvando..." : "Salvar alterações"}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {openModalColabs && rotaSelecionada && (
