@@ -68,7 +68,6 @@ export default function GerenciarLinhas() {
   const [editRotaHoraChegada, setEditRotaHoraChegada] = useState("");
   const [editRotaCapacidade, setEditRotaCapacidade] = useState("");
   const [editRotaIdCidade, setEditRotaIdCidade] = useState("");
-  const [editRotaAtivo, setEditRotaAtivo] = useState(true);
   const [editRotaModalAberto, setEditRotaModalAberto] = useState(false);
   const [salvandoRota, setSalvandoRota] = useState(false);
 
@@ -92,7 +91,7 @@ export default function GerenciarLinhas() {
     );
     const idCidade = getIdCidadeFromRota(rota);
     setEditRotaIdCidade(idCidade ? String(idCidade) : "");
-    setEditRotaAtivo(normalizarAtivo(rota.ativo));
+    
     setEditRotaModalAberto(true);
   };
 
@@ -106,7 +105,7 @@ export default function GerenciarLinhas() {
     setEditRotaHoraChegada("");
     setEditRotaCapacidade("");
     setEditRotaIdCidade("");
-    setEditRotaAtivo(true);
+   
   };
 
   const handleSalvarEdicaoRota = async () => {
@@ -150,7 +149,7 @@ export default function GerenciarLinhas() {
       payload.idCidade = Number(editRotaIdCidade);
     }
 
-    payload.ativo = editRotaAtivo;
+    
 
     try {
       setSalvandoRota(true);
@@ -1338,21 +1337,7 @@ export default function GerenciarLinhas() {
                   />
                 </div>
 
-                <div className="flex items-center gap-2 mt-2 md:mt-6">
-                  <input
-                    id="edit-rota-ativo"
-                    type="checkbox"
-                    checked={editRotaAtivo}
-                    onChange={(e) => setEditRotaAtivo(e.target.checked)}
-                    className="w-8 h-8 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <label
-                    htmlFor="edit-rota-ativo"
-                    className="text-xs text-slate-700"
-                  >
-                    Rota ativa
-                  </label>
-                </div>
+               
               </div>
 
               <div className="mt-5 flex justify-end gap-2">
