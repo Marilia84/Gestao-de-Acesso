@@ -13,4 +13,9 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+export const getImpedimentoDetalhado = async (id) => {
+  const response = await api.get(`/impedimentos/${id}/detalhado`);
+  return response.data;
+};
+
 export default api;

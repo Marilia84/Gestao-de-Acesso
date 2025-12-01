@@ -1,99 +1,70 @@
 // src/pages/Impedimentos.jsx
-import React, { useEffect, useState, useMemo } from "react";
-import { Search, AlertTriangle } from "lucide-react";
-import { toast } from "react-toastify";
-import "leaflet/dist/leaflet.css";
+import React, { useState, useEffect, useMemo } from "react";
 
-import Navbar from "../components/Navbar";
-import { getImpedimentos } from "../api/impedimentosService";
+import api from "../api/axios";
 import Loading from "../components/Loading";
+
 import MapaRotaColaborador from "../components/MapaRotaColaborador";
-
-const getSeveridadeProps = (severidade) => {
-  switch (severidade) {
-    case "ALTA":
-      return {
-        className: "bg-orange-100 text-orange-800",
-        label: "Alta",
-      };
-    case "MEDIA":
-      return {
-        className: "bg-yellow-100 text-yellow-800",
-        label: "Média",
-      };
-    case "BAIXA":
-      return {
-        className: "bg-blue-100 text-blue-800",
-        label: "Baixa",
-      };
-    default:
-      return {
-        className: "bg-red-100 text-red-800",
-        label: severidade || "N/A",
-      };
-  }
-};
-
-const formatarData = (isoString) => {
-  if (!isoString) return "—";
-  try {
-    return new Date(isoString).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch (error) {
-    return "Data inválida";
-  }
-};
-
-const formatarMotivo = (motivo) => {
-  if (!motivo) return "—";
-  return motivo
-    .split("_")
-    .map((palavra) => palavra.charAt(0) + palavra.slice(1).toLowerCase())
-    .join(" ");
-};
+import MapaImpedimentos from "../components/MapaImpedimentos";
+import ImpedimentoDetalhes from "../components/ImpedimentoDetalhes";
+import {
+  Search,
+  AlertTriangle,
+  Car,
+  Stethoscope,
+  Cog,
+} from "lucide-react";
 
 export default function Impedimentos() {
-  const [impedimentos, setImpedimentos] = useState([]);
+  const [activeTab, setActiveTab] = useState("REGISTROS"); // REGISTROS | MAPA
+  const [activeMapaTab, setActiveMapaTab] = useState("COLABORADORES");
+
+  const [lista, setLista] = useState([]);
+  const [loadingLista, setLoadingLista] = useState(false);
+
+  const [selectedId, setSelectedId] = useState(null);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("LISTA");
+
+  // ===============================
+  // BUSCAR LISTA DE IMPEDIMENTOS
+  // ===============================
+  async function carregarLista() {
+    try {
+      setLoadingLista(true);
+      const res = await api.get("/impedimentos", {
+        params: { apenasAtivos: true },
+      });
+      const data = Array.isArray(res.data) ? res.data : [];
+      setLista(data);
+
+      if (!selectedId && data.length > 0) {
+        setSelectedId(data[0].id);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar impedimentos:", err);
+    } finally {
+      setLoadingLista(false);
+    }
+  }
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const data = await getImpedimentos();
-        setImpedimentos(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Erro ao buscar impedimentos:", err);
-        const errorMsg = "Não foi possível carregar os impedimentos.";
-        setError(errorMsg);
-        toast.error(errorMsg);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    carregarLista();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const impedimentosFiltrados = useMemo(() => {
-    const term = search.toLowerCase();
+  const listaFiltrada = useMemo(() => {
+    if (!search) return lista;
+    const s = search.toLowerCase();
 
-    return impedimentos.filter((imp) => {
-      const motivo = imp?.motivo?.toLowerCase?.() || "";
-      const descricao = imp?.descricao?.toLowerCase?.() || "";
-      return motivo.includes(term) || descricao.includes(term);
+    return lista.filter((imp) => {
+      return (
+        (imp.motivo || "").toLowerCase().includes(s) ||
+        (imp.descricao || "").toLowerCase().includes(s) ||
+        (imp.rotaNome || imp.rota?.nome || "").toLowerCase().includes(s) ||
+        (imp.motoristaNome || "").toLowerCase().includes(s)
+      );
     });
-  }, [impedimentos, search]);
+  }, [search, lista]);
 
   return (
     <main
@@ -105,32 +76,28 @@ export default function Impedimentos() {
       "
     >
       <div className="w-full space-y-6">
-        <header className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">
-            <AlertTriangle className="w-5 h-5 text-[#F59E0B]" />
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-emerald-600">
-              Registro de Impedimentos
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl">
-              Acompanhe os registros de impedimentos, suas severidades e status
-              em tempo real.
-            </p>
-          </div>
+        {/* HEADER */}
+        <header className="flex flex-col gap-2">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-emerald-600">
+            Impedimentos na operação
+          </h1>
+          <p className="text-sm text-slate-500 max-w-2xl">
+            Visualize ocorrências, consulte detalhes e acompanhe no mapa.
+          </p>
         </header>
 
+        {/* ABAS PRINCIPAIS */}
         <nav className="border-b border-slate-200 pb-4">
           <div className="flex justify-start">
-            <div className="relative inline-flex bg-slate-100 rounded-full p-1">
+            <div className="relative inline-flex bg-slate-100 rounded-full p-1 shadow-inner">
+              {/* fundo animado */}
               <span
                 className={`
                   absolute inset-y-1 left-1
-                  w-24
-                  rounded-full bg-white shadow-sm
+                  w-24 rounded-full bg-white shadow-sm
                   transition-transform duration-300 ease-out
                   ${
-                    activeTab === "LISTA"
+                    activeTab === "REGISTROS"
                       ? "translate-x-0"
                       : "translate-x-[6.5rem]"
                   }
@@ -138,16 +105,11 @@ export default function Impedimentos() {
               />
 
               <button
-                type="button"
-                onClick={() => setActiveTab("LISTA")}
+                onClick={() => setActiveTab("REGISTROS")}
                 className={`
-                  relative z-10
-                  w-24
-                  px-3 py-1.5
-                  text-xs sm:text-sm font-semibold
-                  transition-colors
+                  relative z-10 w-24 px-3 py-1.5 text-xs sm:text-sm font-semibold
                   ${
-                    activeTab === "LISTA"
+                    activeTab === "REGISTROS"
                       ? "text-emerald-600"
                       : "text-slate-500 hover:text-slate-700"
                   }
@@ -157,14 +119,9 @@ export default function Impedimentos() {
               </button>
 
               <button
-                type="button"
                 onClick={() => setActiveTab("MAPA")}
                 className={`
-                  relative z-10
-                  w-24
-                  px-3 py-1.5
-                  text-xs sm:text-sm font-semibold
-                  transition-colors
+                  relative z-10 w-24 px-3 py-1.5 text-xs sm:text-sm font-semibold
                   ${
                     activeTab === "MAPA"
                       ? "text-emerald-700"
@@ -178,177 +135,256 @@ export default function Impedimentos() {
           </div>
         </nav>
 
-        {activeTab === "LISTA" && (
-          <section
-            className="
-              bg-white border border-slate-200 shadow-sm rounded-2xl
-              p-4 sm:p-6 md:p-7
-              space-y-4 sm:space-y-6
-            "
-          >
-            <div className="relative w-full max-w-md">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"
-                strokeWidth={2.5}
-              />
-              <input
-                type="text"
-                placeholder="Buscar por motivo ou descrição..."
-                className="
-                  pl-10 pr-4 py-2.5 w-full
-                  rounded-xl
-                  border border-slate-300 bg-slate-50
-                  text-sm text-slate-900 placeholder:text-slate-400
-                  focus:bg-white focus:outline-none
-                  focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
-                "
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+        {/* ============================================= */}
+        {/*              ABA REGISTROS                    */}
+        {/* ============================================= */}
+        {activeTab === "REGISTROS" && (
+          <section className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6">
+            {/* CARD LISTA */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col h-[660px]">
+              {/* Cabeçalho */}
+              <div className="px-4 pt-4 pb-3 border-b border-slate-100 flex justify-between items-center">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-800">
+                    Lista de impedimentos
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Todas as ocorrências registradas.
+                  </p>
+                </div>
+
+                <div className="relative w-48">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar..."
+                    className="w-full pl-9 pr-2 py-1.5 text-sm border rounded-lg bg-slate-50 border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Conteúdo scrollável, altura fixa do card */}
+              <div className="relative flex-1 overflow-y-auto">
+                {loadingLista && (
+                  <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
+                    <Loading size={60} />
+                  </div>
+                )}
+
+                {listaFiltrada.length === 0 && !loadingLista ? (
+                  <div className="p-6 text-center text-slate-500 text-sm">
+                    <AlertTriangle className="w-5 h-5 mx-auto text-amber-500 mb-2" />
+                    Nenhum impedimento encontrado.
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-slate-100">
+                    {listaFiltrada.map((imp) => {
+                      const motivoFmt = imp.motivo?.replace(/_/g, " ");
+                      const rotaFmt =
+                        imp.rotaNome || imp.rota?.nome || "—";
+                      const dataFmt = imp.ocorridoEm
+                        ? new Date(imp.ocorridoEm).toLocaleString("pt-BR")
+                        : "—";
+
+                      const sev = (imp.severidade || "—").toUpperCase();
+                      const badgeClass =
+                        {
+                          ALTA: "bg-red-100 text-red-700 border-red-300",
+                          MÉDIA:
+                            "bg-amber-100 text-amber-700 border-amber-300",
+                          MEDIA:
+                            "bg-amber-100 text-amber-700 border-amber-300",
+                          BAIXA:
+                            "bg-emerald-100 text-emerald-700 border-emerald-300",
+                        }[sev] ||
+                        "bg-slate-100 text-slate-700 border-slate-300";
+
+                      // ÍCONE POR TIPO DE IMPEDIMENTO
+                      const tipo = (imp.motivo || "").toUpperCase();
+                      let TipoIcon = AlertTriangle;
+                      let iconWrapperClass =
+                        "bg-slate-50 text-slate-600 border-slate-200";
+
+                      if (tipo === "ACIDENTE") {
+                        TipoIcon = Car;
+                        iconWrapperClass =
+                          "bg-red-50 text-red-600 border-red-200";
+                      } else if (tipo === "SOCORRO_MEDICO") {
+                        TipoIcon = Stethoscope;
+                        iconWrapperClass =
+                          "bg-rose-50 text-rose-600 border-rose-200";
+                      } else if (tipo === "QUEBRA_ONIBUS") {
+                        TipoIcon = Cog;
+                        iconWrapperClass =
+                          "bg-amber-50 text-amber-600 border-amber-200";
+                      }
+
+                      return (
+                        <li
+                          key={imp.id}
+                          onClick={() => setSelectedId(imp.id)}
+                          className={`
+                            cursor-pointer p-4 transition-all
+                            ${
+                              selectedId === imp.id
+                                ? "bg-emerald-50 border-l-4 border-emerald-600"
+                                : "hover:bg-slate-50"
+                            }
+                          `}
+                        >
+                          {/* linha 1: ícone “quadradinho” + motivo + badge */}
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5">
+                              <div
+                                className={`
+                                  w-8 h-8 rounded-lg border flex items-center justify-center
+                                  shadow-[0_1px_2px_rgba(15,23,42,0.05)]
+                                  text-xs ${iconWrapperClass}
+                                `}
+                              >
+                                <TipoIcon className="w-4 h-4" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-slate-800 text-sm">
+                                  {motivoFmt}
+                                </span>
+                                <span className="text-[11px] text-slate-500">
+                                  {rotaFmt}
+                                </span>
+                              </div>
+                            </div>
+
+                            <span
+                              className={`
+                                text-[11px] px-2 py-0.5 rounded-full border 
+                                font-medium ${badgeClass}
+                              `}
+                            >
+                              {sev}
+                            </span>
+                          </div>
+
+                          {/* linha 3: motorista / veículo */}
+                          <div className="text-xs text-slate-500 mt-1">
+                            {imp.motoristaNome && (
+                              <>
+                                Motorista:{" "}
+                                <span className="text-slate-700">
+                                  {imp.motoristaNome}
+                                </span>{" "}
+                                •{" "}
+                              </>
+                            )}
+                            {imp.veiculoNome && (
+                              <>
+                                Veículo:{" "}
+                                <span className="text-slate-700">
+                                  {imp.veiculoNome}
+                                </span>
+                              </>
+                            )}
+                          </div>
+
+                          {/* linha 4: descrição */}
+                          {imp.descricao && (
+                            <p className="text-[12px] text-slate-500 mt-2 line-clamp-2">
+                              {imp.descricao}
+                            </p>
+                          )}
+
+                          {/* linha 5: data */}
+                          <div className="text-[11px] text-slate-400 mt-2">
+                            {dataFmt}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             </div>
 
-            <div className="overflow-x-auto min-h-[150px]">
-              {loading ? (
-                <div className="flex justify-center py-8">
-                  <Loading size={180} className="[&_p]:mt-1" />
-                </div>
-              ) : error ? (
-                <p className="text-center text-red-500 py-4 text-sm sm:text-base">
-                  {error}
+            {/* CARD DETALHES */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col h-[660px]">
+              <div className="px-4 pt-4 pb-3 border-b border-slate-100">
+                <h2 className="text-base font-semibold text-slate-800">
+                  Detalhes
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Dados completos do impedimento.
                 </p>
-              ) : (
-                <div className="w-full">
-                  {impedimentosFiltrados.length > 0 ? (
-                    <table className="w-full border-collapse md:table text-sm sm:text-base">
-                      <thead className="hidden md:table-header-group bg-slate-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                            Motivo
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                            Severidade
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                            Descrição
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                            Ocorrido em
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="block md:table-row-group divide-y divide-slate-200">
-                        {impedimentosFiltrados.map((imp) => {
-                          const severidadeProps = getSeveridadeProps(
-                            imp.severidade
-                          );
-                          return (
-                            <tr
-                              key={imp.id}
-                              className="
-                                block md:table-row
-                                mb-4 md:mb-0
-                                border md:border-0
-                                rounded-xl md:rounded-none
-                                p-4 md:p-0
-                                bg-white md:bg-transparent
-                                shadow-sm md:shadow-none
-                              "
-                            >
-                              <td className="block md:table-cell px-4 py-2 text-sm sm:text-base font-medium text-slate-900">
-                                <span className="md:hidden font-semibold text-slate-500">
-                                  Motivo:{" "}
-                                </span>
-                                {formatarMotivo(imp.motivo)}
-                              </td>
-                              <td className="block md:table-cell px-4 py-2 text-sm sm:text-base">
-                                <span className="md:hidden font-semibold text-slate-500">
-                                  Severidade:{" "}
-                                </span>
-                                <span
-                                  className={`
-                                    px-2 sm:px-3 py-1 inline-flex
-                                    text-xs sm:text-sm leading-5 font-semibold rounded-full
-                                    ${severidadeProps.className}
-                                  `}
-                                >
-                                  {severidadeProps.label}
-                                </span>
-                              </td>
-                              <td className="block md:table-cell px-4 py-2 text-sm sm:text-base text-slate-600 max-w-[220px] truncate">
-                                <span className="md:hidden font-semibold text-slate-500">
-                                  Descrição:{" "}
-                                </span>
-                                {imp.descricao || "—"}
-                              </td>
-                              <td className="block md:table-cell px-4 py-2 text-sm sm:text-base text-slate-600">
-                                <span className="md:hidden font-semibold text-slate-500">
-                                  Ocorrido em:{" "}
-                                </span>
-                                {formatarData(imp.ocorridoEm)}
-                              </td>
-                              <td className="block md:table-cell px-4 py-2 text-sm sm:text-base">
-                                <span className="md:hidden font-semibold text-slate-500">
-                                  Status:{" "}
-                                </span>
-                                <span
-                                  className={`
-                                    px-2 sm:px-3 py-1 inline-flex
-                                    text-xs sm:text-sm leading-5 font-semibold rounded-full
-                                    ${
-                                      imp.ativo
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : "bg-emerald-100 text-emerald-800"
-                                    }
-                                  `}
-                                >
-                                  {imp.ativo ? "Ativo" : "Finalizado"}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="border border-dashed border-slate-300 rounded-2xl p-6 text-center bg-slate-50/60">
-                      <p className="text-sm font-medium text-slate-700">
-                        {search
-                          ? "Nenhum impedimento encontrado."
-                          : "Nenhum impedimento registrado."}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Os registros aparecerão aqui conforme forem criados.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
+              </div>
+
+              {/* Conteúdo com scroll, altura do card fixa */}
+              <div className="flex-1 p-4 overflow-y-auto">
+                <ImpedimentoDetalhes id={selectedId} />
+              </div>
             </div>
           </section>
         )}
 
+        {/* ============================================= */}
+        {/*                      MAPA                      */}
+        {/* ============================================= */}
         {activeTab === "MAPA" && (
-          <section
-            className="
-              bg-white border border-slate-200 shadow-sm rounded-2xl
-              p-4 sm:p-6 md:p-7
-            "
-          >
-            <div className="mb-4">
-              <h2 className="text-lg sm:text-xl font-semibold text-slate-900">
-                Visualização no mapa
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                Analise a distribuição dos impedimentos utilizando o mapa
-                interativo.
-              </p>
+          <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 space-y-4">
+            {/* SUB-ABAS */}
+            <div className="relative inline-flex bg-slate-100 rounded-full p-1 w-max shadow-inner">
+              <span
+                className={`
+                  absolute inset-y-1 left-1
+                  w-32 rounded-full bg-white shadow-sm
+                  transition-transform duration-300 ease-out
+                  ${
+                    activeMapaTab === "COLABORADORES"
+                      ? "translate-x-0"
+                      : "translate-x-[8.5rem]"
+                  }
+                `}
+              />
+              <button
+                onClick={() => setActiveMapaTab("COLABORADORES")}
+                className={`
+                  relative z-10 w-32 px-4 py-1.5 text-sm font-semibold
+                  ${
+                    activeMapaTab === "COLABORADORES"
+                      ? "text-emerald-600"
+                      : "text-slate-500 hover:text-slate-700"
+                  }
+                `}
+              >
+                Colaboradores
+              </button>
+
+              <button
+                onClick={() => setActiveMapaTab("IMPEDIMENTOS")}
+                className={`
+                  relative z-10 w-32 px-4 py-1.5 text-sm font-semibold
+                  ${
+                    activeMapaTab === "IMPEDIMENTOS"
+                      ? "text-emerald-600"
+                      : "text-slate-500 hover:text-slate-700"
+                  }
+                `}
+              >
+                Impedimentos
+              </button>
             </div>
 
-            <div className="mt-2">
-              <MapaRotaColaborador />
+            {/* MAPA */}
+            <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50">
+              <div className="w-full h-[520px] md:h-[640px]">
+                {activeMapaTab === "COLABORADORES" ? (
+                  <MapaRotaColaborador />
+                ) : (
+                  <MapaImpedimentos
+                    onSelect={(id) => setSelectedId(id)}
+                    selectedId={selectedId}
+                  />
+                )}
+              </div>
             </div>
           </section>
         )}
