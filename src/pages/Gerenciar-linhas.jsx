@@ -1005,21 +1005,7 @@ export default function GerenciarLinhas() {
                               <Pencil className="w-6 h-6" />
                             </button>
 
-                            {/* EXCLUIR ROTA */}
-                            <Trash2
-                              className="w-6 h-6 inline-flex items-center justify-center rounded-full  hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-transparent hover:border-rose-100 transition" 
-                              idRota={rota.idRota}
-                              rotaNome={rota.nome}
-                              onDeleted={() =>
-                                setRotas((prev) =>
-                                  prev.filter((r) =>
-                                    r.idRota === undefined
-                                      ? true
-                                      : r.idRota !== rota.idRota
-                                  )
-                                )
-                              }
-                            />
+                       
 
                             {/* ATIVAR / INATIVAR */}
                             <Toggle
