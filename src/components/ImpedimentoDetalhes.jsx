@@ -129,12 +129,7 @@ export default function ImpedimentoDetalhes({ id }) {
             </span>
           </div>
 
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] text-slate-500">
-              Código do impedimento
-            </span>
-            <span className="font-medium text-slate-800">{data.id || "—"}</span>
-          </div>
+         
 
           {data.status && (
             <div className="flex flex-col gap-0.5">

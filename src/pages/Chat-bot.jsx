@@ -79,9 +79,7 @@ export default function Home() {
       mensagemParaApi = `Quero criar uma rota ${trimmedInput}`;
     } else if (assigningPointToRouteMode) {
       mensagemParaApi = `Coloca o ponto ${trimmedInput}`;
-    } else if (askingNaoEmbarcouMode) {
-      mensagemParaApi = `Quem ainda não embarcou na ${trimmedInput}?`;
-    }
+    } 
 
     resetModes();
 
@@ -272,98 +270,112 @@ export default function Home() {
             items-stretch
           "
         >
+          {/* CARD DO CHAT */}
           <div
             className="
               bg-white border border-slate-200 shadow-sm rounded-2xl
-              flex flex-col
-              h-full
-            "
+    flex flex-col
+    h-[calc(100vh-180px)]    
+    min-h-[520px]           
+    overflow-hidden          
+  "
           >
-            <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h2 className="text-sm sm:text-base font-semibold text-slate-900">
-                  Chat com o Buzzy
-                </h2>
-                <p className="text-[11px] sm:text-xs text-slate-500">
-                  Faça perguntas, peça ações ou siga os fluxos guiados para o
-                  Buzzy executar no TrackPass.
-                </p>
-              </div>
-              <div className="hidden sm:flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full overflow-hidden border border-emerald-100">
-                  <img
-                    src={botIcon}
-                    alt="Buzzy"
-                    className="w-7 h-7 object-cover rounded-full"
-                  />
+            {/* ÁREA QUE ROLA: HEADER + MENSAGENS */}
+            <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+              {/* Header do chat (vai rolar junto com as mensagens) */}
+              <div className=" px-4 sm:px-6 py-4
+    border-b border-slate-100
+    flex items-center justify-between
+    bg-white
+    sticky top-0 z-20">
+                <div>
+                  <h2 className="text-sm sm:text-base font-semibold text-slate-900">
+                    Chat com o Buzzy
+                  </h2>
+                  <p className="text-[11px] sm:text-xs text-slate-500">
+                    Faça perguntas, peça ações ou siga os fluxos guiados para o
+                    Buzzy executar no TrackPass.
+                  </p>
                 </div>
-                <span className="text-[11px] text-slate-500">
-                  Buzzy • Assistente IA
-                </span>
+                <div className="hidden sm:flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full overflow-hidden border border-emerald-100">
+                    <img
+                      src={botIcon}
+                      alt="Buzzy"
+                      className="w-7 h-7 object-cover rounded-full"
+                    />
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    Buzzy • Assistente IA
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-5 py-4 space-y-4 bg-slate-50/70">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex items-start gap-3.5 ${
-                    msg.sender === "user" ? "justify-end" : ""
-                  }`}
-                >
-                  {msg.sender === "ai" && <AiAvatar />}
-
+              {/* Mensagens (parte de baixo da área que rola) */}
+              <div className="px-3 sm:px-5 py-4 space-y-4 bg-slate-50/70 flex-1">
+                {messages.map((msg) => (
                   <div
-                    className={`
-                      max-w-[80%] sm:max-w-[70%] p-3.5 rounded-2xl shadow-sm
-                      text-sm leading-relaxed whitespace-pre-wrap break-words
-                      ${
-                        msg.sender === "user"
-                          ? "bg-emerald-600 text-white ml-auto rounded-br-md"
-                          : "bg-white text-slate-800 rounded-bl-md border border-slate-200"
-                      }
-                    `}
+                    key={msg.id}
+                    className={`flex items-start gap-3.5 ${
+                      msg.sender === "user" ? "justify-end" : ""
+                    }`}
                   >
-                    <p>{msg.text}</p>
+                    {msg.sender === "ai" && <AiAvatar />}
 
-                    {msg.sender === "ai" && (
-                      <div className="flex justify-end gap-3 mt-2 text-[11px] text-slate-500">
-                        <button
-                          onClick={() => handleCopy(msg.text, msg.id)}
-                          className="flex items-center gap-1 hover:text-slate-800 transition-colors"
-                          title="Copiar resposta do Buzzy"
-                          disabled={copiedMessageId === msg.id}
-                        >
-                          {copiedMessageId === msg.id ? (
-                            <>
-                              <Check size={14} /> Copiado
-                            </>
-                          ) : (
-                            <>
-                              <Copy size={14} /> Copiar
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    )}
+                    <div
+                      className={`
+                        max-w-[80%] sm:max-w-[70%] p-3.5 rounded-2xl shadow-sm
+                        text-sm leading-relaxed whitespace-pre-wrap break-words
+                        ${
+                          msg.sender === "user"
+                            ? "bg-emerald-600 text-white ml-auto rounded-br-md"
+                            : "bg-white text-slate-800 rounded-bl-md border border-slate-200"
+                        }
+                      `}
+                    >
+                      <p>{msg.text}</p>
+
+                      {msg.sender === "ai" && (
+                        <div className="flex justify-end gap-3 mt-2 text-[11px] text-slate-500">
+                          <button
+                            onClick={() => handleCopy(msg.text, msg.id)}
+                            className="flex items-center gap-1 hover:text-slate-800 transition-colors"
+                            title="Copiar resposta do Buzzy"
+                            disabled={copiedMessageId === msg.id}
+                          >
+                            {copiedMessageId === msg.id ? (
+                              <>
+                                <Check size={14} /> Copiado
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={14} /> Copiar
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {msg.sender === "user" && <UserAvatar />}
                   </div>
+                ))}
 
-                  {msg.sender === "user" && <UserAvatar />}
-                </div>
-              ))}
-
-              {isAiThinking && (
-                <div className="flex items-start gap-3.5">
-                  <AiAvatar />
-                  <div className="max-w-[80%] sm:max-w-[70%] p-3.5 rounded-2xl shadow-sm bg-white text-slate-500 rounded-bl-md border border-slate-200 animate-pulse text-sm">
-                    Buzzy está pensando...
+                {isAiThinking && (
+                  <div className="flex items-start gap-3.5">
+                    <AiAvatar />
+                    <div className="max-w-[80%] sm:max-w-[70%] p-3.5 rounded-2xl shadow-sm bg-white text-slate-500 rounded-bl-md border border-slate-200 animate-pulse text-sm">
+                      Buzzy está pensando...
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <div ref={chatEndRef} />
+                {/* REF PARA SCROLL AUTOMÁTICO (DENTRO DA ÁREA QUE ROLA) */}
+                <div ref={chatEndRef} />
+              </div>
             </div>
 
+            {/* INPUT FIXO NO RODAPÉ DO CARD (NÃO ROLA) */}
             <div className="border-t border-slate-100 px-3 sm:px-5 py-3 sm:py-4 bg-white rounded-b-2xl">
               <form
                 onSubmit={handleSendMessage}
@@ -420,6 +432,7 @@ export default function Home() {
             </div>
           </div>
 
+          {/* ASIDE DE SUGESTÕES */}
           <aside
             className="
               bg-white border border-slate-200 shadow-sm rounded-2xl
@@ -491,22 +504,7 @@ export default function Home() {
                   >
                     Atribuir ponto à rota
                   </button>
-                  <button
-                    type="button"
-                    onClick={iniciarFluxoNaoEmbarcou}
-                    className="
-                      text-left text-xs sm:text-sm
-                      px-3 py-2
-                      rounded-xl
-                      bg-emerald-50 hover:bg-emerald-100
-                      border border-emerald-100
-                      text-emerald-800
-                      transition-colors
-                      font-semibold
-                    "
-                  >
-                    Quem ainda não embarcou na rota
-                  </button>
+                 
                 </div>
               </div>
 
@@ -569,43 +567,6 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
-              </div>
-
-              <div className="space-y-2.5">
-                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-                  Embarques e presença
-                </p>
-                <div className="grid grid-cols-1 gap-2.5">
-                  {[
-                    "Quais são os embarques inválidos desta semana?",
-                    "Quem ainda não embarcou na rota A do período da manhã em São Joaquim da Barra (3)?",
-                  ].map((texto) => (
-                    <button
-                      key={texto}
-                      type="button"
-                      onClick={() => dispararSugestao(texto)}
-                      className="
-                        text-left text-xs sm:text-sm
-                        px-3 py-2
-                        rounded-xl
-                        bg-slate-50 hover:bg-slate-100
-                        border border-slate-100
-                        text-slate-700
-                        transition-colors
-                      "
-                    >
-                      {texto}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-3">
-                <p className="text-[11px] sm:text-xs text-emerald-900">
-                  Você pode escrever livremente ou usar as sugestões. O Buzzy
-                  interpreta sua mensagem, consulta o TrackPass e retorna os
-                  dados de forma simples e organizada.
-                </p>
               </div>
             </div>
           </aside>
