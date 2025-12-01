@@ -6,7 +6,13 @@
   --tp-track-bg: #F8FAFC;
 }
 
+.Toastify__toast-container {
+  z-index: 9999 !important;
+}
 
+.Toastify__toast {
+  z-index: 9999 !important;
+}
 body {
   margin: 0;
   align-content: center;
