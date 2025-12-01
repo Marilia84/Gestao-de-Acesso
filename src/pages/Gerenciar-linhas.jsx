@@ -7,11 +7,10 @@ import Loading from "../components/Loading";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import RotaInativaIcon from "../assets/rota-inativa.png";
 import Toggle from "../components/Toggle";
-import DeleteRotaButton from "../components/DeleteRotaButton";
 import CadastroCidadeCard from "../components/CadastroCidadeCard";
 import CadastroPontoCard from "../components/CadastroPontoCard";
 import ListaPontosCard from "../components/ListaPontosCard";
-import { Pencil, Trash2, X, Check } from "lucide-react";
+import { Pencil,  X, Check } from "lucide-react";
 
 const normalizarAtivo = (valor) => {
   return (

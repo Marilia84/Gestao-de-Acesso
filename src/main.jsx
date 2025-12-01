@@ -13,7 +13,7 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
     <ConfirmAlert>
-    <App /> {/* O App agora é o ponto central */}
+    <App /> {/* O App agora é o ponto central */}</ConfirmAlert>
       <ToastContainer
         position="top-right"
         autoClose={4000}
@@ -24,7 +24,7 @@ createRoot(document.getElementById("root")).render(
         draggable
         theme="light"
       />
-      </ConfirmAlert>
+      
     </BrowserRouter>
   </StrictMode>
 );
