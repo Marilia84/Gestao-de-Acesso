@@ -11,7 +11,7 @@ import DeleteRotaButton from "../components/DeleteRotaButton";
 import CadastroCidadeCard from "../components/CadastroCidadeCard";
 import CadastroPontoCard from "../components/CadastroPontoCard";
 import ListaPontosCard from "../components/ListaPontosCard";
-import { Pencil, X, Check } from "lucide-react";
+import { Pencil, Trash2, X, Check } from "lucide-react";
 
 const normalizarAtivo = (valor) => {
   return (
@@ -91,7 +91,7 @@ export default function GerenciarLinhas() {
     );
     const idCidade = getIdCidadeFromRota(rota);
     setEditRotaIdCidade(idCidade ? String(idCidade) : "");
-    
+
     setEditRotaModalAberto(true);
   };
 
@@ -105,7 +105,7 @@ export default function GerenciarLinhas() {
     setEditRotaHoraChegada("");
     setEditRotaCapacidade("");
     setEditRotaIdCidade("");
-   
+
   };
 
   const handleSalvarEdicaoRota = async () => {
@@ -149,7 +149,7 @@ export default function GerenciarLinhas() {
       payload.idCidade = Number(editRotaIdCidade);
     }
 
-    
+
 
     try {
       setSalvandoRota(true);
@@ -164,10 +164,10 @@ export default function GerenciarLinhas() {
         prev.map((r) =>
           r.idRota === rotaEditando.idRota
             ? {
-                ...r,
-                ...payload,
-                ...(cidadeObj ? { cidade: cidadeObj } : {}),
-              }
+              ...r,
+              ...payload,
+              ...(cidadeObj ? { cidade: cidadeObj } : {}),
+            }
             : r
         )
       );
@@ -528,8 +528,7 @@ export default function GerenciarLinhas() {
       const data = error.response?.data;
       console.error("Erro ao cadastrar rota:", data || error.message || error);
       toast.error(
-        `Erro ao cadastrar rota.${
-          data?.message ? `\nMensagem: ${data.message}` : ""
+        `Erro ao cadastrar rota.${data?.message ? `\nMensagem: ${data.message}` : ""
         }${data?.error ? `\nDetalhe: ${data.error}` : ""}`
       );
     } finally {
@@ -571,10 +570,9 @@ export default function GerenciarLinhas() {
                   w-24
                   rounded-full bg-white shadow-sm
                   transition-transform duration-300 ease-out
-                  ${
-                    activeTab === "PONTOS"
-                      ? "translate-x-0"
-                      : "translate-x-[6.5rem]"
+                  ${activeTab === "PONTOS"
+                    ? "translate-x-0"
+                    : "translate-x-[6.5rem]"
                   }
                 `}
               />
@@ -588,10 +586,9 @@ export default function GerenciarLinhas() {
                   px-3 py-1.5
                   text-xs sm:text-base font-semibold
                   transition-colors
-                  ${
-                    activeTab === "PONTOS"
-                      ? "text-emerald-600"
-                      : "text-slate-500 hover:text-slate-700"
+                  ${activeTab === "PONTOS"
+                    ? "text-emerald-600"
+                    : "text-slate-500 hover:text-slate-700"
                   }
                 `}
               >
@@ -607,10 +604,9 @@ export default function GerenciarLinhas() {
                   px-3 py-1.5
                   text-xs sm:text-sm font-semibold
                   transition-colors
-                  ${
-                    activeTab === "ROTAS"
-                      ? "text-emerald-700"
-                      : "text-slate-500 hover:text-slate-700"
+                  ${activeTab === "ROTAS"
+                    ? "text-emerald-700"
+                    : "text-slate-500 hover:text-slate-700"
                   }
                 `}
               >
@@ -1006,11 +1002,12 @@ export default function GerenciarLinhas() {
                               className="inline-flex items-center justify-center rounded-full p-1.5 hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 border border-transparent hover:border-emerald-100 transition"
                               title="Editar rota"
                             >
-                              <Pencil className="w-4 h-4" />
+                              <Pencil className="w-6 h-6" />
                             </button>
 
                             {/* EXCLUIR ROTA */}
-                            <DeleteRotaButton
+                            <Trash2
+                              className="w-6 h-6 inline-flex items-center justify-center rounded-full  hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-transparent hover:border-rose-100 transition" 
                               idRota={rota.idRota}
                               rotaNome={rota.nome}
                               onDeleted={() =>
@@ -1049,9 +1046,8 @@ export default function GerenciarLinhas() {
                           <div className="text-xs font-medium text-slate-600">
                             <div className="flex items-center gap-2 min-w-0">
                               <span
-                                className={`w-2 h-2 rounded-full ${
-                                  isAtiva ? "bg-emerald-500" : "bg-slate-400"
-                                }`}
+                                className={`w-2 h-2 rounded-full ${isAtiva ? "bg-emerald-500" : "bg-slate-400"
+                                  }`}
                               />
                               <span className="truncate">
                                 {isAtiva
@@ -1337,7 +1333,7 @@ export default function GerenciarLinhas() {
                   />
                 </div>
 
-               
+
               </div>
 
               <div className="mt-5 flex justify-end gap-2">
