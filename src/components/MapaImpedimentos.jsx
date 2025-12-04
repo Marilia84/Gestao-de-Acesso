@@ -288,9 +288,23 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
     ].join(" ");
   };
 
+  // 🔎 Quando o selectedId mudar (clique na tabela), leva o mapa até o ponto
+  useEffect(() => {
+    if (!mapInstance || !selectedId) return;
+
+    const imp = impedimentos.find((i) => i.id === selectedId);
+    if (!imp) return;
+
+    const lat = parseFloat(imp.latitude);
+    const lng = parseFloat(imp.longitude);
+    if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
+
+    mapInstance.flyTo([lat, lng], 14, { duration: 0.8 });
+  }, [selectedId, mapInstance, impedimentos]);
+
   return (
-    <div className="w-full h-[calc(92vh-180px)] rounded-xl border border-slate-200 bg-white relative overflow-hidden flex flex-col">
-      {/* Cabeçalho (igual vibe do de colaborador) */}
+    <div className="w-full h-full bg-white relative overflow-hidden flex flex-col">
+      {/* Cabeçalho flutuante com filtros */}
       <div className="px-4 pt-3 pb-2 border-b border-slate-200 bg-white/95 backdrop-blur-sm flex flex-wrap gap-3 items-center justify-between z-[10]">
         <div>
           <p className="text-xs font-semibold text-slate-800">
@@ -301,7 +315,7 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
           </p>
         </div>
 
-        {/* Filtros de severidade em chip, estilo parecido */}
+        {/* Filtros de severidade em chip */}
         <div className="flex flex-wrap gap-2 text-[11px] items-center">
           <span className="text-[10px] text-slate-500 uppercase font-semibold tracking-wide">
             Severidade:
@@ -337,9 +351,9 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
         </div>
       </div>
 
-      {/* Corpo: só o mapa (sem painel lateral) */}
+      {/* Corpo: mapa ocupa o restante */}
       <div className="flex-1 relative">
-        {/* Botões de zoom / visão inicial (igual conceito do mapa de colaboradores) */}
+        {/* Botões de zoom / visão inicial */}
         <div className="absolute left-3 bottom-3 z-[1000] flex flex-col gap-1">
           <button
             type="button"
@@ -360,7 +374,7 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
           )}
         </div>
 
-        {/* Legenda de severidade (ALTO, MEDIO, BAIXO) */}
+        {/* Legenda de severidade */}
         <div className="absolute z-[20] top-3 right-3 flex flex-col gap-1 px-3 py-2 rounded-xl bg-white/90 backdrop-blur border border-slate-200 shadow-sm text-[11px] text-slate-600 max-w-[260px]">
           <span className="font-semibold text-[10px] tracking-wide text-slate-500 uppercase">
             Severidade
@@ -384,7 +398,7 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
           </div>
         </div>
 
-        {/* Legenda de tipos (ícones/emoji) */}
+        {/* Legenda de tipos */}
         <div className="absolute z-[20] bottom-3 right-3 flex flex-col gap-1 px-3 py-2 rounded-xl bg-white/90 backdrop-blur border border-slate-200 shadow-sm text-[11px] text-slate-600 max-w-[260px]">
           <span className="font-semibold text-[10px] tracking-wide text-slate-500 uppercase">
             Tipos de impedimento
@@ -466,7 +480,6 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
                 }}
               >
                 <Popup>
-                  {/* Popup com fonte maior */}
                   <div className="text-[13px] md:text-[14px] leading-snug">
                     <p className="font-semibold text-slate-800 flex items-center gap-1.5 text-[15px] md:text-[16px]">
                       <span>{tipoMeta.emoji}</span>
