@@ -2,20 +2,11 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/axios";
 import Loading from "./Loading";
-import {
-  AlertTriangle,
-  Bus,
-  User,
-  Users,
-  Clock,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 export default function ImpedimentoDetalhes({ id }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showColaboradores, setShowColaboradores] = useState(false);
 
   async function loadDetalhe() {
     if (!id) {
@@ -27,7 +18,6 @@ export default function ImpedimentoDetalhes({ id }) {
       setLoading(true);
       const res = await api.get(`/impedimentos/${id}/detalhado`);
       setData(res.data);
-      setShowColaboradores(false); // reseta ao trocar de impedimento
     } catch (err) {
       console.error("Erro ao carregar detalhes:", err);
       setData(null);
@@ -43,7 +33,7 @@ export default function ImpedimentoDetalhes({ id }) {
   if (!id) {
     return (
       <div className="p-4 text-xs text-slate-500 flex items-center gap-2">
-        <AlertTriangle className="w-4 h-4 text-amber-500" />
+        <AlertTriangle className="w-4 h-4 text-slate-500" />
         Selecione um impedimento para visualizar os detalhes.
       </div>
     );
@@ -65,105 +55,103 @@ export default function ImpedimentoDetalhes({ id }) {
     );
   }
 
+  const motivoFmt = data.motivo?.replace(/_/g, " ");
+
   const badgeSeveridade = {
-    ALTA: "bg-red-50 text-red-700 border-red-200",
-    MÉDIA: "bg-amber-50 text-amber-700 border-amber-200",
-    MEDIA: "bg-amber-50 text-amber-700 border-amber-200",
-    BAIXA: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    ALTA: "bg-rose-100 text-rose-800 border-rose-200",
+    MÉDIA: "bg-amber-100 text-amber-800 border-amber-200",
+    MEDIA: "bg-amber-100 text-amber-800 border-amber-200",
+    BAIXA: "bg-emerald-100 text-emerald-800 border-emerald-200",
   };
 
-  const motivoFmt = data.motivo?.replace(/_/g, " ");
   const temColaboradores =
     Array.isArray(data.colaboradores) && data.colaboradores.length > 0;
 
   return (
-    <div className="space-y-4 text-[13px] text-slate-800">
-      {/* BANNER SUPERIOR */}
-      <div className="rounded-xl border border-gray-300  px-3.5 py-3 flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-full bg-white/80 border border-gray-200 flex items-center justify-center">
-            <AlertTriangle className="w-4 h-4 text-gray-600" />
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] uppercase tracking-wide text-gray-600">
-              Impedimento selecionado
-            </span>
-            <span className="text-sm font-semibold text-slate-900">
-              {motivoFmt || "Motivo não informado"}
-            </span>
-            {data.ocorridoEm && (
-              <span className="flex items-center gap-1 text-[11px] text-slate-600 mt-1">
-                <Clock size={13} className="text-slate-500" />
-                {new Date(data.ocorridoEm).toLocaleString("pt-BR")}
-              </span>
-            )}
-          </div>
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden text-[13px] text-slate-800">
+      {/* HEADER */}
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
+        <div className="flex flex-col">
+          <span className="text-[11px] tracking-[0.08em] uppercase text-slate-500">
+            Detalhes do impedimento
+          </span>
+          <span className="text-sm font-semibold text-slate-900">
+            {motivoFmt || "Motivo não informado"}
+          </span>
         </div>
 
-        <span
-          className={`
-            inline-flex items-center justify-center
-            px-3 py-1 text-[11px] font-semibold rounded-full border
-            ${badgeSeveridade[data.severidade] || "bg-slate-50 text-slate-700 border-slate-200"}
-          `}
-        >
-          {data.severidade ? `Severidade ${data.severidade}` : "Severidade —"}
-        </span>
+        <div className="flex items-center gap-2">
+          {data.severidade && (
+            <span
+              className={`inline-flex items-center px-3 py-1 rounded-md border text-[11px] font-semibold ${
+                badgeSeveridade[data.severidade] ||
+                "bg-slate-100 text-slate-800 border-slate-200"
+              }`}
+            >
+              Severidade {data.severidade}
+            </span>
+          )}
+          {data.status && (
+            <span className="inline-flex items-center px-3 py-1 rounded-md border border-slate-200 bg-white text-[11px] font-medium text-slate-700">
+              {data.status}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* BLOCO DE INFORMAÇÕES PRINCIPAIS */}
-      <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-3 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* BLOCO PRINCIPAL – CAMPOS */}
+      <div className="px-4 py-4 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] text-slate-500">Rota</span>
-            <span className="font-medium text-slate-800 flex items-center gap-1.5">
-              <Bus size={15} className="text-slate-500" />
+            <span className="text-[11px] uppercase tracking-[0.08em] text-slate-500">
+              Rota
+            </span>
+            <span className="text-[13px] font-medium text-slate-900">
               {data.rotaNome || "—"}
             </span>
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] text-slate-500">Motorista</span>
-            <span className="font-medium text-slate-800">
+            <span className="text-[11px] uppercase tracking-[0.08em] text-slate-500">
+              Motorista
+            </span>
+            <span className="text-[13px] font-medium text-slate-900">
               {data.motoristaNome || "—"}
             </span>
           </div>
 
-         
-
-          {data.status && (
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[11px] text-slate-500">Status</span>
-              <span className="inline-flex w-max px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-white border border-slate-200 text-slate-700">
-                {data.status}
-              </span>
-            </div>
-          )}
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[11px] uppercase tracking-[0.08em] text-slate-500">
+              Data / hora do ocorrido
+            </span>
+            <span className="text-[13px] text-slate-800">
+              {data.ocorridoEm
+                ? new Date(data.ocorridoEm).toLocaleString("pt-BR")
+                : "—"}
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* DESCRIÇÃO */}
-      {data.descricao && (
-        <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-3">
-          <span className="text-[11px] text-slate-500">Descrição</span>
-          <p className="text-slate-700 mt-1.5 leading-relaxed text-[13px]">
-            {data.descricao}
-          </p>
-        </div>
-      )}
+        {/* DESCRIÇÃO */}
+        {data.descricao && (
+          <div className="border border-slate-200 rounded-lg bg-slate-50 px-3 py-2.5">
+            <span className="text-[11px] uppercase tracking-[0.08em] text-slate-500">
+              Descrição
+            </span>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-slate-800">
+              {data.descricao}
+            </p>
+          </div>
+        )}
 
-      {/* COLABORADORES - COM BOTÃO PARA VER LISTA */}
-      <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
-              <Users size={16} className="text-emerald-600" />
-            </div>
+        {/* COLABORADORES – TABELA ESTILO INVOICE */}
+        <div className="mt-2">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-slate-900">
+              <span className="text-[11px] uppercase tracking-[0.08em] text-slate-500">
                 Colaboradores afetados
               </span>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[12px] text-slate-600">
                 {temColaboradores
                   ? `${data.colaboradores.length} colaborador(es) vinculados à rota`
                   : "Nenhum colaborador vinculado a este impedimento."}
@@ -172,60 +160,38 @@ export default function ImpedimentoDetalhes({ id }) {
           </div>
 
           {temColaboradores && (
-            <button
-              type="button"
-              onClick={() => setShowColaboradores((prev) => !prev)}
-              className="
-                inline-flex items-center gap-1.5
-                px-3 py-1 rounded-full text-[11px] font-medium
-                border border-slate-200 bg-slate-50 text-slate-700
-                hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50
-                transition-colors
-              "
-            >
-              {showColaboradores ? "Ocultar lista" : "Ver lista"}
-              {showColaboradores ? (
-                <ChevronUp size={14} />
-              ) : (
-                <ChevronDown size={14} />
-              )}
-            </button>
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              {/* Cabeçalho da tabela */}
+              <div className="grid grid-cols-[75px,1.6fr,1fr,1.2fr] bg-slate-50 px-4 py-2 text-[11px] font-semibold text-slate-500">
+                <span>CL</span>
+                <span>Colaborador</span>
+                <span>Matrícula</span>
+              </div>
+
+              {/* Linhas */}
+              <div className="bg-white">
+                {data.colaboradores.map((c, index) => (
+                  <div
+                    key={c.idColaborador || c.id || index}
+                    className={`grid grid-cols-[75px,1.6fr,1fr,1.2fr] px-4 py-2.5 text-[13px] text-slate-800 ${
+                      index % 2 === 0 ? "bg-white" : "bg-slate-50/60"
+                    } hover:bg-slate-100 transition-colors`}
+                  >
+                    <span className="text-[12px] text-slate-500">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="font-medium truncate">
+                      {c.nome || "—"}
+                    </span>
+                    <span className="text-[12px] text-slate-700">
+                      {c.matricula || "—"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
-
-        {temColaboradores && showColaboradores && (
-          <ul className="space-y-2 mt-3">
-            {data.colaboradores.map((c) => (
-              <li
-                key={c.idColaborador || c.id}
-                className="
-                  bg-slate-50 border border-slate-200 rounded-lg
-                  px-3 py-2 flex justify-between items-center
-                "
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center">
-                    <User size={14} className="text-slate-500" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-medium text-slate-800">
-                      {c.nome}
-                    </span>
-                    {c.matricula && (
-                      <span className="text-[11px] text-slate-500">
-                        Matrícula: {c.matricula}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {c.cargo && (
-                  <span className="text-[11px] text-slate-500">{c.cargo}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
     </div>
   );

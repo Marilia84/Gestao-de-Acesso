@@ -1,23 +1,29 @@
+// src/components/MapaRotaColaborador.jsx
 import { useEffect, useMemo, useState } from "react";
+import ReactDOMServer from "react-dom/server";
 import {
   MapContainer,
   TileLayer,
   Marker,
   Popup,
+  Tooltip,
   useMap,
+  LayersControl,
+  ScaleControl,
 } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import api from "../api/axios";
 import Loading from "./Loading";
 import "leaflet/dist/leaflet.css";
+import { UsersRound } from "lucide-react";
+
+const { BaseLayer, Overlay } = LayersControl;
 
 const LEGEND_ITEMS = [
-  { cor: "#22c55e", faixa: "0 – 2" },
-  { cor: "#a3e635", faixa: "3 – 4" },
-  { cor: "#facc15", faixa: "5 – 6" },
-  { cor: "#fb923c", faixa: "7 – 10" },
-  { cor: "#f97373", faixa: "10+" },
+  { cor: "#53ADDD", faixa: "1 – 5" },
+  { cor: "#21BE67", faixa: "6 – 9" },
+  { cor: "#FF5E5E", faixa: "10+" },
 ];
 
 function MapController({ action, pontos, defaultCenter, defaultZoom }) {
@@ -68,6 +74,7 @@ export default function MapaRotaColaborador() {
   const [rotaSelecionada, setRotaSelecionada] = useState("");
   const [periodoSelecionado, setPeriodoSelecionado] = useState("");
 
+  // carrega rotas para o filtro
   useEffect(() => {
     const carregarRotas = async () => {
       try {
@@ -81,6 +88,7 @@ export default function MapaRotaColaborador() {
     carregarRotas();
   }, []);
 
+  // carrega pontos do mapa
   useEffect(() => {
     const carregarMapa = async () => {
       try {
@@ -178,10 +186,9 @@ export default function MapaRotaColaborador() {
   }, [pontos]);
 
   const getColorByQuantidade = (qtd) => {
-    if (qtd <= 2) return "#22c55e";
-    if (qtd <= 4) return "#a3e635";
-    if (qtd <= 6) return "#facc15";
-    if (qtd <= 10) return "#fb923c";
+    if (qtd <= 5) return "#53ADDD";
+    if (qtd <= 6) return "#21BE67";
+    if (qtd <= 10) return "#FF5E5E";
     return "#f97373";
   };
 
@@ -192,79 +199,129 @@ export default function MapaRotaColaborador() {
     if (qtd <= 10) return 46;
     return 56;
   };
-
   const getMarkerIcon = (qtd, isSelected) => {
-    const color = getColorByQuantidade(qtd);
-    const size = getBubbleSize(qtd);
-    const borderColor = color;
-    const shadow =
-      "0 0 0 1px rgba(148,163,184,0.35), 0 10px 22px rgba(15,23,42,0.2)";
-    const background = `${color}33`;
+  const color = getColorByQuantidade(qtd);
+  const iconSvg = ReactDOMServer.renderToStaticMarkup(
+    <UsersRound size={14} strokeWidth={2} />
+  );
 
-    return L.divIcon({
-      className: "",
-      html: `
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="
+        position: relative;
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: ${isSelected ? "scale(1.15)" : "scale(1)"};
+        transition: transform 160ms ease-out;
+      ">
+        <!-- GOTA -->
         <div style="
-          width:${size}px;
-          height:${size}px;
-          border-radius:999px;
-          background:${background};
-          border:2px solid ${borderColor};
+          width: 100%;
+          height: 100%;
+          background: ${color};
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          box-shadow: 0 4px 10px rgba(0,0,0,0.2);
           display:flex;
           align-items:center;
           justify-content:center;
-          font-size:11px;
-          font-weight:600;
-          color:#0f172a;
-          box-shadow:${shadow};
-          backdrop-filter: blur(2px);
-          opacity:${isSelected ? 1 : 0.9};
-          transform:${isSelected ? "scale(1.05)" : "scale(1)"};
-          transition:transform 150ms ease-out, opacity 150ms ease-out;
+          position: relative;
         ">
-          ${qtd}
+          <!-- Conteúdo dentro da gota -->
+          <div style="
+            transform: rotate(45deg);
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            color:#fff;
+            font-weight:700;
+            font-size:12px;
+            line-height:1;
+          ">
+            <div style="width:14px; height:14px; margin-bottom:2px;">${iconSvg}</div>
+            ${qtd}
+          </div>
         </div>
-      `,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-    });
-  };
+
+        <!-- PONTA da gota -->
+        <div style="
+          position:absolute;
+          bottom:-6px;
+          width: 0;
+          height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-top: 8px solid ${color};
+          filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+        "></div>
+      </div>
+    `,
+    iconSize: [42, 42],
+    iconAnchor: [21, 46],  // A gota se ancora exatamente na ponta
+  });
+};
+
 
   const createClusterCustomIcon = (cluster) => {
-    const count = cluster.getChildCount();
-    const color = getColorByQuantidade(count);
+  const count = cluster.getChildCount();
+  const color = getColorByQuantidade(count);
+  const baseSize =
+    count < 10 ? 40 :
+    count < 50 ? 46 :
+    count < 100 ? 50 : 52;
 
-    const size = getBubbleSize(count) + 8;
-    const shadow =
-      "0 0 0 1px rgba(148,163,184,0.35), 0 10px 22px rgba(15,23,42,0.2)";
-    const background = `${color}33`;
+  const outerSize = baseSize;
+  const innerSize = baseSize - 6;
 
-    return L.divIcon({
-      className: "",
-      html: `
+  const shadow =
+    "0 10px 20px rgba(15,23,42,0.25), 0 0 0 1px rgba(148,163,184,0.45)";
+
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="
+        position: relative;
+        width: ${outerSize}px;
+        height: ${outerSize}px;
+        border-radius: 999px;
+        background: radial-gradient(circle at 30% 20%, #ffffff, ${color});
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: ${shadow};
+        overflow: hidden;
+      ">
         <div style="
-          width:${size}px;
-          height:${size}px;
-          border-radius:999px;
-          background:${background};
-          border:2px solid ${color};
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          font-size:12px;
-          font-weight:700;
-          color:#0f172a;
-          box-shadow:${shadow};
-          backdrop-filter: blur(2px);
-          opacity:0.96;
+          width: ${innerSize}px;
+          height: ${innerSize}px;
+          border-radius: 999px;
+          background: #f9fafb;
+          border: 2px solid ${color};
+          display: flex;
+          align-items: center;
+          justify-content: center;
         ">
-          ${count}
+          <span style="
+            font-size: 13px;
+            font-weight: 800;
+            color: #0f172a;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          ">
+            ${count}
+          </span>
         </div>
-      `,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-    });
-  };
+      </div>
+    `,
+    iconSize: [outerSize, outerSize],
+    iconAnchor: [outerSize / 2, outerSize / 2],
+  });
+};
+
 
   const handleResetView = () => {
     setSelectedPontoId(null);
@@ -288,9 +345,10 @@ export default function MapaRotaColaborador() {
     setSelectedPontoId(null);
   };
 
+  // ESTADOS DE LOADING / ERRO: preenchem todo espaço do pai
   if (loadingMapa) {
     return (
-      <div className="w-full h-[48vh] md:h-[56vh] lg:h-[60vh] flex items-center justify-center bg-slate-50 rounded-xl border border-slate-200">
+      <div className="w-full h-full flex items-center justify-center bg-slate-50">
         <Loading size={120} />
       </div>
     );
@@ -298,7 +356,7 @@ export default function MapaRotaColaborador() {
 
   if (errorMapa) {
     return (
-      <div className="w-full h-[48vh] md:h-[56vh] lg:h-[60vh] flex items-center justify-center bg-slate-50 rounded-xl border border-slate-200">
+      <div className="w-full h-full flex items-center justify-center bg-slate-50">
         <p className="text-sm text-red-500 text-center px-4 whitespace-pre-line">
           {errorMapa}
         </p>
@@ -307,18 +365,16 @@ export default function MapaRotaColaborador() {
   }
 
   return (
-    <div className="w-full h-[calc(92vh-180px)] rounded-xl border border-slate-200 bg-white relative overflow-hidden flex flex-col">
+    <div className="w-full h-full bg-white relative overflow-hidden flex flex-col">
+      {/* HEADER DO MAPA */}
       <div className="px-4 pt-3 pb-2 border-b border-slate-200 bg-white/95 backdrop-blur-sm flex flex-wrap gap-3 items-center justify-between z-[10]">
         <div>
-          <p className="text-xs font-semibold text-slate-800">
+          <p className="text-2xl font-semibold text-slate-800">
             Mapa de Colaboradores por Ponto
-          </p>
-          <p className="text-[11px] text-slate-500">
-            Use os filtros para refinar a visualização por rota e período.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2 text-[11px] items-center">
+        <div className="flex flex-wrap gap-2 text-[16px] items-center">
           <select
             className="border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             value={rotaSelecionada}
@@ -347,11 +403,11 @@ export default function MapaRotaColaborador() {
             type="button"
             onClick={handleLimparFiltros}
             disabled={!rotaSelecionada && !periodoSelecionado}
-            className={`text-[13px] px-2.5 py-1 rounded-full border transition 
+            className={`text-[16px] px-2.5 py-1 rounded-lg border transition 
               ${
                 !rotaSelecionada && !periodoSelecionado
                   ? "border-slate-200 text-slate-300 cursor-default"
-                  : "border-emerald-500/60 text-emerald-700 hover:bg-emerald-50"
+                  : "border-emerald-500/60 text-emerald-700 hover:bg-emerald-600 hover:text-white"
               }`}
           >
             Limpar filtros
@@ -359,13 +415,16 @@ export default function MapaRotaColaborador() {
         </div>
       </div>
 
+      {/* CORPO: MAPA + PAINEL LATERAL */}
       <div className="flex-1 flex flex-col md:flex-row">
+        {/* MAPA */}
         <div className="relative flex-1">
-          <div className="absolute left-3 bottom-3 z-[1000] flex flex-col gap-1">
+          {/* botões de ação no canto inferior direito */}
+          <div className="absolute right-3 bottom-8 z-[1000] flex flex-col gap-3">
             <button
               type="button"
               onClick={handleResetView}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-white/95 border border-slate-200 shadow-sm hover:bg-slate-50 transition"
+              className="text-[16px] px-2.5 py-1 rounded-lg bg-white/95 border border-slate-200 shadow-sm hover:bg-slate-50 transition"
             >
               Visão inicial
             </button>
@@ -374,14 +433,26 @@ export default function MapaRotaColaborador() {
               <button
                 type="button"
                 onClick={handleZoomToAllPoints}
-                className="text-[11px] px-2.5 py-1 rounded-full bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 transition"
+                className="text-[16px] px-2.5 py-1 rounded-lg bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 transition"
               >
                 Enquadrar pontos
               </button>
             )}
           </div>
 
-          {pontos.length === 0 && !loadingMapa && !errorMapa && (
+          {/* badge flutuante com resumo rápido */}
+          {stats && (
+            <div className="absolute right-16 top-3 z-[900] bg-white/95 border border-slate-200 rounded-full px-3 py-1.5 shadow-sm text-[13px] text-slate-600 flex items-center gap-3">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-xl" />
+                {stats.totalPontos} pontos
+              </span>
+              <span className="text-slate-300">-</span>
+              <span>{stats.totalColabs} colaboradores</span>
+            </div>
+          )}
+
+          {pontos.length === 0 && (
             <div className="absolute left-4 top-4 z-[900] bg-white/95 border border-slate-200 rounded-lg px-3 py-2 shadow text-[11px] text-slate-500 max-w-xs">
               Nenhum ponto encontrado com os filtros atuais. Ajuste os filtros
               ou clique em{" "}
@@ -393,8 +464,11 @@ export default function MapaRotaColaborador() {
           <MapContainer
             center={defaultCenter}
             zoom={defaultZoom}
+            minZoom={3}
+            maxZoom={18}
             style={{ width: "100%", height: "100%" }}
           >
+            {/* controla flyTo / bounds */}
             <MapController
               action={mapAction}
               pontos={pontos}
@@ -402,173 +476,205 @@ export default function MapaRotaColaborador() {
               defaultZoom={defaultZoom}
             />
 
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-              attribution="&copy; OpenStreetMap &copy; CartoDB"
-            />
+            {/* escala no canto */}
+            <ScaleControl position="bottomleft" />
 
-            <MarkerClusterGroup
-              chunkedLoading
-              iconCreateFunction={createClusterCustomIcon}
-            >
-              {pontos.map((ponto) => {
-                const isSelected = ponto.idPonto === selectedPontoId;
-                return (
-                  <Marker
-                    key={ponto.idPonto}
-                    position={[ponto.latitude, ponto.longitude]}
-                    icon={getMarkerIcon(
-                      ponto.quantidadeColaboradores,
-                      isSelected
-                    )}
-                    eventHandlers={{
-                      click: () => handleFocusPonto(ponto),
-                    }}
-                  >
-                    <Popup>
-                      <div className="space-y-1">
-                        <p className="font-semibold text-slate-800 text-sm">
-                          {ponto.nome || "Ponto sem nome"}
-                        </p>
-                        <p className="text-xs text-slate-600">
-                          Colaboradores neste ponto:{" "}
-                          <span className="font-semibold">
-                            {ponto.quantidadeColaboradores}
+            {/* controle de camadas e estilo do mapa */}
+            <LayersControl position="topright">
+              {/* Mapa claro padrão */}
+              <BaseLayer checked name="Mapa claro (OSM)">
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution="&copy; OpenStreetMap contributors"
+                />
+              </BaseLayer>
+
+              {/* Mapa estilo Carto Voyager */}
+              <BaseLayer name="Mapa Voyager (Carto)">
+                <TileLayer
+                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                  attribution="&copy; OpenStreetMap &copy; CartoDB"
+                />
+              </BaseLayer>
+
+              {/* overlay dos pontos */}
+              <Overlay checked name="Colaboradores por ponto">
+                <MarkerClusterGroup
+                  chunkedLoading
+                  iconCreateFunction={createClusterCustomIcon}
+                >
+                  {pontos.map((ponto) => {
+                    const isSelected = ponto.idPonto === selectedPontoId;
+                    return (
+                      <Marker
+                        key={ponto.idPonto}
+                        position={[ponto.latitude, ponto.longitude]}
+                        icon={getMarkerIcon(
+                          ponto.quantidadeColaboradores,
+                          isSelected
+                        )}
+                        eventHandlers={{
+                          click: () => handleFocusPonto(ponto),
+                        }}
+                      >
+                        <Tooltip
+                          direction="top"
+                          offset={[0, -4]}
+                          opacity={0.9}
+                        >
+                          <span className="font-semibold text-[11px]">
+                            {ponto.nome || "Ponto sem nome"}
                           </span>
-                        </p>
-                        <p className="text-[11px] text-slate-400">
-                          Lat: {ponto.latitude.toFixed(5)} | Lng:{" "}
-                          {ponto.longitude.toFixed(5)}
-                        </p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
-            </MarkerClusterGroup>
+                          <br />
+                          <span className="text-[10px]">
+                            {ponto.quantidadeColaboradores} colaborador(es)
+                          </span>
+                        </Tooltip>
+                        <Popup>
+                          <div className="space-y-1">
+                            <p className="font-semibold text-slate-800 text-sm">
+                              {ponto.nome || "Ponto sem nome"}
+                            </p>
+                            <p className="text-xs text-slate-600">
+                              Colaboradores neste ponto:{" "}
+                              <span className="font-semibold">
+                                {ponto.quantidadeColaboradores}
+                              </span>
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              Lat: {ponto.latitude.toFixed(5)} | Lng:{" "}
+                              {ponto.longitude.toFixed(5)}
+                            </p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    );
+                  })}
+                </MarkerClusterGroup>
+              </Overlay>
+            </LayersControl>
           </MapContainer>
         </div>
 
-        <div className="w-full md:w-72 border-t md:border-t-0 md:border-l border-slate-200 bg-white/95 backdrop-blur-sm px-4 py-3 flex flex-col gap-3">
+        {/* PAINEL LATERAL */}
+        <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-slate-200 bg-white/95 backdrop-blur-sm px-4 py-3 flex flex-col gap-3">
+          {/* CART VISÃO GERAL */}
           {pontos.length > 0 && stats && (
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm px-3 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">
-                Visão Geral
-              </p>
-              <div className="flex gap-4 text-[11px] mb-3">
-                <div>
-                  <p className="text-slate-400">Pontos</p>
-                  <p className="font-semibold text-slate-800">
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm px-3 py-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Visão Geral
+                </p>
+                <span className="text-[10px] text-slate-400">
+                  Atualizado em tempo real
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 text-[11px]">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-slate-400">Pontos</span>
+                  <span className="text-sm font-semibold text-slate-900">
                     {stats.totalPontos}
-                  </p>
+                  </span>
                 </div>
-                <div>
-                  <p className="text-slate-400">Colaboradores</p>
-                  <p className="font-semibold text-slate-800">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-slate-400">Colaboradores</span>
+                  <span className="text-sm font-semibold text-slate-900">
                     {stats.totalColabs}
-                  </p>
+                  </span>
                 </div>
-                <div>
-                  <p className="text-slate-400">Máx. por ponto</p>
-                  <p className="font-semibold text-slate-800">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-slate-400">Máx. por ponto</span>
+                  <span className="text-sm font-semibold text-slate-900">
                     {stats.maxColab}
-                  </p>
+                  </span>
                 </div>
               </div>
 
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">
-                Top pontos com mais colaboradores
-              </p>
-              <div className="space-y-1 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
-                {topPontos.map((p, index) => {
-                  const isSelected = p.idPonto === selectedPontoId;
-                  const color = getColorByQuantidade(
-                    p.quantidadeColaboradores || 0
-                  );
-                  const larguraBarra =
-                    stats && stats.maxColab
-                      ? Math.max(
-                          8,
-                          (p.quantidadeColaboradores / stats.maxColab) * 100
-                        )
-                      : 0;
-
-                  return (
-                    <button
-                      key={p.idPonto}
-                      type="button"
-                      onClick={() => handleFocusPonto(p)}
-                      className={`w-full text-left rounded-lg px-2 py-1.5 text-[11px] transition ${
-                        isSelected
-                          ? "bg-emerald-50 border border-emerald-300 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
-                          : "hover:bg-slate-50 border border-transparent"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-0.5">
-                        <span className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-semibold text-slate-400">
-                            #{index + 1}
-                          </span>
-                          <span className="font-medium text-slate-800 truncate">
-                            {p.nome || "Ponto sem nome"}
-                          </span>
-                        </span>
-                        <span className="font-semibold text-slate-800">
-                          {p.quantidadeColaboradores}
-                        </span>
-                      </div>
-                      <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${larguraBarra}%`,
-                            backgroundColor: color,
-                          }}
-                        />
-                      </div>
-                    </button>
-                  );
-                })}
-
-                {topPontos.length === 0 && (
-                  <p className="text-[11px] text-slate-400">
-                    Nenhum ponto encontrado com os filtros atuais.
-                  </p>
-                )}
+              {/* mini barra de distribuição geral */}
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-500">
+                  Distribuição aproximada por faixa
+                </span>
+                <div className="flex gap-1 h-1.5">
+                  {LEGEND_ITEMS.map((item) => (
+                    <div
+                      key={item.faixa}
+                      className="flex-1 rounded-full"
+                      style={{ backgroundColor: item.cor, opacity: 0.9 }}
+                    />
+                  ))}
+                </div>
+                <div className="flex justify-between text-[9px] text-slate-400">
+                  {LEGEND_ITEMS.map((item) => (
+                    <span key={item.faixa}>{item.faixa}</span>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
-          <div className="rounded-xl border border-slate-200 bg-white shadow-sm px-3 py-3 text-[11px]">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <p className="font-semibold text-slate-800">Legenda</p>
-              {stats && (
-                <span className="text-[10px] text-slate-400">
-                  {stats.totalPontos} pts · {stats.totalColabs} colabs
-                </span>
-              )}
-            </div>
-
-            <p className="text-[10px] text-slate-500 mb-1">
-              Faixas de colaboradores por ponto
+          {/* TOP PONTOS */}
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm px-3 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">
+              Top pontos com mais colaboradores
             </p>
+            <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1 custom-scrollbar">
+              {topPontos.map((p, index) => {
+                const isSelected = p.idPonto === selectedPontoId;
+                const color = getColorByQuantidade(
+                  p.quantidadeColaboradores || 0
+                );
+                const larguraBarra =
+                  stats && stats.maxColab
+                    ? Math.max(
+                        8,
+                        (p.quantidadeColaboradores / stats.maxColab) * 100
+                      )
+                    : 0;
 
-            <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden flex">
-              {LEGEND_ITEMS.map((item) => (
-                <div
-                  key={item.faixa}
-                  className="flex-1 h-full"
-                  style={{ backgroundColor: item.cor }}
-                />
-              ))}
-            </div>
+                return (
+                  <button
+                    key={p.idPonto}
+                    type="button"
+                    onClick={() => handleFocusPonto(p)}
+                    className={`w-full text-left rounded-xl px-2 py-1.5 text-[11px] transition ${
+                      isSelected
+                        ? "bg-emerald-50 border border-emerald-300 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
+                        : "hover:bg-slate-50 border border-transparent"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-semibold text-slate-400">
+                          #{index + 1}
+                        </span>
+                        <span className="font-medium text-slate-800 truncate">
+                          {p.nome || "Ponto sem nome"}
+                        </span>
+                      </span>
+                      <span className="font-semibold text-slate-800">
+                        {p.quantidadeColaboradores}
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${larguraBarra}%`,
+                          backgroundColor: color,
+                        }}
+                      />
+                    </div>
+                  </button>
+                );
+              })}
 
-            <div className="mt-1.5 flex justify-between text-[9px] text-slate-500">
-              {LEGEND_ITEMS.map((item) => (
-                <span key={item.faixa} className="text-center flex-1">
-                  {item.faixa}
-                </span>
-              ))}
+              {topPontos.length === 0 && (
+                <p className="text-[11px] text-slate-400">
+                  Nenhum ponto encontrado com os filtros atuais.
+                </p>
+              )}
             </div>
           </div>
         </div>

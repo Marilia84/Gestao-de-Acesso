@@ -1,10 +1,24 @@
-// src/components/MapaImpedimentos.jsx
 import React, { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMap,
+  LayersControl,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { AlertTriangle } from "lucide-react";
+import {
+  AlertTriangle,
+  Bus,
+  Hospital,
+  TriangleAlert,
+  Construction,
+  AlertOctagon,
+} from "lucide-react";
 
+import ReactDOMServer from "react-dom/server";
 import api from "../api/axios";
 
 // --- FIX DO ÍCONE PADRÃO DO LEAFLET (fallback) ---
@@ -19,103 +33,126 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-const centerFallback = [-23.5505, -46.6333]; // São Paulo como centro padrão
+const centerFallback = [-23.5505, -46.6333]; // São Paulo
 const defaultZoom = 5;
 
-// === NORMALIZAÇÃO DE SEVERIDADE (vários valores -> ALTO / MEDIO / BAIXO) ===
-const SEVERITY_MAP = {
-  CRITICO: "ALTO",
-  ALTA: "ALTO",
-  ALTO: "ALTO",
-
-  MEDIA: "MEDIO",
-  MEDIO: "MEDIO",
-
-  BAIXA: "BAIXO",
-  BAIXO: "BAIXO",
-};
-
-// === CONFIG DE SEVERIDADE (cores/labels) ===
 const SEVERITY_CONFIG = {
   ALTO: {
-    color: "#F97316", // laranja
+    color: "#FF5E5E", 
+    iconColor: "#FFFFFF", 
     label: "Alto",
   },
   MEDIO: {
-    color: "#EAB308", // amarelo
+    color: "#F2CB52", 
+    iconColor: "#7C2D12", 
     label: "Médio",
   },
   BAIXO: {
-    color: "#22C55E", // verde
+    color: "#53ADDD", 
+    iconColor: "#FFFFFF", 
     label: "Baixo",
   },
   DEFAULT: {
-    color: "#0EA5E9", // azul
-    label: "Padrão",
+    color: "#F2CB52",
+    iconColor: "#111827",
+    label: "Indefinido",
   },
 };
 
-function getSeverityKey(severidade) {
-  if (!severidade) return null;
-  return severidade.toString().trim().toUpperCase();
-}
-
-// ===== TIPOS DE IMPEDIMENTO -> EMOJI E LABEL =====
-const TIPO_EMOJI_CONFIG = {
+// ===== TIPOS DE IMPEDIMENTO -> COMPONENTE LUCIDE + EMOJI + LABEL =====
+const TIPO_META_CONFIG = {
   ACIDENTE: {
     emoji: "💥",
+    icon: TriangleAlert,
     label: "Acidente / Colisão",
   },
   ONIBUS: {
     emoji: "🚌",
+    icon: Bus,
     label: "Veículo / Ônibus",
   },
   SAUDE: {
     emoji: "🚑",
+    icon: Hospital,
     label: "Saúde / Emergência",
   },
   OBRA: {
     emoji: "🚧",
+    icon: Construction,
     label: "Obra / Manutenção",
   },
   OUTRO: {
     emoji: "⚠️",
+    icon: AlertOctagon,
     label: "Outro tipo de impedimento",
   },
 };
 
+// Remove acentos
+function normalizeString(value) {
+  return value
+    .toString()
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+// Decide o nível de severidade independente do formato que vier do backend
+function getSeverityLevel(severidade) {
+  if (!severidade) return null;
+
+  const s = normalizeString(severidade);
+
+  if (
+    s.includes("CRITICO") ||
+    s.includes("CRITICA") ||
+    s.includes("ALTO") ||
+    s.includes("ALTA") ||
+    s === "3"
+  ) {
+    return "ALTO";
+  }
+
+  if (s.includes("MEDIO") || s.includes("MEDIA") || s === "2") {
+    return "MEDIO";
+  }
+
+  if (s.includes("BAIXO") || s.includes("BAIXA") || s === "1") {
+    return "BAIXO";
+  }
+
+  return null;
+}
+
 function normalizarTipo(imp) {
   const base = imp?.tipo || imp?.motivo || imp?.descricao || "";
-  const t = base.toString().toUpperCase();
+  const t = normalizeString(base);
 
   if (
     t.includes("ACIDENTE") ||
     t.includes("COLISAO") ||
-    t.includes("COLISÃO") ||
     t.includes("BATIDA")
   ) {
     return "ACIDENTE";
   }
 
   if (
-    t.includes("ÔNIBUS") ||
     t.includes("ONIBUS") ||
     t.includes("VEICULO") ||
-    t.includes("VEÍCULO") ||
-    t.includes("TRANSPORTE")
+    t.includes("TRANSPORTE") ||
+    t.includes("QUEBRA") ||
+    t.includes("PANE")
   ) {
     return "ONIBUS";
   }
 
   if (
     t.includes("SAUDE") ||
-    t.includes("SAÚDE") ||
     t.includes("MEDICO") ||
-    t.includes("MÉDICO") ||
     t.includes("URGENCIA") ||
-    t.includes("URGÊNCIA") ||
     t.includes("EMERGENCIA") ||
-    t.includes("EMERGÊNCIA")
+    t.includes("SOCORRO")
   ) {
     return "SAUDE";
   }
@@ -123,9 +160,7 @@ function normalizarTipo(imp) {
   if (
     t.includes("OBRA") ||
     t.includes("MANUTENCAO") ||
-    t.includes("MANUTENÇÃO") ||
-    t.includes("INTERDICAO") ||
-    t.includes("INTERDIÇÃO")
+    t.includes("INTERDICAO")
   ) {
     return "OBRA";
   }
@@ -135,46 +170,115 @@ function normalizarTipo(imp) {
 
 function getTipoMeta(imp) {
   const key = normalizarTipo(imp);
-  return TIPO_EMOJI_CONFIG[key] || TIPO_EMOJI_CONFIG.OUTRO;
+  return TIPO_META_CONFIG[key] || TIPO_META_CONFIG.OUTRO;
 }
 
-// 🔥 Cria ícone de marker em SVG MAIOR, com cor (severidade) e emoji (tipo)
-function createMarkerIcon(color, emoji) {
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="52" height="72" viewBox="0 0 24 24">
-      <defs>
-        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="1.8" stdDeviation="1.8" flood-color="rgba(15,23,42,0.45)" />
-        </filter>
-      </defs>
-      <path filter="url(#shadow)" fill="${color}" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-      <circle cx="12" cy="9" r="3.7" fill="white"/>
-      <text x="12" y="10.2" text-anchor="middle" font-size="10.5" dominant-baseline="middle">
-        ${emoji || ""}
-      </text>
-    </svg>
+// Cria ícone de marker como DIV, com cor (severidade) e SVG do Lucide (via ReactDOMServer)
+function createMarkerIcon(bgColor, IconComponent, iconColor) {
+  const svgString = ReactDOMServer.renderToString(
+    <IconComponent color={iconColor || "#FFFFFF"} size={20} strokeWidth={2} />
+  );
+
+  const html = `
+    <div
+      class="tp-marker"
+      style="
+        background:${bgColor};
+        border-radius:999px;
+        width:34px;
+        height:34px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 8px 14px rgba(15,23,42,0.35);
+        border:2px solid #FFFFFF;
+        transform:translateY(-4px);
+      "
+    >
+      ${svgString}
+    </div>
   `;
 
-  const encoded = encodeURIComponent(svg.trim());
-
-  return L.icon({
-    iconUrl: `data:image/svg+xml,${encoded}`,
-    iconSize: [54, 70],
-    iconAnchor: [22, 58],
-    popupAnchor: [0, -54],
-    shadowUrl: markerShadow,
-    shadowSize: [50, 50],
-    shadowAnchor: [16, 48],
+  return L.divIcon({
+    html,
+    className: "",
+    iconSize: [34, 34],
+    iconAnchor: [17, 32],
+    popupAnchor: [0, -30],
   });
+}
+
+/**
+ * Controlador do mapa para:
+ * - resetar visão
+ * - enquadrar todos os pontos visíveis
+ */
+function MapController({ action, pontos, defaultCenter, defaultZoom }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || !action) return;
+
+    if (action.type === "reset") {
+      map.flyTo(defaultCenter, defaultZoom, { duration: 0.6 });
+      return;
+    }
+
+    if (action.type === "fit") {
+      const validPoints = pontos
+        .map((i) => {
+          const lat = parseFloat(i.latitude);
+          const lng = parseFloat(i.longitude);
+          if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return null;
+          return [lat, lng];
+        })
+        .filter(Boolean);
+
+      if (validPoints.length > 0) {
+        const bounds = L.latLngBounds(validPoints);
+        map.flyToBounds(bounds, {
+          padding: [48, 48],
+          duration: 0.6,
+        });
+      } else {
+        map.flyTo(defaultCenter, defaultZoom, { duration: 0.6 });
+      }
+    }
+  }, [map, action, pontos, defaultCenter, defaultZoom]);
+
+  return null;
+}
+
+/**
+ * Controlador para focar em um impedimento selecionado (da tabela)
+ */
+function SelectedImpedimentoController({ selectedId, impedimentos }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || !selectedId) return;
+
+    const imp = impedimentos.find((i) => i.id === selectedId);
+    if (!imp) return;
+
+    const lat = parseFloat(imp.latitude);
+    const lng = parseFloat(imp.longitude);
+    if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
+
+    map.flyTo([lat, lng], 14, { duration: 0.8 });
+  }, [map, selectedId, impedimentos]);
+
+  return null;
 }
 
 export default function MapaImpedimentos({ onSelect, selectedId }) {
   const [impedimentos, setImpedimentos] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [mapInstance, setMapInstance] = useState(null);
 
   // filtro de severidade: null | "ALTO" | "MEDIO" | "BAIXO"
   const [severityFilter, setSeverityFilter] = useState(null);
+  // ação do mapa (reset / fit)
+  const [mapAction, setMapAction] = useState(null);
 
   const fetchImpedimentosMapa = async () => {
     try {
@@ -182,6 +286,10 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
       const res = await api.get("/impedimentos/mapa");
       const data = Array.isArray(res.data) ? res.data : [];
       console.log("Impedimentos mapa (total):", data.length, data);
+      console.log(
+        "Severidades distintas:",
+        [...new Set(data.map((i) => i.severidade))]
+      );
       setImpedimentos(data);
     } catch (err) {
       console.error("Erro ao carregar impedimentos no mapa:", err);
@@ -194,20 +302,15 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
     fetchImpedimentosMapa();
   }, []);
 
-  // lista filtrada pelo filtro de severidade
   const filteredImpedimentos = useMemo(() => {
     if (!severityFilter) return impedimentos;
 
     return impedimentos.filter((imp) => {
-      const sevKeyRaw = getSeverityKey(imp.severidade);
-      const normalizedKey = sevKeyRaw
-        ? SEVERITY_MAP[sevKeyRaw] || sevKeyRaw
-        : null;
-      return normalizedKey === severityFilter;
+      const level = getSeverityLevel(imp.severidade);
+      return level === severityFilter;
     });
   }, [impedimentos, severityFilter]);
 
-  // centro inicial baseado em todos os impedimentos
   const initialCenter = useMemo(() => {
     const valido = impedimentos.find((i) => {
       const lat = parseFloat(i.latitude);
@@ -221,61 +324,29 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
     return centerFallback;
   }, [impedimentos]);
 
-  // fit nos pontos de uma lista
-  const fitToPoints = (lista) => {
-    if (!mapInstance) return;
-
-    const validPoints = lista
-      .map((i) => {
-        const lat = parseFloat(i.latitude);
-        const lng = parseFloat(i.longitude);
-        if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return null;
-        return [lat, lng];
-      })
-      .filter(Boolean);
-
-    if (validPoints.length > 0) {
-      const bounds = L.latLngBounds(validPoints);
-      mapInstance.flyToBounds(bounds, {
-        padding: [48, 48],
-        duration: 0.6,
-      });
-    } else {
-      mapInstance.flyTo(centerFallback, defaultZoom, { duration: 0.6 });
-    }
-  };
-
-  // quando clicar no filtro, além de filtrar, leva o mapa até os pontos
   const handleFilterClick = (level) => {
     const newFilter = severityFilter === level ? null : level;
     setSeverityFilter(newFilter);
 
-    if (!mapInstance) return;
-
-    if (newFilter === null) {
-      // todos
-      fitToPoints(impedimentos);
-    } else {
-      const list = impedimentos.filter((imp) => {
-        const sevKeyRaw = getSeverityKey(imp.severidade);
-        const normalizedKey = sevKeyRaw
-          ? SEVERITY_MAP[sevKeyRaw] || sevKeyRaw
-          : null;
-        return normalizedKey === newFilter;
-      });
-      fitToPoints(list);
-    }
+    // sempre que mudar filtro, já dispara um "fit" nos pontos visíveis
+    setMapAction({
+      type: "fit",
+      ts: Date.now(),
+    });
   };
 
-  const handleResetView = () => {
-    if (!mapInstance) return;
-    mapInstance.flyTo(initialCenter, defaultZoom, { duration: 0.6 });
+  const handleResetViewClick = () => {
+    setMapAction({
+      type: "reset",
+      ts: Date.now(),
+    });
   };
 
-  const handleZoomToAll = () => {
-    if (!mapInstance) return;
-    const baseList = severityFilter ? filteredImpedimentos : impedimentos;
-    fitToPoints(baseList);
+  const handleZoomToAllClick = () => {
+    setMapAction({
+      type: "fit",
+      ts: Date.now(),
+    });
   };
 
   const getFilterButtonClasses = (level) => {
@@ -288,30 +359,19 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
     ].join(" ");
   };
 
-  // 🔎 Quando o selectedId mudar (clique na tabela), leva o mapa até o ponto
-  useEffect(() => {
-    if (!mapInstance || !selectedId) return;
+  const totalVisiveis = severityFilter
+    ? filteredImpedimentos.length
+    : impedimentos.length;
 
-    const imp = impedimentos.find((i) => i.id === selectedId);
-    if (!imp) return;
-
-    const lat = parseFloat(imp.latitude);
-    const lng = parseFloat(imp.longitude);
-    if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
-
-    mapInstance.flyTo([lat, lng], 14, { duration: 0.8 });
-  }, [selectedId, mapInstance, impedimentos]);
+  const { BaseLayer } = LayersControl;
 
   return (
     <div className="w-full h-full bg-white relative overflow-hidden flex flex-col">
       {/* Cabeçalho flutuante com filtros */}
       <div className="px-4 pt-3 pb-2 border-b border-slate-200 bg-white/95 backdrop-blur-sm flex flex-wrap gap-3 items-center justify-between z-[10]">
         <div>
-          <p className="text-xs font-semibold text-slate-800">
+          <p className="text-2xl font-semibold text-slate-800">
             Mapa de Impedimentos
-          </p>
-          <p className="text-[11px] text-slate-500">
-            Visualize impedimentos por severidade e tipo no trajeto.
           </p>
         </div>
 
@@ -357,17 +417,17 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
         <div className="absolute left-3 bottom-3 z-[1000] flex flex-col gap-1">
           <button
             type="button"
-            onClick={handleResetView}
-            className="text-[11px] px-2.5 py-1 rounded-full bg-white/95 border border-slate-200 shadow-sm hover:bg-slate-50 transition"
+            onClick={handleResetViewClick}
+            className="text-[16px] px-2.5 py-1 rounded-lg bg-white/95 border border-slate-200 shadow-sm hover:bg-slate-50 transition"
           >
             Visão inicial
           </button>
 
-          {impedimentos.length > 0 && (
+          {totalVisiveis > 0 && (
             <button
               type="button"
-              onClick={handleZoomToAll}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 transition"
+              onClick={handleZoomToAllClick}
+              className="text-[16px] px-2.5 py-1 rounded-lg bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 transition"
             >
               Enquadrar impedimentos
             </button>
@@ -398,35 +458,6 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
           </div>
         </div>
 
-        {/* Legenda de tipos */}
-        <div className="absolute z-[20] bottom-3 right-3 flex flex-col gap-1 px-3 py-2 rounded-xl bg-white/90 backdrop-blur border border-slate-200 shadow-sm text-[11px] text-slate-600 max-w-[260px]">
-          <span className="font-semibold text-[10px] tracking-wide text-slate-500 uppercase">
-            Tipos de impedimento
-          </span>
-          <div className="flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5">
-              <span>💥</span>
-              <span className="text-[10px]">Acidente / Colisão</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span>🚌</span>
-              <span className="text-[10px]">Veículo / Ônibus</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span>🚑</span>
-              <span className="text-[10px]">Saúde / Emergência</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span>🚧</span>
-              <span className="text-[10px]">Obra / Manutenção</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span>⚠️</span>
-              <span className="text-[10px]">Outros</span>
-            </span>
-          </div>
-        </div>
-
         {loading && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/70 text-slate-500 text-xs gap-2">
             <div className="w-5 h-5 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
@@ -440,10 +471,39 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
           scrollWheelZoom={true}
           style={{ width: "100%", height: "100%" }}
           className="z-0"
-          whenCreated={setMapInstance}
         >
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+          {/* Controladores imperativos do mapa */}
+          <MapController
+            action={mapAction}
+            pontos={severityFilter ? filteredImpedimentos : impedimentos}
+            defaultCenter={initialCenter}
+            defaultZoom={defaultZoom}
+          />
+          <SelectedImpedimentoController
+            selectedId={selectedId}
+            impedimentos={impedimentos}
+          />
 
+          {/* CONTROLE DE LAYERS */}
+          <LayersControl position="topright">
+            {/* Mapa claro padrão */}
+            <BaseLayer checked name="Mapa claro (OSM)">
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution="&copy; OpenStreetMap contributors"
+              />
+            </BaseLayer>
+
+            {/* Mapa estilo Carto Voyager */}
+            <BaseLayer name="Mapa Voyager (Carto)">
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                attribution="&copy; OpenStreetMap &copy; CartoDB"
+              />
+            </BaseLayer>
+          </LayersControl>
+
+          {/* Marcadores */}
           {filteredImpedimentos.map((imp) => {
             const latNum = parseFloat(imp.latitude);
             const lngNum = parseFloat(imp.longitude);
@@ -453,17 +513,18 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
             const position = hasValid ? [latNum, lngNum] : centerFallback;
             const isSelected = selectedId === imp.id;
 
-            const sevKeyRaw = getSeverityKey(imp.severidade);
-            const normalizedKey = sevKeyRaw
-              ? SEVERITY_MAP[sevKeyRaw] || sevKeyRaw
-              : null;
-
+            const level = getSeverityLevel(imp.severidade);
             const severityCfg =
-              (normalizedKey && SEVERITY_CONFIG[normalizedKey]) ||
-              SEVERITY_CONFIG.DEFAULT;
+              (level && SEVERITY_CONFIG[level]) || SEVERITY_CONFIG.DEFAULT;
 
             const tipoMeta = getTipoMeta(imp);
-            const icon = createMarkerIcon(severityCfg.color, tipoMeta.emoji);
+            const IconComponent = tipoMeta.icon || AlertOctagon;
+
+            const icon = createMarkerIcon(
+              severityCfg.color, // fundo
+              IconComponent,
+              severityCfg.iconColor // cor do ícone
+            );
 
             const motivoFormatado =
               imp.motivo?.replace(/_/g, " ") || "Motivo não informado";
@@ -487,7 +548,9 @@ export default function MapaImpedimentos({ onSelect, selectedId }) {
                     </p>
 
                     <p className="mt-2 text-[12px] md:text-[13px] text-slate-600 flex items-center gap-1.5">
-                      <span className="inline-flex items-center gap-1 px-1.5 py-[2px] rounded-full bg-slate-100 text-[11px] md:text-[12px] text-slate-700">
+                      <span
+                        className="inline-flex items-center gap-1 px-1.5 py-[2px] rounded-full bg-slate-100 text-[11px] md:text-[12px] text-slate-700"
+                      >
                         <span>{tipoMeta.emoji}</span>
                         <span>{tipoMeta.label}</span>
                       </span>
