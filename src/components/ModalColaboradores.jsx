@@ -408,10 +408,19 @@ export default function ModalColaboradores({ open, onClose, rota }) {
             </div>
             <button
               onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-red-200 text-red-800"
+              className="
+                w-8 h-8
+                flex items-center justify-center
+                rounded-full
+                border border-gray-300
+                text-slate-400
+                hover:bg-slate-100
+                transition
+              "
             >
-              Fechar
+              ✕
             </button>
+
           </div>
 
           {/* CONTEÚDO SCROLLÁVEL */}

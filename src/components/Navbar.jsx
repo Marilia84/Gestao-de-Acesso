@@ -10,17 +10,18 @@ import {
   FileText,
   LogOut,
   Flag,
+  Map,
+  Bot,
 } from "lucide-react";
 
 const menuItems = [
-  { icon: Flag, label: "Mapas", path: "/home" },
-  { icon: LayoutDashboard, label: "Chat-Bot", path: "/chat-bot" },
+  { icon: Map, label: "Mapas", path: "/home" },
+  { icon: Bot, label: "Chat-Bot", path: "/chat-bot" },
   { icon: Bus, label: "Gerenciar Linhas", path: "/gerenciarLinhas" },
   { icon: Users, label: "Colaboradores", path: "/colaboradores" },
   { icon: Building, label: "Portaria", path: "/portaria" },
   { icon: UserCheck, label: "Visitantes", path: "/visitantes" },
   { icon: ClipboardList, label: "Registro", path: "/registro-viagem" },
-  
 ];
 
 export default function Navbar() {

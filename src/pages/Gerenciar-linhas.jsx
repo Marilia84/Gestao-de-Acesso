@@ -10,7 +10,7 @@ import Toggle from "../components/Toggle";
 import CadastroCidadeCard from "../components/CadastroCidadeCard";
 import CadastroPontoCard from "../components/CadastroPontoCard";
 import ListaPontosCard from "../components/ListaPontosCard";
-import { Pencil,  X, Check } from "lucide-react";
+import { Pencil, X, Check, Search, Filter } from "lucide-react";
 
 const normalizarAtivo = (valor) => {
   return (
@@ -104,7 +104,6 @@ export default function GerenciarLinhas() {
     setEditRotaHoraChegada("");
     setEditRotaCapacidade("");
     setEditRotaIdCidade("");
-
   };
 
   const handleSalvarEdicaoRota = async () => {
@@ -148,8 +147,6 @@ export default function GerenciarLinhas() {
       payload.idCidade = Number(editRotaIdCidade);
     }
 
-
-
     try {
       setSalvandoRota(true);
       await api.patch(`/rotas/${rotaEditando.idRota}`, payload);
@@ -163,10 +160,10 @@ export default function GerenciarLinhas() {
         prev.map((r) =>
           r.idRota === rotaEditando.idRota
             ? {
-              ...r,
-              ...payload,
-              ...(cidadeObj ? { cidade: cidadeObj } : {}),
-            }
+                ...r,
+                ...payload,
+                ...(cidadeObj ? { cidade: cidadeObj } : {}),
+              }
             : r
         )
       );
@@ -461,7 +458,7 @@ export default function GerenciarLinhas() {
         (p) => String(p.idPonto) === String(ponto.idPonto)
       );
       if (jaExiste) {
-        return prev.filter((p) => String(p.idPonto) !== String(ponto.idPonto));
+        return prev.filter((p) => String(p.idPonto) !== String(p.idPonto));
       }
       return [...prev, ponto];
     });
@@ -527,7 +524,8 @@ export default function GerenciarLinhas() {
       const data = error.response?.data;
       console.error("Erro ao cadastrar rota:", data || error.message || error);
       toast.error(
-        `Erro ao cadastrar rota.${data?.message ? `\nMensagem: ${data.message}` : ""
+        `Erro ao cadastrar rota.${
+          data?.message ? `\nMensagem: ${data.message}` : ""
         }${data?.error ? `\nDetalhe: ${data.error}` : ""}`
       );
     } finally {
@@ -539,6 +537,42 @@ export default function GerenciarLinhas() {
   const pontosFiltrados = cidadeSelecionada
     ? pontos.filter((p) => String(p.idCidade) === String(cidadeSelecionada))
     : [];
+
+  // =========================
+  // FILTROS DE ROTAS
+  // =========================
+  const [filtroNomeRota, setFiltroNomeRota] = useState("");
+  const [filtroCidadeRota, setFiltroCidadeRota] = useState("");
+  const [filtroPeriodoRota, setFiltroPeriodoRota] = useState("");
+  const [filtroStatusRota, setFiltroStatusRota] = useState("TODAS");
+
+  const rotasFiltradas = rotas.filter((rota) => {
+    const nomeMatch = filtroNomeRota
+      ? rota.nome?.toLowerCase().includes(filtroNomeRota.toLowerCase())
+      : true;
+
+    const cidadeId = getIdCidadeFromRota(rota);
+    const cidadeMatch = filtroCidadeRota
+      ? String(cidadeId) === String(filtroCidadeRota)
+      : true;
+
+    const periodoMatch = filtroPeriodoRota
+      ? rota.periodo === filtroPeriodoRota
+      : true;
+
+    const statusAtual = normalizarAtivo(rota.ativo);
+    const statusMatch =
+      filtroStatusRota === "TODAS"
+        ? true
+        : filtroStatusRota === "ATIVAS"
+        ? statusAtual === true
+        : statusAtual === false;
+
+    return nomeMatch && cidadeMatch && periodoMatch && statusMatch;
+  });
+
+  const algumFiltroAtivo =
+    filtroNomeRota || filtroCidadeRota || filtroPeriodoRota || filtroStatusRota !== "TODAS";
 
   return (
     <main
@@ -569,9 +603,10 @@ export default function GerenciarLinhas() {
                   w-24
                   rounded-full bg-white shadow-sm
                   transition-transform duration-300 ease-out
-                  ${activeTab === "PONTOS"
-                    ? "translate-x-0"
-                    : "translate-x-[6.5rem]"
+                  ${
+                    activeTab === "PONTOS"
+                      ? "translate-x-0"
+                      : "translate-x-[6.5rem]"
                   }
                 `}
               />
@@ -585,9 +620,10 @@ export default function GerenciarLinhas() {
                   px-3 py-1.5
                   text-xs sm:text-base font-semibold
                   transition-colors
-                  ${activeTab === "PONTOS"
-                    ? "text-emerald-600"
-                    : "text-slate-500 hover:text-slate-700"
+                  ${
+                    activeTab === "PONTOS"
+                      ? "text-emerald-600"
+                      : "text-slate-500 hover:text-slate-700"
                   }
                 `}
               >
@@ -603,9 +639,10 @@ export default function GerenciarLinhas() {
                   px-3 py-1.5
                   text-xs sm:text-sm font-semibold
                   transition-colors
-                  ${activeTab === "ROTAS"
-                    ? "text-emerald-700"
-                    : "text-slate-500 hover:text-slate-700"
+                  ${
+                    activeTab === "ROTAS"
+                      ? "text-emerald-700"
+                      : "text-slate-500 hover:text-slate-700"
                   }
                 `}
               >
@@ -951,17 +988,171 @@ export default function GerenciarLinhas() {
                   </div>
                 )}
 
-                <div className="mb-5">
-                  <h2 className="text-xl font-semibold text-slate-900">
-                    Rotas cadastradas
-                  </h2>
-                  <p className="text-base text-slate-600">
-                    Visualize todas as rotas, seus pontos e o trajeto no mapa.
-                  </p>
+                <div className="mb-5 flex flex-col gap-4">
+                  <div>
+                    <h2 className="text-xl font-semibold text-slate-900">
+                      Rotas cadastradas
+                    </h2>
+                    <p className="text-base text-slate-600">
+                      Visualize todas as rotas, seus pontos e o trajeto no mapa.
+                    </p>
+                  </div>
+
+                  {/* FILTROS DE ROTAS */}
+                  <div
+                    className="
+                      rounded-2xl border border-slate-200 bg-slate-50/60
+                      px-3 py-3 sm:px-4 sm:py-4
+                      flex flex-col gap-3
+                    "
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4 text-emerald-600" />
+                        <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                          Filtros das rotas
+                        </span>
+                      </div>
+                      {algumFiltroAtivo && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFiltroNomeRota("");
+                            setFiltroCidadeRota("");
+                            setFiltroPeriodoRota("");
+                            setFiltroStatusRota("TODAS");
+                          }}
+                          className="text-[11px] text-emerald-700 hover:text-emerald-900 font-medium"
+                        >
+                          Limpar filtros
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col lg:flex-row gap-3">
+                      {/* Busca por nome */}
+                      <div className="flex-1 relative">
+                        <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                          <Search className="w-4 h-4 text-slate-400" />
+                        </span>
+                        <input
+                          type="text"
+                          value={filtroNomeRota}
+                          onChange={(e) => setFiltroNomeRota(e.target.value)}
+                          placeholder="Buscar rota pelo nome..."
+                          className="
+                            w-full pl-9 pr-3 py-2.5
+                            rounded-xl border border-slate-200 bg-white
+                            text-xs sm:text-sm text-slate-800
+                            placeholder:text-slate-400
+                            focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                          "
+                        />
+                      </div>
+
+                      {/* Cidade */}
+                      <div className="w-full lg:w-52">
+                        <select
+                          value={filtroCidadeRota}
+                          onChange={(e) => setFiltroCidadeRota(e.target.value)}
+                          className="
+                            w-full rounded-xl border border-slate-200 bg-white
+                            px-3 py-2.5 text-xs sm:text-sm text-slate-700
+                            focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                          "
+                        >
+                          <option value="">Todas as cidades</option>
+                          {cidades.map((cidade) => (
+                            <option
+                              key={cidade.idCidade}
+                              value={String(cidade.idCidade)}
+                            >
+                              {cidade.nome} - {cidade.uf}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                      {/* Período */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-slate-500">
+                          Período:
+                        </span>
+                        <select
+                          value={filtroPeriodoRota}
+                          onChange={(e) => setFiltroPeriodoRota(e.target.value)}
+                          className="
+                            rounded-full border border-slate-200 bg-white
+                            px-3 py-1.5 text-[11px] sm:text-xs text-slate-700
+                            focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500
+                          "
+                        >
+                          <option value="">Todos</option>
+                          <option value="MANHA">Manhã</option>
+                          <option value="TARDE">Tarde</option>
+                          <option value="NOITE">Noite</option>
+                          <option value="MADRUGADA">Madrugada</option>
+                        </select>
+                      </div>
+
+                      {/* Status (todas / ativas / inativas) */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-slate-500">
+                          Status:
+                        </span>
+                        <div className="inline-flex rounded-full bg-slate-100 p-0.5">
+                          <button
+                            type="button"
+                            onClick={() => setFiltroStatusRota("TODAS")}
+                            className={`
+                              px-3 py-1 rounded-full text-[11px] sm:text-xs
+                              ${
+                                filtroStatusRota === "TODAS"
+                                  ? "bg-white text-emerald-700 shadow-sm"
+                                  : "text-slate-500 hover:text-slate-700"
+                              }
+                            `}
+                          >
+                            Todas
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFiltroStatusRota("ATIVAS")}
+                            className={`
+                              px-3 py-1 rounded-full text-[11px] sm:text-xs
+                              ${
+                                filtroStatusRota === "ATIVAS"
+                                  ? "bg-white text-emerald-700 shadow-sm"
+                                  : "text-slate-500 hover:text-slate-700"
+                              }
+                            `}
+                          >
+                            Ativas
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFiltroStatusRota("INATIVAS")}
+                            className={`
+                              px-3 py-1 rounded-full text-[11px] sm:text-xs
+                              ${
+                                filtroStatusRota === "INATIVAS"
+                                  ? "bg-white text-emerald-700 shadow-sm"
+                                  : "text-slate-500 hover:text-slate-700"
+                              }
+                            `}
+                          >
+                            Inativas
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-3 ">
-                  {rotas.map((rota) => {
+                  {rotasFiltradas.map((rota) => {
                     const pontosDaRota = trajetosByRota[rota.idRota] || [];
 
                     const isAtiva = normalizarAtivo(rota.ativo);
@@ -1004,8 +1195,6 @@ export default function GerenciarLinhas() {
                               <Pencil className="w-6 h-6" />
                             </button>
 
-                       
-
                             {/* ATIVAR / INATIVAR */}
                             <Toggle
                               checked={isAtiva}
@@ -1028,19 +1217,6 @@ export default function GerenciarLinhas() {
                             pb-3 md:pb-0
                           "
                         >
-                          <div className="text-xs font-medium text-slate-600">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span
-                                className={`w-2 h-2 rounded-full ${isAtiva ? "bg-emerald-500" : "bg-slate-400"
-                                  }`}
-                              />
-                              <span className="truncate">
-                                {isAtiva
-                                  ? "Disponível para trajeto"
-                                  : "Rota inativa"}
-                              </span>
-                            </div>
-                          </div>
 
                           <div className="mt-3">
                             <h3 className="text-lg font-semibold text-slate-900 leading-tight">
@@ -1127,18 +1303,19 @@ export default function GerenciarLinhas() {
                               )}
                             </div>
 
-                            <button
+                           <button
                               className="
                                 mt-3
                                 inline-flex items-end 
                                 px-3.5 py-2
-                                rounded-full
+                                rounded-md
                                 text-[14px] font-semibold
                                 bg-[#71CE97]
                                 text-[white]
                                 hover:bg-[#039155]
                                 transition-colors
                                 w-max
+                                ml-auto
                               "
                               onClick={() => {
                                 setRotaSelecionada(rota);
@@ -1147,6 +1324,7 @@ export default function GerenciarLinhas() {
                             >
                               Exibir colaboradores
                             </button>
+
                           </div>
 
                           {isAtiva ? (
@@ -1176,7 +1354,7 @@ export default function GerenciarLinhas() {
                     );
                   })}
 
-                  {!rotas.length && !loadingRotasCadastradas && (
+                  {!rotasFiltradas.length && !loadingRotasCadastradas && (
                     <div className="w-full">
                       <div className="border border-dashed border-slate-300 rounded-2xl p-6 text-center bg-slate-50/40">
                         <div className="mx-auto mb-3 w-10 h-10 rounded-full bg-white border border-slate-200 grid place-items-center">
@@ -1193,11 +1371,14 @@ export default function GerenciarLinhas() {
                           </svg>
                         </div>
                         <p className="text-sm font-medium text-slate-700">
-                          Nenhuma rota cadastrada ainda.
+                          {algumFiltroAtivo
+                            ? "Nenhuma rota encontrada com os filtros atuais."
+                            : "Nenhuma rota cadastrada ainda."}
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
-                          Crie uma nova rota ao lado para começar a visualizar o
-                          trajeto aqui.
+                          {algumFiltroAtivo
+                            ? "Ajuste os filtros acima ou limpe para ver outras rotas."
+                            : "Crie uma nova rota ao lado para começar a visualizar o trajeto aqui."}
                         </p>
                       </div>
                     </div>
@@ -1317,8 +1498,6 @@ export default function GerenciarLinhas() {
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-500"
                   />
                 </div>
-
-
               </div>
 
               <div className="mt-5 flex justify-end gap-2">
