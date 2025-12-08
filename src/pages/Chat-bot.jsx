@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
 import { Send, Copy, Check, User, MessageCircle } from "lucide-react";
@@ -79,7 +78,7 @@ export default function Home() {
       mensagemParaApi = `Quero criar uma rota ${trimmedInput}`;
     } else if (assigningPointToRouteMode) {
       mensagemParaApi = `Coloca o ponto ${trimmedInput}`;
-    } 
+    }
 
     resetModes();
 
@@ -233,12 +232,9 @@ export default function Home() {
       <div className="w-full flex-1 flex flex-col space-y-6 overflow-hidden">
         <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
-              <MessageCircle className="w-5 h-5 text-emerald-600" />
-            </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-semibold text-emerald-600">
-                Buzzy • Assistente do Sistema
+                Assistente do Sistema
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl">
                 Converse com o Buzzy sobre rotas, pontos de embarque, embarques
@@ -254,12 +250,7 @@ export default function Home() {
               rounded-full px-3 py-1.5
               shadow-sm
             "
-          >
-            <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-            <span className="text-[11px] sm:text-xs font-medium text-emerald-700">
-              Buzzy online • resposta automática
-            </span>
-          </div>
+          ></div>
         </header>
 
         <section
@@ -283,19 +274,17 @@ export default function Home() {
             {/* ÁREA QUE ROLA: HEADER + MENSAGENS */}
             <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
               {/* Header do chat (vai rolar junto com as mensagens) */}
-              <div className=" px-4 sm:px-6 py-4
+              <div
+                className=" px-4 sm:px-6 py-4
     border-b border-slate-100
     flex items-center justify-between
     bg-white
-    sticky top-0 z-20">
+    sticky top-0 z-20"
+              >
                 <div>
                   <h2 className="text-sm sm:text-base font-semibold text-slate-900">
-                    Chat com o Buzzy
+                    Buzzy
                   </h2>
-                  <p className="text-[11px] sm:text-xs text-slate-500">
-                    Faça perguntas, peça ações ou siga os fluxos guiados para o
-                    Buzzy executar no TrackPass.
-                  </p>
                 </div>
                 <div className="hidden sm:flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full overflow-hidden border border-emerald-100">
@@ -504,7 +493,6 @@ export default function Home() {
                   >
                     Atribuir ponto à rota
                   </button>
-                 
                 </div>
               </div>
 
