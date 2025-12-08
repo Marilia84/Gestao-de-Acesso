@@ -14,7 +14,7 @@ import { getMotoristas } from "../api/motoristaService";
 import { getVeiculos } from "../api/veiculoService";
 
 import Loading from "../components/Loading";
-import Navbar from "../components/Navbar";
+// import Navbar from "../components/Navbar";
 
 import {
   Users,
@@ -88,6 +88,20 @@ const RegistroViagem = () => {
     tipoViagem: "ida",
   });
 
+  // ==========================
+  // ESTADOS DE FILTRO DE ROTAS
+  // ==========================
+  const [rotaSearch, setRotaSearch] = useState("");
+  const [rotaCidadeFilter, setRotaCidadeFilter] = useState("TODAS");
+  const [rotaPeriodoFilter, setRotaPeriodoFilter] = useState("TODOS");
+
+  // filtro "somente rotas com viagem"
+  const [rotaSomenteComViagem, setRotaSomenteComViagem] = useState(false);
+
+  // ids de rotas que têm pelo menos uma viagem cadastrada
+  const [rotasComViagem, setRotasComViagem] = useState([]);
+  const [loadingRotasComViagem, setLoadingRotasComViagem] = useState(false);
+
   // ===========================
   // CARREGAMENTO DADOS INICIAIS
   // ===========================
@@ -126,8 +140,48 @@ const RegistroViagem = () => {
     fetchInitialData();
   }, []);
 
+  // ===========================
+  // DESCOBRIR ROTAS QUE TÊM VIAGEM
+  // ===========================
+  useEffect(() => {
+    const carregarRotasComViagem = async () => {
+      if (!rotas || rotas.length === 0) return;
+
+      try {
+        setLoadingRotasComViagem(true);
+
+        const results = await Promise.all(
+          rotas.map(async (rota) => {
+            try {
+              const viagensDaRota = await getViagensPorRota(rota.idRota);
+
+              // 👉 Aqui é a regra:
+              // - Se quiser "rota que tem QUALQUER viagem": use length > 0
+              // - Se quiser "rota que tem viagem ATIVA": use some(v => v.ativo)
+              const temViagem = (viagensDaRota || []).length > 0;
+              // const temViagem = (viagensDaRota || []).some((v) => v.ativo); // versão só com ativas
+
+              return temViagem ? rota.idRota : null;
+            } catch (err) {
+              console.error("Erro ao buscar viagens da rota", rota.idRota, err);
+              return null;
+            }
+          })
+        );
+
+        const ids = results.filter(Boolean);
+        setRotasComViagem(ids);
+        console.log("Rotas com viagem:", ids);
+      } finally {
+        setLoadingRotasComViagem(false);
+      }
+    };
+
+    carregarRotasComViagem();
+  }, [rotas]);
+
   // =====================
-  // BUSCAR VIAGENS DA ROTA
+  // BUSCAR VIAGENS DA ROTA SELECIONADA
   // =====================
   const fetchViagens = async () => {
     if (!selectedRotaId) return;
@@ -206,9 +260,9 @@ const RegistroViagem = () => {
     fetchEmbarques();
   }, [selectedTripId]);
 
-  // ==========
-  // MEMOIZADOS
-  // ==========
+  // ==============
+  // MEMOIZADOS GLOBAIS
+  // ==============
   const filteredEmbarques = useMemo(() => {
     if (!embarqueDateFilter) return embarques;
     return embarques.filter(
@@ -234,6 +288,53 @@ const RegistroViagem = () => {
     () => filteredEmbarques.length,
     [filteredEmbarques]
   );
+
+  // ===========================
+  // MEMOIZADOS DE FILTRO DE ROTAS
+  // ===========================
+  const cidadesDisponiveis = useMemo(() => {
+    const setCidades = new Set(
+      (rotas || []).map((r) => r.cidadeNome).filter(Boolean)
+    );
+    return Array.from(setCidades);
+  }, [rotas]);
+
+  const periodosDisponiveis = useMemo(() => {
+    const setPeriodos = new Set(
+      (rotas || []).map((r) => r.periodo).filter(Boolean)
+    );
+    return Array.from(setPeriodos);
+  }, [rotas]);
+
+  const filteredRotas = useMemo(() => {
+    return (rotas || []).filter((rota) => {
+      const search = rotaSearch.trim().toLowerCase();
+
+      const matchSearch = search
+        ? (rota.nome || "").toLowerCase().includes(search) ||
+          (rota.cidadeNome || "").toLowerCase().includes(search)
+        : true;
+
+      const matchCidade =
+        rotaCidadeFilter === "TODAS" || rota.cidadeNome === rotaCidadeFilter;
+
+      const matchPeriodo =
+        rotaPeriodoFilter === "TODOS" || rota.periodo === rotaPeriodoFilter;
+
+      const matchSomenteComViagem = rotaSomenteComViagem
+        ? rotasComViagem.includes(rota.idRota)
+        : true;
+
+      return matchSearch && matchCidade && matchPeriodo && matchSomenteComViagem;
+    });
+  }, [
+    rotas,
+    rotaSearch,
+    rotaCidadeFilter,
+    rotaPeriodoFilter,
+    rotaSomenteComViagem,
+    rotasComViagem,
+  ]);
 
   // ==========
   // HANDLERS
@@ -319,8 +420,6 @@ const RegistroViagem = () => {
 
       setIsConfirmModalOpen(false);
       setTripToToggle(null);
-
-      // se eu acabei de encerrar a viagem selecionada, mantenho selecionada, mas atualizada
     } catch (error) {
       console.error(error);
       notifyError(
@@ -337,18 +436,17 @@ const RegistroViagem = () => {
   // ==========
   return (
     <>
-      {/* Se você já renderiza Navbar no layout global, pode remover essa linha */}
-      {/* <Navbar /> */}
+      {/* <Navbar /> se já tiver em outro lugar, deixa comentado */}
 
       <main
-      className="
+        className="
         flex-1 min-h-screen bg-slate-50
         px-3 sm:px-4 lg:px-28
         py-4
         ml-16
       "
-    >
-        <div className="relative z-10 bg-white shadow-sm rounded-2xl w-full p-4 sm:p-6 md:p-8">
+      >
+        <div className="relative z-10 bg-white shadow-sm rounded-md w-full p-4 sm:p-6 md:p-8">
           {/* HEADER */}
           <header className="mb-2 flex flex-col gap-2">
             <div className="flex items-center justify-between gap-4">
@@ -367,7 +465,7 @@ const RegistroViagem = () => {
           {/* CARDS RESUMO */}
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             {/* Card 1 */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
+            <div className="bg-white rounded-md border border-slate-200 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-md bg-emerald-50 border border-emerald-100 flex items-center justify-center">
                   <Route className="w-5 h-5 text-emerald-700" />
@@ -392,7 +490,7 @@ const RegistroViagem = () => {
             </div>
 
             {/* Card 2 */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
+            <div className="bg-white rounded-md border border-slate-200 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-md bg-sky-50 border border-sky-100 flex items-center justify-center">
                   <Clock className="w-5 h-5 text-sky-700" />
@@ -417,7 +515,7 @@ const RegistroViagem = () => {
             </div>
 
             {/* Card 3 */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
+            <div className="bg-white rounded-md border border-slate-200 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-md bg-amber-50 border border-amber-100 flex items-center justify-center">
                   <Users className="w-5 h-5 text-amber-700" />
@@ -446,12 +544,75 @@ const RegistroViagem = () => {
           <div className="flex flex-col lg:flex-row gap-6 items-stretch h-[calc(100vh-270px)] min-h-[600px]">
             {/* LISTA DE ROTAS - ESQUERDA */}
             <aside className="w-full lg:w-1/4 flex flex-col">
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 h-full flex flex-col relative">
-                <div className="flex items-center justify-between mb-4">
+              <div className="bg-white border border-slate-200 rounded-md shadow-sm p-4 h-full flex flex-col relative">
+                <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
                     <Route size={18} className="text-slate-500" />
                     Rotas disponíveis
                   </h2>
+                </div>
+
+                {/* FILTROS DE ROTA */}
+                <div className="space-y-2 mb-3">
+                  {/* Busca */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por rota ou cidade..."
+                      value={rotaSearch}
+                      onChange={(e) => setRotaSearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Cidade */}
+                    <select
+                      value={rotaCidadeFilter}
+                      onChange={(e) => setRotaCidadeFilter(e.target.value)}
+                      className="w-full border border-slate-300 rounded-lg px-2 py-2 text-[11px] focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50"
+                    >
+                      <option value="TODAS">Todas as cidades</option>
+                      {cidadesDisponiveis.map((cidade) => (
+                        <option key={cidade} value={cidade}>
+                          {cidade}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Período */}
+                    <select
+                      value={rotaPeriodoFilter}
+                      onChange={(e) => setRotaPeriodoFilter(e.target.value)}
+                      className="w-full border border-slate-300 rounded-lg px-2 py-2 text-[11px] focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50"
+                    >
+                      <option value="TODOS">Todos os períodos</option>
+                      {periodosDisponiveis.map((periodo) => (
+                        <option key={periodo} value={periodo}>
+                          {periodo}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* checkbox - somente rotas com viagem */}
+                  <div className="flex items-center justify-between mt-1">
+                    <label className="flex items-center gap-2 text-[11px] text-slate-600">
+                      <input
+                        type="checkbox"
+                        className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        checked={rotaSomenteComViagem}
+                        onChange={(e) => setRotaSomenteComViagem(e.target.checked)}
+                      />
+                      <span>Somente rotas com viagem cadastrada</span>
+                    </label>
+                    {loadingRotasComViagem && (
+                      <span className="text-[10px] text-slate-400">
+                        carregando...
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {loadingInitial && (
@@ -460,13 +621,18 @@ const RegistroViagem = () => {
                   </div>
                 )}
 
+                {/* LISTA DE ROTAS FILTRADAS */}
                 <div className="space-y-2 flex-1 overflow-y-auto scrollbar-thin">
                   {rotas.length === 0 && !loadingInitial ? (
                     <div className="text-xs text-slate-400 text-center mt-6">
                       Nenhuma rota cadastrada.
                     </div>
+                  ) : filteredRotas.length === 0 && rotas.length > 0 ? (
+                    <div className="text-xs text-slate-400 text-center mt-6">
+                      Nenhuma rota encontrada com os filtros aplicados.
+                    </div>
                   ) : (
-                    rotas.map((rota) => {
+                    filteredRotas.map((rota) => {
                       const isSelected = selectedRotaId === rota.idRota;
                       return (
                         <button
@@ -474,14 +640,18 @@ const RegistroViagem = () => {
                           onClick={() => setSelectedRotaId(rota.idRota)}
                           className={`w-full text-left px-3 py-2.5 rounded-lg border text-sm transition-all flex flex-col gap-0.5 ${
                             isSelected
-                              ? "border-emerald-500 bg-emerald-50 text-emerald-900 shadow-sm"
+                              ? " bg-[#0D896F] text-sky-50 shadow-sm"
                               : "border-transparent bg-slate-50 hover:bg-slate-100 text-slate-700"
                           }`}
                         >
                           <p className="font-semibold truncate">
                             {rota.nome || "Rota sem nome"}
                           </p>
-                          <p className="text-[11px] text-slate-500">
+                          <p
+                            className={`text-[11px] ${
+                              isSelected ? "text-sky-50" : "text-slate-500"
+                            }`}
+                          >
                             {rota.cidadeNome} • {rota.periodo}
                           </p>
                         </button>
@@ -495,7 +665,7 @@ const RegistroViagem = () => {
             {/* VIAGENS + EMBARQUES - DIREITA */}
             <section className="flex-1 flex flex-col gap-6 min-w-0">
               {/* SELEÇÃO DAS VIAGENS */}
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 flex-none relative">
+              <div className="bg-white border border-slate-200 rounded-md shadow-sm p-4 flex-none relative">
                 <div className="flex justify-between items-center mb-4 gap-3">
                   <div>
                     <h2 className="text-sm font-semibold text-slate-900">
@@ -609,7 +779,7 @@ const RegistroViagem = () => {
               </div>
 
               {/* CARD DE EMBARQUES */}
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex-1 flex flex-col relative min-h-0">
+              <div className="bg-white border border-slate-200 rounded-md shadow-sm p-6 flex-1 flex flex-col relative min-h-0">
                 {/* HEADER CARD */}
                 <div className="flex flex-col sm:flex-row justify-between items-end sm:items-center mb-6 border-b pb-4 border-slate-100 gap-4 flex-none">
                   <div>
@@ -717,7 +887,7 @@ const RegistroViagem = () => {
                       </div>
                     ) : (
                       !loadingEmbarques && (
-                        <div className="flex flex-col items-center justify-center h-full py-12 text-slate-400 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                        <div className="flex flex-col items-center justify-center h-full py-12 text-slate-400 bg-slate-50 rounded-md border-2 border-dashed border-slate-200">
                           <Search size={40} className="mb-3 opacity-60" />
                           <p className="text-sm font-medium text-slate-600 mb-1">
                             Nenhum embarque encontrado

@@ -258,18 +258,19 @@ export default function Login() {
           onSubmit={handleSubmit}
           className="bg-white/10 backdrop-blur-xl rounded-md shadow-2xl shadow-black/40 w-full px-8 py-10 flex flex-col items-center space-y-6"
         >
-          <div className="flex flex-col items-center gap-2 mb-2">
+          <div className="flex flex-col items-center  mb-1">
             <img
-              className="w-28 h-20 object-contain"
+              className="w-40 h-40  object-contain"
               src={Logo}
               alt="Logo de ônibus"
             />
-            <h2 className="text-white text-3xl font-semibold tracking-wide">
-              TrackPass
+            <h2 className="mt-2 text-2xl font-semibold text-white tracking-wide">
+               TrackPass
             </h2>
+          
           </div>
 
-          <div className="w-full space-y-4 mt-2">
+          <div className="w-full space-y-2 mt-2">
             {/* CAMPO E-MAIL */}
             <div className="flex flex-col gap-1 w-full">
               <label
