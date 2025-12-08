@@ -40,19 +40,9 @@ import {
 // =======================
 // CONFIGURAÇÃO DOS TOASTS
 // =======================
-const toastConfig = {
-  position: "bottom-right",
-  autoClose: 3500,
-  hideProgressBar: false,
-  closeOnClick: true,
-  pauseOnHover: true,
-  draggable: true,
-  theme: "colored",
-};
 
-const notifySuccess = (message) => toast.success(message, toastConfig);
-const notifyError = (message) => toast.error(message, toastConfig);
-const notifyWarning = (message) => toast.warn(message, toastConfig);
+
+
 
 const RegistroViagem = () => {
   const [rotas, setRotas] = useState([]);
@@ -122,13 +112,13 @@ const RegistroViagem = () => {
 
         if ((rotasData || []).length > 0) {
           setSelectedRotaId(rotasData[0].idRota);
-          notifySuccess("Dados iniciais carregados com sucesso.");
+          toast.success("Dados iniciais carregados com sucesso.");
         } else {
-          notifyWarning("Nenhuma rota encontrada. Cadastre uma rota primeiro.");
+          toast.warn("Nenhuma rota encontrada. Cadastre uma rota primeiro.");
         }
       } catch (error) {
         console.error(error);
-        notifyError(
+       toast.error(
           error?.response?.data?.message ||
             "Erro ao carregar dados iniciais. Tente novamente."
         );
@@ -202,7 +192,7 @@ const RegistroViagem = () => {
       }
     } catch (error) {
       console.error(error);
-      notifyError(
+      toast.error(
         error?.response?.data?.message || "Falha ao carregar viagens da rota."
       );
     } finally {
@@ -248,7 +238,7 @@ const RegistroViagem = () => {
       } catch (error) {
         console.error(error);
         setEmbarques([]);
-        notifyError(
+        toast.error(
           error?.response?.data?.message ||
             "Não foi possível carregar os embarques desta viagem."
         );
@@ -343,54 +333,71 @@ const RegistroViagem = () => {
     setNewTripData({ ...newTripData, [e.target.name]: e.target.value });
   };
 
-  const handleCreateTrip = async (e) => {
-    e.preventDefault();
+ const handleCreateTrip = async (e) => {
+  e.preventDefault();
 
-    if (!selectedRotaId) {
-      notifyWarning("Selecione uma rota antes de criar uma viagem.");
-      return;
-    }
+  if (!selectedRotaId) {
+    toast.warn("Selecione uma rota antes de criar uma viagem.");
+    return;
+  }
 
-    if (!newTripData.idMotorista || !newTripData.idVeiculo) {
-      notifyWarning("Selecione um motorista e um veículo.");
-      return;
-    }
+  if (!newTripData.idMotorista || !newTripData.idVeiculo) {
+    toast.warn("Selecione um motorista e um veículo.");
+    return;
+  }
 
-    setIsCreating(true);
+  setIsCreating(true);
 
-    try {
-      const payload = {
-        idRota: selectedRotaId,
-        idMotorista: Number(newTripData.idMotorista),
-        idVeiculo: Number(newTripData.idVeiculo),
-        data: newTripData.data,
-        saidaPrevista: newTripData.saidaPrevista,
-        chegadaPrevista: newTripData.chegadaPrevista,
-        tipoViagem: newTripData.tipoViagem,
-        ativo: true,
-      };
+  // Toast enquanto processa
+  const loadingToast = toast.info("Criando viagem...", {
+    autoClose: false,
+  });
 
-      await createViagem(payload);
+  try {
+    const payload = {
+      idRota: selectedRotaId,
+      idMotorista: Number(newTripData.idMotorista),
+      idVeiculo: Number(newTripData.idVeiculo),
+      data: newTripData.data,
+      saidaPrevista: newTripData.saidaPrevista,
+      chegadaPrevista: newTripData.chegadaPrevista,
+      tipoViagem: newTripData.tipoViagem,
+      ativo: true,
+    };
 
-      notifySuccess("Viagem criada com sucesso.");
-      setIsModalOpen(false);
-      setNewTripData((prev) => ({
-        ...prev,
-        saidaPrevista: "",
-        chegadaPrevista: "",
-      }));
+    await createViagem(payload);
 
-      await fetchViagens();
-    } catch (error) {
-      console.error(error);
-      notifyError(
+    toast.update(loadingToast, {
+      render: "Viagem criada com sucesso.",
+      type: "success",
+      autoClose: 3000,
+      isLoading: false,
+    });
+
+    setIsModalOpen(false);
+    setNewTripData((prev) => ({
+      ...prev,
+      saidaPrevista: "",
+      chegadaPrevista: "",
+    }));
+
+    await fetchViagens();
+  } catch (error) {
+    console.error(error);
+
+    toast.update(loadingToast, {
+      render:
         error?.response?.data?.message ||
-          "Erro ao criar viagem. Verifique os dados e tente novamente."
-      );
-    } finally {
-      setIsCreating(false);
-    }
-  };
+        "Erro ao criar viagem. Verifique os dados e tente novamente.",
+      type: "error",
+      autoClose: 4000,
+      isLoading: false,
+    });
+  } finally {
+    setIsCreating(false);
+  }
+};
+
 
   const openToggleModal = (viagem, e) => {
     e.stopPropagation();
@@ -410,7 +417,7 @@ const RegistroViagem = () => {
       const payload = { ...tripToToggle, ativo: novoStatus };
       await updateViagem(tripToToggle.idViagem, payload);
 
-      notifySuccess(`Viagem ${acaoTexto} com sucesso.`);
+      toast.success(`Viagem ${acaoTexto} com sucesso.`);
 
       setViagens((prev) =>
         prev.map((v) =>
@@ -422,10 +429,8 @@ const RegistroViagem = () => {
       setTripToToggle(null);
     } catch (error) {
       console.error(error);
-      notifyError(
-        error?.response?.data?.message ||
-          "Erro ao alterar o status da viagem. Tente novamente."
-      );
+      toast.error("Erro ao alterar o status da viagem. Tente novamente.");
+      
     } finally {
       setTogglingId(null);
     }
@@ -732,7 +737,7 @@ const RegistroViagem = () => {
                               title={
                                 v.ativo ? "Encerrar viagem" : "Reativar viagem"
                               }
-                              className={`p-1.5 rounded-full transition-colors shadow-sm z-10 border text-xs ${
+                              className={` rounded-full transition-colors shadow-sm z-10 border text-xs ${
                                 v.ativo
                                   ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
                                   : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
@@ -1048,7 +1053,7 @@ const RegistroViagem = () => {
                     disabled={isCreating}
                     className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 transition-colors font-medium shadow-sm disabled:opacity-70"
                   >
-                    {isCreating ? <Loading size={16} /> : <Save size={16} />}
+                   
                     Salvar viagem
                   </button>
                 </div>
@@ -1100,9 +1105,7 @@ const RegistroViagem = () => {
                       : "bg-emerald-600 hover:bg-emerald-700"
                   }`}
                 >
-                  {togglingId === tripToToggle.idViagem ? (
-                    <Loading size={16} />
-                  ) : tripToToggle.ativo ? (
+                  { tripToToggle.ativo ? (
                     "Sim, encerrar"
                   ) : (
                     "Sim, ativar"

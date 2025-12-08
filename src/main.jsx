@@ -11,10 +11,7 @@ import App from "./App"; // Nosso componente principal que cuidará das rotas
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter>
-    <ConfirmAlert>
-    <App /> {/* O App agora é o ponto central */}</ConfirmAlert>
-      <ToastContainer
+    <BrowserRouter> <ToastContainer
         position="top-right"
         autoClose={4000}
         hideProgressBar={false}
@@ -24,6 +21,9 @@ createRoot(document.getElementById("root")).render(
         draggable
         theme="light"
       />
+    <ConfirmAlert>
+    <App /> {/* O App agora é o ponto central */}</ConfirmAlert>
+     
       
     </BrowserRouter>
   </StrictMode>
