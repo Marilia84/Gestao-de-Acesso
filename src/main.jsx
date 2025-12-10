@@ -1,30 +1,32 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom"; // Importamos apenas o BrowserRouter
+import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "./components/delete-button.css"; // Importa o CSS do botão de exclusão
-import { ConfirmAlert } from "./components/ConfirmAlert"; // Importa o ConfirmAlert
+import "./components/delete-button.css";
+import { ConfirmAlert } from "./components/ConfirmAlert";
 
-import App from "./App"; // Nosso componente principal que cuidará das rotas
+import App from "./App";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter> <ToastContainer
-        position="top-right"
-        autoClose={4000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        pauseOnHover
-        draggable
-        theme="light"
-      />
-    <ConfirmAlert>
-    <App /> {/* O App agora é o ponto central */}</ConfirmAlert>
-     
-      
+    <BrowserRouter>
+      <ConfirmAlert>
+        <App />
+      </ConfirmAlert>
     </BrowserRouter>
+    <ToastContainer
+      position="top-right"
+      autoClose={4000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      pauseOnHover
+      draggable
+      theme="light"
+      limit={3}
+      style={{ zIndex: 9999 }}
+    />
   </StrictMode>
 );
