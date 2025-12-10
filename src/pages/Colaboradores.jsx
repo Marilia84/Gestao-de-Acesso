@@ -54,7 +54,7 @@ export default function Colaboradores() {
       {/* CONTAINER PRINCIPAL - agora ocupa toda a largura, como em Gerenciar Linhas */}
       <div className="relative z-10 bg-white shadow-sm rounded-2xl w-full p-4 sm:p-6 md:p-8">
         <h1 className="text-2xl sm:text-3xl font-semibold text-emerald-600 mb-4 sm:mb-6">
-          Gerenciar colaboradores
+          Lista dos colaboradores
         </h1>
 
         {/* Campo de busca */}
