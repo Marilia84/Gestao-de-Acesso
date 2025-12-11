@@ -27,6 +27,10 @@ createRoot(document.getElementById("root")).render(
       style={{ zIndex: 9999 }}
     />
     </BrowserRouter>
+<<<<<<< HEAD
    
+=======
+    
+>>>>>>> 49003c0c2dc1279a24401bf92971011c5585e1da
   </StrictMode>
 );
