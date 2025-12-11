@@ -14,9 +14,7 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <ConfirmAlert>
         <App />
-      </ConfirmAlert>
-    </BrowserRouter>
-    <ToastContainer
+      </ConfirmAlert><ToastContainer
       position="top-right"
       autoClose={4000}
       hideProgressBar={false}
@@ -28,5 +26,7 @@ createRoot(document.getElementById("root")).render(
       limit={3}
       style={{ zIndex: 9999 }}
     />
+    </BrowserRouter>
+    
   </StrictMode>
 );

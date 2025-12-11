@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route, Outlet } from "react-router-dom"; // Importe o <Outlet />
 
-// Importe suas páginas e componentes
+
 import Login from "./pages/Login";
 import ChatBot from "./pages/Chat-bot";
 import PrivateRoute from "./components/PrivateRoute";
@@ -13,20 +13,15 @@ import Portaria from "./pages/Portaria";
 import Navbar from "./components/Navbar";
 import Impedimentos from "./pages/Impedimentos" 
 
-/**
- * Este é o nosso componente de Layout.
- * Ele renderiza o Navbar e um "placeholder" <Outlet />
- * O React Router irá renderizar a página da rota atual (Home, Portaria, etc.)
- * no lugar do <Outlet />.
- */
+
 const MainLayout = () => {
   return (
-    // Este é o container flex que você tinha em cada página
+    
     <div className="flex bg-[#F4F7F6] min-h-screen">
       <Navbar />
-      {/* O 'flex-1' faz a <main> ocupar todo o espaço restante */}
+     
       <main className="flex-1">
-        <Outlet /> {/* <-- A MÁGICA ACONTECE AQUI */}
+        <Outlet /> 
       </main>
     </div>
   );
